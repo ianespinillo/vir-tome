@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/commo
 import { CreatePublisherDto, UpdatePublisherDto } from '@repo/common';
 import { PublisherEntity } from '../entities/publisher.entity';
 import { PublisherService } from '../services/publisher.service';
-import { AuthBearer } from 'src/auth/decorators/auth-bearer.decorators';
+import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
 
 @AuthBearer()
 @Controller('publisher')

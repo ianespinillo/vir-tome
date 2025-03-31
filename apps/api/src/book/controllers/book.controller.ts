@@ -3,7 +3,7 @@ import { CreateBookDto, UpdateBookDto, UpdateStockDto } from '@repo/common';
 ;
 import { BookEntity } from '../entities/book.entity';
 import { BookService } from '../services/book.service';
-import { AuthBearer } from 'src/auth/decorators/auth-bearer.decorators';
+import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
 
 @AuthBearer()
 @Controller('book')

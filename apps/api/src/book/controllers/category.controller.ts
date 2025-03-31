@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query 
 import { CreateCategoryDto, UpdateCategoryDto } from '@repo/common';
 import { CategoryEntity } from '../entities/category.entity';
 import { CategoryService } from '../services/category.service';
-import { AuthBearer } from 'src/auth/decorators/auth-bearer.decorators';
+import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
 
 @AuthBearer()
 @Controller('category')
