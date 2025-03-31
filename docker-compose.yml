@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  virtec:
+    image: postgres:14-alpine
+    container_name: vir-tome
+    restart: always
+    environment:
+      POSTGRES_ROOT_PASSWORD: virtome_password
+      POSTGRES_DB: virtome_dev_db
+      POSTGRES_USER: virtome_user
+      POSTGRES_PASSWORD: virtome_password
+    ports:
+      - "5434:5432"
+    volumes:
+      - virtome_pg_data:/var/lib/pg
+
+volumes:
+  virtome_pg_data:

@@ -16,6 +16,7 @@
 		"typescript": "^5.0.0"
 	},
 	"scripts": {
+		"dev": "turbo run dev",
 		"test": "turbo run test",
 		"lint:check": "biome check .",
 		"lint:fix": "biome check . --write",

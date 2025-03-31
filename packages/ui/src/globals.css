@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--background: 220 10% 96%; /* Fondo general - gris claro */
+		--foreground: 220 15% 15%; /* Texto principal - gris oscuro */
+		--card: 0 0% 100%; /* Fondo de las tarjetas - blanco */
+		--card-foreground: 220 15% 15%; /* Texto dentro de tarjetas - gris oscuro */
+		--popover: 0 0% 100%; /* Fondo de popovers - blanco */
+		--popover-foreground: 220 15% 15%; /* Texto en popovers - gris oscuro */
+
+		/* Colores principales */
+		--primary: 210 50% 36%; /* Azul oscuro - botones principales */
+		--primary-foreground: 0 0% 98%; /* Texto en botones principales - blanco */
+
+		--secondary: 220 15% 85%; /* Fondo secundario - gris suave */
+		--secondary-foreground: 220 15% 15%; /* Texto en fondo secundario - gris oscuro */
+
+		--muted: 220 15% 85%; /* Fondo de elementos sutiles como bordes */
+		--muted-foreground: 220 10% 40%; /* Texto en elementos muted - gris medio */
+
+		--accent: 140 40% 60%; /* Verde claro para acentos - botones o links especiales */
+		--accent-foreground: 220 15% 15%; /* Texto en acentos */
+
+		--destructive: 0 84.2% 60.2%; /* Rojo - elementos destructivos como botones de eliminar */
+		--destructive-foreground: 0 0% 98%; /* Texto en botones destructivos - blanco */
+
+		/* Colores de bordes e inputs */
+		--border: 220 15% 85%; /* Color de bordes - gris claro */
+		--input: 220 15% 85%; /* Fondo de inputs - gris claro */
+
+		/* Colores de anillos (focus) */
+		--ring: 210 50% 36%; /* Anillos de foco (focus) - azul oscuro */
+
+		/* Radios para bordes redondeados */
+		--radius: 0.5rem;
+
+		/* Colores para gráficos */
+		--chart-1: 210 70% 40%; /* Azul para gráficos */
+		--chart-2: 160 60% 45%; /* Verde */
+		--chart-3: 30 80% 55%; /* Amarillo */
+		--chart-4: 280 65% 60%; /* Púrpura */
+		--chart-5: 340 75% 55%; /* Rosa */
+	}
+
+	.dark {
+		--background: 220 15% 15%; /* Fondo oscuro - gris muy oscuro */
+		--foreground: 0 0% 98%; /* Texto en modo oscuro - blanco */
+
+		--card: 220 20% 18%; /* Fondo de tarjetas en modo oscuro - gris oscuro */
+		--card-foreground: 0 0% 98%; /* Texto en tarjetas - blanco */
+
+		--popover: 220 20% 18%; /* Fondo de popovers - gris oscuro */
+		--popover-foreground: 0 0% 98%; /* Texto en popovers - blanco */
+
+		--primary: 0 0% 98%; /* Texto en modo oscuro */
+		--primary-foreground: 210 50% 36%; /* Botones en modo oscuro */
+
+		--secondary: 220 15% 25%; /* Fondo secundario - gris oscuro */
+		--secondary-foreground: 0 0% 98%; /* Texto en fondo secundario - blanco */
+
+		--muted: 220 15% 25%; /* Fondo de elementos sutiles en oscuro */
+		--muted-foreground: 220 5% 60%; /* Texto en muted */
+
+		--accent: 140 40% 60%; /* Verde claro - para acentos en oscuro */
+		--accent-foreground: 0 0% 98%; /* Texto en acentos */
+
+		--destructive: 0 62.8% 30.6%; /* Rojo oscuro para elementos destructivos */
+		--destructive-foreground: 0 0% 98%; /* Texto en destructivo - blanco */
+
+		--border: 220 15% 25%; /* Bordes oscuros */
+		--input: 220 15% 25%; /* Inputs en oscuro */
+
+		--ring: 210 50% 36%; /* Anillos de foco (focus) en oscuro */
+
+		--chart-1: 220 70% 50%; /* Azul para gráficos */
+		--chart-2: 160 60% 45%; /* Verde */
+		--chart-3: 30 80% 55%; /* Amarillo */
+		--chart-4: 280 65% 60%; /* Púrpura */
+		--chart-5: 340 75% 55%; /* Rosa */
+	}
+}
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+/* Cambiamos el fondo y agregamos una sombra cuando esté en hover */
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: #b3b3b3;
+    box-shadow: 0 0 2px 1px rgba(0, 0, 0, 0.2);
+}
+
+/* Cambiamos el fondo cuando esté en active */
+.custom-scroll::-webkit-scrollbar-thumb:active {
+    background-color: #999999;
+}
