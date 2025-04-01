@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateBookDto, UpdateBookDto } from '@repo/common';
-import { GenericService } from 'src/core/generic.service';
+import { GenericService } from '@/core/generic.service';
 import { Repository, IsNull } from 'typeorm';
 import { BookEntity } from '../entities/book.entity';
 import { CategoryService } from './category.service';
