@@ -2,8 +2,7 @@ import { PasswordAdapter } from '@/core/passport-adapter';
 import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { IAuthPayload, SignUpDto } from '@repo/common';
-import { SignInDto } from '@repo/common/src/dto/auth/sign-in.dto';
+import { IAuthPayload, SignInDto, SignUpDto } from '@repo/common';
 
 @Injectable()
 export class AuthService {

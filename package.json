@@ -21,7 +21,7 @@
 		"lint:check": "biome check .",
 		"lint:fix": "biome check . --write",
 		"prepare": "husky",
-		"ts:check": "tsc --noEmit"
+		"ts:check": "tsc --noEmit --skipLibCheck"
 	},
 	"workspaces": ["packages/*", "apps/*"],
 	"packageManager": "pnpm@9.8.0",

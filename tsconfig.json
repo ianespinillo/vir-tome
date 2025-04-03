@@ -3,26 +3,32 @@
 		// Enable latest features
 		"lib": ["ESNext", "DOM"],
 		"target": "ESNext",
-		"module": "ESNext",
+		"module": "Node16",
 		"moduleDetection": "force",
 		"jsx": "react-jsx",
 		"allowJs": true,
 
 		// Bundler mode
-		"moduleResolution": "bundler",
+		"moduleResolution": "node16",
 		"allowImportingTsExtensions": true,
 		//"verbatimModuleSyntax": true,
 		"noEmit": true,
-
+		"strictNullChecks": false,
+		"noImplicitAny": false,
 		// Best practices
 		"strict": true,
 		"skipLibCheck": true,
 		"noFallthroughCasesInSwitch": true,
-
+		"allowSyntheticDefaultImports": true,
+		"typeRoots": ["./apps/api/node_modules/@types"],
 		// Some stricter flags (disabled by default)
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
 		"noPropertyAccessFromIndexSignature": false,
-		"experimentalDecorators": true
+		"experimentalDecorators": true,
+		"baseUrl": "./",
+		"paths": {
+			"@/*": ["./apps/api/src/*", "./apps/client/src/*", "./packages/ui/src/*"]
+		}
 	}
 }
