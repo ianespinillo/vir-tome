@@ -1,36 +1,36 @@
 {
-    "folders": [
-        {
-            "path": "../",
-            "name": "root"
-        },
-        {
-            "path": "../apps/api",
-            "name": "api"
-        },
-        {
-            "path": "../apps/client",
-            "name": "client"
-        },
-        {
-            "path": "../packages/common",
-            "name": "@repo/common"
-        },
-        {
-            "path": "../packages/eslint-config",
-            "name": "@repo/eslint-config"
-        },
-        {
-            "path": "../packages/hooks",
-            "name": "@repo/hooks"
-        },
-        {
-            "path": "../packages/typescript-config",
-            "name": "@repo/typescript-config"
-        },
-        {
-            "path": "../packages/ui",
-            "name": "@repo/ui"
-        }
-    ]
+	"folders": [
+		{
+			"name": "root",
+			"path": ".."
+		},
+		{
+			"name": "api",
+			"path": "../apps/api"
+		},
+		{
+			"name": "client",
+			"path": "../apps/client"
+		},
+		{
+			"name": "@repo/common",
+			"path": "../packages/common"
+		},
+		{
+			"name": "@repo/eslint-config",
+			"path": "../packages/eslint-config"
+		},
+		{
+			"name": "@repo/hooks",
+			"path": "../packages/hooks"
+		},
+		{
+			"name": "@repo/typescript-config",
+			"path": "../packages/typescript-config"
+		},
+		{
+			"name": "@repo/ui",
+			"path": "../packages/ui"
+		}
+	]
 }

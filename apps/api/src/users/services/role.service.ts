@@ -1,15 +1,15 @@
-import { Injectable } from '@nestjs/common';
 import { GenericService } from '@/core/generic.service';
-import { RoleEntity } from '../entites/role.entity';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { RoleEntity } from '../entities/role.entity';
 
 @Injectable()
-export class RoleService extends GenericService{
-    constructor(
-        @InjectRepository(RoleEntity)
-        private readonly roleRepository: Repository<RoleEntity>,
-    ){
-        super(roleRepository);
-    }
+export class RoleService extends GenericService {
+	constructor(
+		@InjectRepository(RoleEntity)
+		private readonly roleRepository: Repository<RoleEntity>,
+	) {
+		super(roleRepository);
+	}
 }

@@ -1,14 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from 'typeorm';
-import { BookEntity } from './book.entity';
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { GenericEntity } from '../../core/generic.entity';
+import { BookEntity } from './book.entity';
 
 @Entity({
-  name: 'category',
+	name: 'category',
 })
 export class CategoryEntity extends GenericEntity {
-  @Column()
-  name!: string;
+	@Column()
+	name!: string;
 
-  @ManyToMany(() => BookEntity, (bookEntity) => bookEntity.categories)
-  books!: BookEntity[];
+	@ManyToMany(
+		() => BookEntity,
+		(bookEntity) => bookEntity.categories,
+	)
+	books!: BookEntity[];
 }

@@ -1,70 +1,78 @@
-import { IsString, IsInt, IsNotEmpty, Min, Max, IsArray, IsOptional } from 'class-validator';
+import {
+	IsArray,
+	IsInt,
+	IsNotEmpty,
+	IsOptional,
+	IsString,
+	Max,
+	Min,
+} from 'class-validator';
 
 export class CreateBookDto {
-  @IsString()
-  @IsNotEmpty()
-  title!: string;
+	@IsString()
+	@IsNotEmpty()
+	title!: string;
 
-  @IsInt()
-  @Min(1800)
-  @Max(new Date().getFullYear())
-  publicationYear!: number;
+	@IsInt()
+	@Min(1800)
+	@Max(new Date().getFullYear())
+	publicationYear!: number;
 
-  @IsString()
-  @IsNotEmpty()
-  genre!: string;
+	@IsString()
+	@IsNotEmpty()
+	genre!: string;
 
-  @IsInt()
-  @Min(1)
-  copies!: number;
+	@IsInt()
+	@Min(1)
+	copies!: number;
 
-  @IsArray()
-  @IsNotEmpty()
-  @IsInt({ each: true })
-  categoryIds!: number[]; // Para relaciones ManyToMany con Category
+	@IsArray()
+	@IsNotEmpty()
+	@IsInt({ each: true })
+	categoryIds!: number[]; // Para relaciones ManyToMany con Category
 
-  @IsInt()
-  @IsNotEmpty()
-  publisherId!: number; // Para relación ManyToMany con Publisher
+	@IsInt()
+	@IsNotEmpty()
+	publisherId!: number; // Para relación ManyToMany con Publisher
 }
 
 export class UpdateBookDto {
-    @IsInt()
-    @IsOptional()
-    id?: number;
-    
-    @IsString()
-    @IsNotEmpty()
-    title!: string;
-  
-    @IsInt()
-    @Min(1800)
-    @Max(new Date().getFullYear())
-    publicationYear!: number;
-  
-    @IsString()
-    @IsNotEmpty()
-    genre!: string;
-  
-    @IsInt()
-    @Min(1)
-    copies!: number;
-  
-    @IsArray()
-    @IsNotEmpty()
-    categoryIds!: number[]; // Para relaciones ManyToMany con Category
-  
-    @IsInt()
-    @IsNotEmpty()
-    publisherId!: number; // Para relación ManyToMany con Publisher
-  }
+	@IsInt()
+	@IsOptional()
+	id?: number;
 
-  export class UpdateStockDto {
-    @IsInt()
-    @IsNotEmpty()
-    id!: number;
-  
-    @IsInt()
-    @IsNotEmpty()
-    quantity!: number;
-  }
+	@IsString()
+	@IsNotEmpty()
+	title!: string;
+
+	@IsInt()
+	@Min(1800)
+	@Max(new Date().getFullYear())
+	publicationYear!: number;
+
+	@IsString()
+	@IsNotEmpty()
+	genre!: string;
+
+	@IsInt()
+	@Min(1)
+	copies!: number;
+
+	@IsArray()
+	@IsNotEmpty()
+	categoryIds!: number[]; // Para relaciones ManyToMany con Category
+
+	@IsInt()
+	@IsNotEmpty()
+	publisherId!: number; // Para relación ManyToMany con Publisher
+}
+
+export class UpdateStockDto {
+	@IsInt()
+	@IsNotEmpty()
+	id!: number;
+
+	@IsInt()
+	@IsNotEmpty()
+	quantity!: number;
+}

@@ -1,4 +1,4 @@
 export interface IAuthPayload {
-  sub: number;
-  email: string;
+	sub: number;
+	email: string;
 }

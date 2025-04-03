@@ -1,37 +1,52 @@
-import { Entity, Column, OneToMany, ManyToMany, JoinTable, JoinColumn, ManyToOne } from 'typeorm';
-import { CategoryEntity } from './category.entity';
-import { PublisherEntity } from './publisher.entity';
+import {
+	Column,
+	Entity,
+	JoinColumn,
+	JoinTable,
+	ManyToMany,
+	ManyToOne,
+	OneToMany,
+} from 'typeorm';
 import { GenericEntity } from '../../core/generic.entity';
 import { LoanEntity } from '../../loan/entities/loan.entity';
+import { CategoryEntity } from './category.entity';
+import { PublisherEntity } from './publisher.entity';
 
 @Entity({
-  name: 'book'
+	name: 'book',
 })
 export class BookEntity extends GenericEntity {
-  @Column()
-  title!: string;
+	@Column()
+	title!: string;
 
-  @Column()
-    publicationYear!: number;
+	@Column()
+	publicationYear!: number;
 
-@Column({ default: 1 })
-availableQuantity!: number;
+	@Column({ default: 1 })
+	availableQuantity!: number;
 
-@OneToMany(() => LoanEntity, (loan) => loan.book)
-loans!: LoanEntity[];
+	@OneToMany(
+		() => LoanEntity,
+		(loan) => loan.book,
+	)
+	loans!: LoanEntity[];
 
-@ManyToMany(() => CategoryEntity, (categoryEntity) => categoryEntity.books)
-@JoinTable()
-@JoinColumn()
-categories!: CategoryEntity[];
+	@ManyToMany(
+		() => CategoryEntity,
+		(categoryEntity) => categoryEntity.books,
+	)
+	@JoinTable()
+	@JoinColumn()
+	categories!: CategoryEntity[];
 
+	@ManyToOne(
+		() => PublisherEntity,
+		(AuthorEntity) => AuthorEntity.books,
+	)
+	@JoinTable()
+	@JoinColumn()
+	publisher!: PublisherEntity;
 
-@ManyToOne(() => PublisherEntity, (AuthorEntity) => AuthorEntity.books)
-@JoinTable()
-@JoinColumn()
-publisher!: PublisherEntity
-
-@Column({ type: 'numeric' })
-copies!: number;
-
+	@Column({ type: 'numeric' })
+	copies!: number;
 }

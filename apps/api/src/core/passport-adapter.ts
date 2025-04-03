@@ -20,7 +20,6 @@ export class PasswordAdapter {
 		return hash(password, PASSWORD_SALT_ROUNDS);
 	}
 
-
 	static comparePassword(password: string, hashedPassword: string) {
 		return compare(password, hashedPassword);
 	}

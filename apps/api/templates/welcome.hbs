@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido a Virtome</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .content {
+            padding: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .highlight {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .no-reply {
+            font-style: italic;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>¡Bienvenido a Virtome!</h1>
+    </div>
+    
+    <div class="content">
+        <p>Hola,</p>
+        
+        <p>Nos complace informarte que tu cuenta en Virtome ha sido creada exitosamente.</p>
+        
+        <div class="highlight">
+            <p><strong>Información de tu cuenta:</strong></p>
+            <p>Contraseña: {{ password }}</p>
+        </div>
+        
+        <p>Por razones de seguridad, te recomendamos cambiar tu contraseña lo antes posible. Actualmente, la única forma de actualizar tu contraseña es a través del panel de perfil después de iniciar sesión.</p>
+        
+        <p>Si tienes alguna pregunta o necesitas asistencia, por favor contacta a nuestro equipo de soporte a través de la sección de ayuda de la plataforma.</p>
+        
+        <p class="no-reply">Este es un mensaje automático. Por favor no respondas a este correo ya que no está siendo monitoreado.</p>
+    </div>
+    
+    <div class="footer">
+        <p>&copy; 2025 Virtome. Todos los derechos reservados.</p>
+    </div>
+</body>
+</html>

@@ -11,7 +11,7 @@ services:
       POSTGRES_USER: virtome_user
       POSTGRES_PASSWORD: virtome_password
     ports:
-      - "5434:5432"
+      - "5438:5432"
     volumes:
       - virtome_pg_data:/var/lib/pg
 
