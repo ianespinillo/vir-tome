@@ -53,7 +53,18 @@ export class BookService extends GenericService {
 	}
 
 	async findAll(): Promise<BookEntity[]> {
-		return this.bookRepository.findBy({ deleted_at: IsNull() });
+		const books = await this.bookRepository.findBy({ deleted_at: IsNull() });
+		const transformedBooks : any = [];
+		for (let book of books) {
+			const categories = await this.categoryService.findAllOfBook(book.categories.map(c => c.id));
+			const publisher = await this.publishersService.findById(book.publisher.id);
+			transformedBooks.push({
+				...book,
+				categories,
+				publisher,
+			});
+		}
+		return transformedBooks;
 	}
 
 	async findOne(id: number): Promise<BookEntity> {

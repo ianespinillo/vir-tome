@@ -31,7 +31,7 @@ import { BookEntity } from '../entities/book.entity';
 import { BookService } from '../services/book.service';
 
 @ApiTags('Libros')
-@ApiBearerAuth()
+// @ApiBearerAuth()
 @ApiUnauthorizedResponse({
 	description: 'Unauthorized - Invalid or missing token',
 })

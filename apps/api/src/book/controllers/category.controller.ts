@@ -32,7 +32,7 @@ import { CategoryService } from '../services/category.service';
 
 @ApiTags('Categorias')
 @ApiBearerAuth()
-@AuthBearer()
+// @AuthBearer()
 @ApiUnauthorizedResponse({
 	description: 'Acceso no autorizado - Token inválido o faltante',
 })

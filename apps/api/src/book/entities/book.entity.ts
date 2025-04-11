@@ -46,7 +46,4 @@ export class BookEntity extends GenericEntity {
 	@JoinTable()
 	@JoinColumn()
 	publisher!: PublisherEntity;
-
-	@Column({ type: 'numeric' })
-	copies!: number;
 }
