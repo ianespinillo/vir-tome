@@ -12,9 +12,7 @@ import { LoanEntity } from '../../loan/entities/loan.entity';
 import { CategoryEntity } from './category.entity';
 import { PublisherEntity } from './publisher.entity';
 
-@Entity({
-	name: 'book',
-})
+@Entity({ name: 'book' })
 export class BookEntity extends GenericEntity {
 	@Column()
 	title!: string;
@@ -33,20 +31,31 @@ export class BookEntity extends GenericEntity {
 
 	@ManyToMany(
 		() => CategoryEntity,
-		(categoryEntity) => categoryEntity.books,
+		(category) => category.books,
+		{
+			cascade: true, // Opcional: permite guardar categorías al guardar el libro
+		},
 	)
-	@JoinTable()
-	@JoinColumn()
+	@JoinTable({
+		name: 'book_categories', // Nombre explícito de la tabla de unión
+		joinColumn: {
+			name: 'bookId',
+			referencedColumnName: 'id',
+		},
+		inverseJoinColumn: {
+			name: 'categoryId',
+			referencedColumnName: 'id',
+		},
+	})
 	categories!: CategoryEntity[];
 
 	@ManyToOne(
 		() => PublisherEntity,
-		(AuthorEntity) => AuthorEntity.books,
+		(publisher) => publisher.books,
+		{
+			onDelete: 'CASCADE', // Opcional: elimina libros si se elimina la editorial
+		},
 	)
-	@JoinTable()
-	@JoinColumn()
+	@JoinColumn({ name: 'publisherId' })
 	publisher!: PublisherEntity;
-
-	@Column({ type: 'numeric' })
-	copies!: number;
 }

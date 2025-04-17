@@ -8,10 +8,8 @@ export default function AppLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" className="min-h-screen">
-			<body>
-				<TanstackProvider>{children}</TanstackProvider>
-			</body>
-		</html>
+		<div style={{ height: '100vh' }}>
+			<TanstackProvider>{children}</TanstackProvider>
+		</div>
 	);
 }

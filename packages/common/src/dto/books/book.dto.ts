@@ -18,13 +18,9 @@ export class CreateBookDto {
 	@Max(new Date().getFullYear())
 	publicationYear!: number;
 
-	@IsString()
-	@IsNotEmpty()
-	genre!: string;
-
 	@IsInt()
 	@Min(1)
-	copies!: number;
+	availableQuantity!: number;
 
 	@IsArray()
 	@IsNotEmpty()
@@ -50,13 +46,9 @@ export class UpdateBookDto {
 	@Max(new Date().getFullYear())
 	publicationYear!: number;
 
-	@IsString()
-	@IsNotEmpty()
-	genre!: string;
-
 	@IsInt()
 	@Min(1)
-	copies!: number;
+	availableQuantity!: number;
 
 	@IsArray()
 	@IsNotEmpty()

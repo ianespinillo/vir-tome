@@ -3,6 +3,15 @@
 	"organizeImports": {
 		"enabled": true
 	},
+	"files": {
+		"ignore": [
+			"**/node_modules/**",
+			"**/dist/**",
+			"**/build/**",
+			"**/test/**",
+			"./packages/ui/src/ui/*.tsx"
+		]
+	},
 	"linter": {
 		"enabled": true,
 		"rules": {

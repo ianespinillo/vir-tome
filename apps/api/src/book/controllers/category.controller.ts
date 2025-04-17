@@ -5,6 +5,7 @@ import {
 	Delete,
 	Get,
 	Param,
+	ParseBoolPipe,
 	ParseIntPipe,
 	Patch,
 	Post,
@@ -32,12 +33,12 @@ import { CategoryService } from '../services/category.service';
 
 @ApiTags('Categorias')
 @ApiBearerAuth()
-@AuthBearer()
+// @AuthBearer()
 @ApiUnauthorizedResponse({
 	description: 'Acceso no autorizado - Token inválido o faltante',
 })
 @ApiForbiddenResponse({ description: 'Prohibido - Permisos insuficientes' })
-@Controller('category')
+@Controller('categories')
 export class CategoryController {
 	constructor(private readonly categoryService: CategoryService) {}
 
@@ -148,7 +149,13 @@ export class CategoryController {
 			},
 		},
 	})
-	async findAll(@Query('page', ParseIntPipe) page = 1) {
+	async findAll(
+		@Query('page', new ParseIntPipe({ optional: true })) page = 1,
+		@Query('full', new ParseBoolPipe({ optional: true })) full = false,
+	) {
+		if (full) {
+			return this.categoryService.findAll();
+		}
 		return this.categoryService.findByPage(page);
 	}
 

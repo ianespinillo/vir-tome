@@ -14,7 +14,9 @@
 		"isolatedModules": true,
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./packages/ui/src/*"]
+			"@/*": ["./packages/ui/src/*"],
+			"@repo/common": ["packages/common/src"],
+			"@repo/hooks": ["packages/hooks/src"]
 		}
 	}
 }

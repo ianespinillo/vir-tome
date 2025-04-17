@@ -1,3 +1,4 @@
+import { IBook } from './types/books.types';
 export { CreateCategoryDto, UpdateCategoryDto } from './dto/books/category.dto';
 export {
 	CreatePublisherDto,
@@ -19,3 +20,4 @@ export {
 	TOKEN_DURATION,
 } from './constants/index';
 export type { IAuthPayload } from './types/auth';
+export type * from './types/books.types';

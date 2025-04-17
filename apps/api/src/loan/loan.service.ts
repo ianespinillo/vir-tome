@@ -42,7 +42,7 @@ export class LoanService extends GenericService {
 	}
 	async returnBook(loanId: number): Promise<void> {
 		const loan: LoanEntity = await this.findById(loanId);
-		const book = await this.bookService.findOne(loan.book.id);
+		const book = await this.bookService.findById(loan.book.id);
 		book.availableQuantity += loan.quantity;
 		await this.bookService.updateStock(book.id, book.availableQuantity);
 		loan.status = LoanStatus.RETURNED;

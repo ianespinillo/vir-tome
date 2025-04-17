@@ -5,6 +5,7 @@ import {
 	Delete,
 	Get,
 	Param,
+	ParseBoolPipe,
 	ParseIntPipe,
 	Post,
 	Put,
@@ -26,12 +27,18 @@ import {
 	ApiTags,
 	ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { CreateBookDto, UpdateBookDto, UpdateStockDto } from '@repo/common';
+import {
+	CreateBookDto,
+	IBooKForm,
+	UpdateBookDto,
+	UpdateStockDto,
+} from '@repo/common';
+import { UpdateResult } from 'typeorm';
 import { BookEntity } from '../entities/book.entity';
 import { BookService } from '../services/book.service';
 
 @ApiTags('Libros')
-@ApiBearerAuth()
+// @ApiBearerAuth()
 @ApiUnauthorizedResponse({
 	description: 'Unauthorized - Invalid or missing token',
 })
@@ -174,7 +181,7 @@ export class BookController {
 		@Param('id', ParseIntPipe) id: number,
 		@Body() data: UpdateBookDto,
 	) {
-		return this.bookService.update(id, data);
+		return this.bookService.updateBook(id, data);
 	}
 
 	@Get()
@@ -217,8 +224,14 @@ export class BookController {
 			},
 		},
 	})
-	async findAll(@Query('page', ParseIntPipe) page = 1) {
-		return await this.bookService.findByPage(page);
+	async findAll(
+		@Query('page', new ParseIntPipe({ optional: true })) page = 1,
+		@Query('full', new ParseBoolPipe({ optional: true })) full = false,
+	) {
+		if (full) {
+			return this.bookService.findAll();
+		}
+		return this.bookService.findByPage(page);
 	}
 
 	@Get(':id')
@@ -239,7 +252,7 @@ export class BookController {
 	@ApiNotFoundResponse({
 		description: 'Not Found - Book with specified ID not found',
 	})
-	async findById(@Param('id', ParseIntPipe) id: number): Promise<BookEntity> {
+	async findById(@Param('id', ParseIntPipe) id: number): Promise<IBooKForm> {
 		return await this.bookService.findOne(id);
 	}
 
@@ -259,7 +272,7 @@ export class BookController {
 	@ApiNotFoundResponse({
 		description: 'Not Found - Book with specified ID not found',
 	})
-	async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-		await this.bookService.remove(id);
+	async remove(@Param('id', ParseIntPipe) id: number): Promise<UpdateResult> {
+		return await this.bookService.remove(id);
 	}
 }

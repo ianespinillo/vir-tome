@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 
 export abstract class GenericService {
 	constructor(protected repository: Repository<any>) {}
@@ -23,10 +23,20 @@ export abstract class GenericService {
 	async findByPage(page: number) {
 		const [data, total] = await this.repository.findAndCount({
 			where: { deleted_at: null },
-			order: { id: 'DESC' },
+			order: { id: 'ASC' },
 			take: 10,
 			skip: (page - 1) * 10,
 		});
-		return { data, total };
+		return {
+			data,
+			total,
+			current_page: page,
+			last_page: Math.ceil(total / 10),
+		};
+	}
+	async findByName(name: string) {
+		return this.repository.find({
+			where: { name: ILike(`%${name}%`), deleted_at: null },
+		});
 	}
 }
