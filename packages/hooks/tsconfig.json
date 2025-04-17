@@ -3,6 +3,6 @@
 	"compilerOptions": {
 		"jsx": "preserve"
 	},
-	"include": ["src"],
+	"include": ["src", "../ui/src/contexts"],
 	"exclude": ["node_modules"]
 }

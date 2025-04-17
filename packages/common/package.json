@@ -17,6 +17,8 @@
 		".": "./dist/index.js"
 	},
 	"devDependencies": {
+		"@tanstack/react-query": "^5.59.0",
+		"@types/react": "^18",
 		"typescript": "^5.6.3"
 	}
 }

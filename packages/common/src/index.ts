@@ -20,5 +20,4 @@ export {
 	TOKEN_DURATION,
 } from './constants/index';
 export type { IAuthPayload } from './types/auth';
-export type { IBook } from './types/books.types';
-export type { ICategory } from './types/books.types';
+export type * from './types/books.types';
