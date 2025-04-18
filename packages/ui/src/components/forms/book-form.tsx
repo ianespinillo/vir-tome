@@ -42,7 +42,8 @@ import {
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { CreateBookDto } from '@repo/common';
 import { useCategory, usePublishers } from '@repo/hooks';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { AlertCircle, Check, ChevronsUpDown } from 'lucide-react';
 import React, { useContext, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Toaster, toast } from 'react-hot-toast';
@@ -70,7 +71,7 @@ export function BookForm({ onSuccess, id }: Readonly<BookFormProps>) {
 		},
 		mode: 'onBlur',
 	});
-
+	console.log(form.formState);
 	// efecto quee verifica si hay id y en dado caso, busca el libro y lo carga en el formulario
 	useEffect(() => {
 		if (id) {
@@ -142,7 +143,7 @@ export function BookForm({ onSuccess, id }: Readonly<BookFormProps>) {
 						<FormField
 							control={form.control}
 							name="title"
-							render={({ field }) => (
+							render={({ field, fieldState }) => (
 								<FormItem>
 									<FormLabel>Nombre del libro</FormLabel>
 									<FormControl>
@@ -151,7 +152,19 @@ export function BookForm({ onSuccess, id }: Readonly<BookFormProps>) {
 									<FormDescription>
 										Ingrese el título completo del libro.
 									</FormDescription>
-									<FormMessage />
+									<AnimatePresence>
+										{fieldState.error && (
+											<motion.div
+												initial={{ opacity: 0, y: -5 }}
+												animate={{ opacity: 1, y: 0 }}
+												exit={{ opacity: 0 }}
+												className="text-xs text-red-500 mt-1 flex items-center gap-1"
+											>
+												<AlertCircle className="h-3 w-3" />
+												{form.formState.errors.title?.message}
+											</motion.div>
+										)}
+									</AnimatePresence>
 								</FormItem>
 							)}
 						/>
@@ -164,10 +177,26 @@ export function BookForm({ onSuccess, id }: Readonly<BookFormProps>) {
 									<FormItem>
 										<FormLabel>Año de publicación</FormLabel>
 										<FormControl>
-											<Input type="number" {...field} />
+											<Input
+												type="number"
+												{...field}
+												onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
+											/>
 										</FormControl>
 										<FormDescription>Año en que se publicó el libro.</FormDescription>
-										<FormMessage />
+										<AnimatePresence>
+											{form.formState.errors.publicationYear && (
+												<motion.div
+													initial={{ opacity: 0, y: -5 }}
+													animate={{ opacity: 1, y: 0 }}
+													exit={{ opacity: 0 }}
+													className="text-xs text-red-500 mt-1 flex items-center gap-1"
+												>
+													<AlertCircle className="h-3 w-3" />
+													{form.formState.errors.publicationYear?.message}
+												</motion.div>
+											)}
+										</AnimatePresence>
 									</FormItem>
 								)}
 							/>
@@ -195,127 +224,129 @@ export function BookForm({ onSuccess, id }: Readonly<BookFormProps>) {
 							/>
 						</div>
 
-						<FormField
-							control={form.control}
-							name="publisherId"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Editorial</FormLabel>
-									<Select
-										onValueChange={(value) => field.onChange(Number(value))}
-										value={field.value?.toString()}
-									>
+						<div className="flex space-x-2">
+							<FormField
+								control={form.control}
+								name="publisherId"
+								render={({ field }) => (
+									<FormItem className="basis-1/2">
+										<FormLabel>Editorial</FormLabel>
+										<Select
+											onValueChange={(value) => field.onChange(Number(value))}
+											value={field.value?.toString()}
+										>
+											<FormControl>
+												<SelectTrigger>
+													<SelectValue placeholder="Seleccione una editorial" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{publishers.data?.map((publisher) => (
+													<SelectItem key={publisher.id} value={publisher.id.toString()}>
+														{publisher.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<FormDescription>Editorial que publicó el libro.</FormDescription>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={form.control}
+								name="categoryIds"
+								render={({ field }) => (
+									<FormItem className="basis-1/2">
+										<FormLabel>Categorías</FormLabel>
 										<FormControl>
-											<SelectTrigger>
-												<SelectValue placeholder="Seleccione una editorial" />
-											</SelectTrigger>
-										</FormControl>
-										<SelectContent>
-											{publishers.data?.map((publisher) => (
-												<SelectItem key={publisher.id} value={publisher.id.toString()}>
-													{publisher.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									<FormDescription>Editorial que publicó el libro.</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-
-						<FormField
-							control={form.control}
-							name="categoryIds"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Categorías</FormLabel>
-									<FormControl>
-										<Popover open={open} onOpenChange={setOpen}>
-											<PopoverTrigger asChild>
-												<Button
-													variant="outline"
-													role="combobox"
-													aria-expanded={open}
-													className="w-full justify-between"
-												>
-													{selectedCategorias.length > 0
-														? `${selectedCategorias.length} categorías seleccionadas`
-														: 'Seleccione categorías'}
-													<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-												</Button>
-											</PopoverTrigger>
-											<PopoverContent className="w-full p-0" align="start">
-												<Command>
-													<CommandInput placeholder="Buscar categoría..." />
-													<CommandList>
-														<CommandEmpty>No se encontraron categorías.</CommandEmpty>
-														<CommandGroup>
-															<ScrollArea className="h-72">
-																{allCategories.data?.map((category) => (
-																	<CommandItem
-																		key={category.id}
-																		value={category.id.toString()}
-																		onSelect={() => {
-																			const isSelected = selectedCategorias.includes(category.id);
-																			const newSelectedCategorias = isSelected
-																				? selectedCategorias.filter(
-																						(value) => value !== category.id,
-																					)
-																				: [...selectedCategorias, category.id];
-
-																			setSelectedCategorias(newSelectedCategorias);
-																			form.setValue('categoryIds', newSelectedCategorias);
-																		}}
-																	>
-																		<Check
-																			className={cn(
-																				'mr-2 h-4 w-4',
-																				selectedCategorias.includes(category.id)
-																					? 'opacity-100'
-																					: 'opacity-0',
-																			)}
-																		/>
-																		{category.name}
-																	</CommandItem>
-																))}
-															</ScrollArea>
-														</CommandGroup>
-													</CommandList>
-												</Command>
-											</PopoverContent>
-										</Popover>
-									</FormControl>
-									<div className="flex flex-wrap gap-2 mt-2">
-										{selectedCategorias.map((value) => {
-											const categoria = allCategories.data?.find((c) => c.id === value);
-											return (
-												<Badge key={value} variant="secondary">
-													{categoria?.name}
-													<button
-														type="button"
-														className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-														onClick={() => {
-															const newSelectedCategorias = selectedCategorias.filter(
-																(v) => v !== value,
-															);
-															setSelectedCategorias(newSelectedCategorias);
-															form.setValue('categoryIds', newSelectedCategorias);
-														}}
+											<Popover open={open} onOpenChange={setOpen}>
+												<PopoverTrigger asChild>
+													<Button
+														variant="outline"
+														role="combobox"
+														aria-expanded={open}
+														className="w-full justify-between"
 													>
-														×
-													</button>
-												</Badge>
-											);
-										})}
-									</div>
-									<FormDescription>
-										Seleccione una o más categorías para el libro.
-									</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+														{selectedCategorias.length > 0
+															? `${selectedCategorias.length} categorías seleccionadas`
+															: 'Seleccione categorías'}
+														<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+													</Button>
+												</PopoverTrigger>
+												<PopoverContent className="w-full p-0" align="start">
+													<Command>
+														<CommandInput placeholder="Buscar categoría..." />
+														<CommandList>
+															<CommandEmpty>No se encontraron categorías.</CommandEmpty>
+															<CommandGroup>
+																<ScrollArea className="h-72">
+																	{allCategories.data?.map((category) => (
+																		<CommandItem
+																			key={category.id}
+																			value={category.id.toString()}
+																			onSelect={() => {
+																				const isSelected = selectedCategorias.includes(category.id);
+																				const newSelectedCategorias = isSelected
+																					? selectedCategorias.filter(
+																							(value) => value !== category.id,
+																						)
+																					: [...selectedCategorias, category.id];
+
+																				setSelectedCategorias(newSelectedCategorias);
+																				form.setValue('categoryIds', newSelectedCategorias);
+																			}}
+																		>
+																			<Check
+																				className={cn(
+																					'mr-2 h-4 w-4',
+																					selectedCategorias.includes(category.id)
+																						? 'opacity-100'
+																						: 'opacity-0',
+																				)}
+																			/>
+																			{category.name}
+																		</CommandItem>
+																	))}
+																</ScrollArea>
+															</CommandGroup>
+														</CommandList>
+													</Command>
+												</PopoverContent>
+											</Popover>
+										</FormControl>
+										<div className="flex flex-wrap gap-2 mt-2">
+											{selectedCategorias.map((value) => {
+												const categoria = allCategories.data?.find((c) => c.id === value);
+												return (
+													<Badge key={value} variant="secondary">
+														{categoria?.name}
+														<button
+															type="button"
+															className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+															onClick={() => {
+																const newSelectedCategorias = selectedCategorias.filter(
+																	(v) => v !== value,
+																);
+																setSelectedCategorias(newSelectedCategorias);
+																form.setValue('categoryIds', newSelectedCategorias);
+															}}
+														>
+															×
+														</button>
+													</Badge>
+												);
+											})}
+										</div>
+										<FormDescription>
+											Seleccione una o más categorías para el libro.
+										</FormDescription>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</div>
 						<CardFooter className="flex justify-end px-0 pt-4">
 							<Button type="submit" disabled={!form.formState.isValid}>
 								{id ? 'Actualizar' : 'Crear'} Libro

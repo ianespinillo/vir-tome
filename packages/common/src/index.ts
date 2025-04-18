@@ -21,3 +21,5 @@ export {
 } from './constants/index';
 export type { IAuthPayload } from './types/auth';
 export type * from './types/books.types';
+export type * from './types/common.types';
+export type * from './types/loan.types';

@@ -48,17 +48,24 @@ export class BookService extends GenericService {
 		if (!book) throw new NotFoundException('Libro no encontrado');
 		if (book.availableQuantity < quantity)
 			throw new BadRequestException('No hay suficientes ejemplares disponibles');
+		console.log(quantity);
 		book.availableQuantity -= quantity;
 		await this.bookRepository.save(book);
 	}
 
 	async findAll(): Promise<BookEntity[]> {
-		const books = await this.bookRepository.findBy({ deleted_at: IsNull() });
+		const books = await this.bookRepository.find({
+			where: { deleted_at: IsNull() },
+			relations: ['categories', 'publisher'],
+		});
 		const transformedBooks: any = [];
 		for (const book of books) {
-			const categories = await this.categoryService.findAllOfBook(
-				book.categories.map((c) => c.id),
-			);
+			let categories: any = [];
+			if (book.categories) {
+				categories = await this.categoryService.findAllOfBook(
+					book.categories.map((c) => c.id),
+				);
+			}
 			const publisher = await this.publishersService.findById(book.publisher.id);
 			transformedBooks.push({
 				...book,
@@ -73,8 +80,8 @@ export class BookService extends GenericService {
 			where: { deleted_at: IsNull() },
 			relations: ['categories', 'publisher'],
 			order: { id: 'ASC' },
-			take: 10,
-			skip: (page - 1) * 10,
+			take: 6,
+			skip: (page - 1) * 6,
 		});
 		return {
 			data: data.map((book) => ({
@@ -84,7 +91,7 @@ export class BookService extends GenericService {
 			})),
 			total,
 			current_page: page,
-			last_page: Math.ceil(total / 10),
+			last_page: Math.ceil(total / 6),
 		};
 	}
 	async findOne(id: number): Promise<IBooKForm> {

@@ -48,13 +48,13 @@ const menuSections: MenuSection[] = [
 			},
 			{
 				title: 'Libros',
-				href: '/books',
+				href: '/dashboard/books',
 				icon: BookOpen,
 				tooltip: 'Libros',
 			},
 			{
 				title: 'Prestamos',
-				href: '/loans',
+				href: '/dashboard/loans',
 				icon: BookCopy,
 				tooltip: 'Prestamos',
 			},

@@ -1,19 +1,32 @@
+import { Transform } from 'class-transformer';
 import { IsDate, IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
-
 export class CreateLoanDto {
-	@IsNotEmpty()
-	@IsString()
+	@IsNotEmpty({
+		message: 'El nombre del responsable es requerido',
+	})
+	@IsString({
+		message: 'El nombre del responsable es requerido',
+	})
 	borrowerName!: string;
 
-	@IsNotEmpty()
+	@IsNotEmpty({
+		message: 'El libro es requerido',
+	})
 	@IsNumber()
 	bookId!: number;
 
-	@IsNotEmpty()
-	@Min(1)
+	@IsNotEmpty({
+		message: 'La cantidad es requerida',
+	})
+	@Min(1, {
+		message: 'La cantidad debe ser mayor a 0',
+	})
 	quantity!: number;
 
-	@IsNotEmpty()
+	@Transform(({ value }) => new Date(value))
+	@IsNotEmpty({
+		message: 'La fecha de prestamo es requerida',
+	})
 	@IsDate()
-	returnDate?: Date;
+	returnDate!: Date;
 }

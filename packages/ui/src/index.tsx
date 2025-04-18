@@ -5,6 +5,7 @@ export { SidebarProvider } from './ui/sidebar';
 export { BookForm } from './components/forms/book-form';
 export { AddBook } from './components/dialogs/add-book';
 export { BooksTable } from './components/tables/table/books-table';
-
+export { LoansTable } from './components/tables/table/loans-table';
+export { NewLoan } from './components/dialogs/new-loan';
 // contexts
 export * from './contexts/book.context';

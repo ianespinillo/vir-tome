@@ -20,13 +20,11 @@ export const AddBook = () => {
 					<CircleFadingPlus className="ml-2 h-4 w-4" />
 				</Button>
 			</DialogTrigger>
-			<DialogContent>
+			<DialogContent className="p-0">
 				<DialogHeader className="hidden">
 					<DialogTitle>Add Book</DialogTitle>
 				</DialogHeader>
-				<div className="py-2">
-					<BookForm onSuccess={() => setOpen(false)} />
-				</div>
+				<BookForm onSuccess={() => setOpen(false)} />
 			</DialogContent>
 		</Dialog>
 	);
