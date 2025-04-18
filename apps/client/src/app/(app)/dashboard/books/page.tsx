@@ -11,7 +11,7 @@ export default function BooksPage() {
 	return isClient ? (
 		<BookProvider>
 			<div>
-				<div className="px-8 py-5">
+				<div className="px-8 pt-3">
 					<h1 className="text-5xl font-bold text-primary">Libros</h1>
 					<span className="text-muted-foreground text-xl">
 						Estos son los libros disponibles

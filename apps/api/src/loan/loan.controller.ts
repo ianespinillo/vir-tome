@@ -23,6 +23,7 @@ import {
 	ApiTags,
 } from '@nestjs/swagger';
 import { CreateLoanDto } from '@repo/common';
+import { UpdateResult } from 'typeorm';
 import { LoanEntity } from './entities/loan.entity';
 import { LoanService } from './loan.service';
 
@@ -115,7 +116,9 @@ export class LoanController {
 	@ApiBadRequestResponse({
 		description: 'El préstamo ya fue devuelto anteriormente',
 	})
-	async returnBook(@Param('id', ParseIntPipe) loanId: number): Promise<void> {
+	async returnBook(
+		@Param('id', ParseIntPipe) loanId: number,
+	): Promise<UpdateResult> {
 		return await this.loanService.returnBook(loanId);
 	}
 
@@ -171,7 +174,7 @@ export class LoanController {
 		},
 	})
 	async findAll(@Query('page') page = 1) {
-		return await this.loanService.findByPage(page);
+		return await this.loanService.paginatedLoans(page);
 	}
 
 	@Get(':id')

@@ -24,14 +24,14 @@ export abstract class GenericService {
 		const [data, total] = await this.repository.findAndCount({
 			where: { deleted_at: null },
 			order: { id: 'ASC' },
-			take: 10,
-			skip: (page - 1) * 10,
+			take: 6,
+			skip: (page - 1) * 6,
 		});
 		return {
 			data,
 			total,
 			current_page: page,
-			last_page: Math.ceil(total / 10),
+			last_page: Math.ceil(total / 6),
 		};
 	}
 	async findByName(name: string) {

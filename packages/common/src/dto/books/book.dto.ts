@@ -9,26 +9,36 @@ import {
 } from 'class-validator';
 
 export class CreateBookDto {
-	@IsString()
-	@IsNotEmpty()
+	@IsNotEmpty({ message: 'El título es requerido' })
+	@IsString({
+		message: 'El título debe ser una cadena de texto',
+	})
 	title!: string;
 
 	@IsInt()
-	@Min(1800)
-	@Max(new Date().getFullYear())
+	@Min(1800, { message: 'El año de publicación debe ser mayor a 1800' })
+	@Max(new Date().getFullYear(), {
+		message: `El año de publicación debe ser menor a ${new Date().getFullYear()}`,
+	})
 	publicationYear!: number;
 
+	@Min(1, {
+		message: 'La cantidad disponible debe ser mayor a 0',
+	})
 	@IsInt()
-	@Min(1)
 	availableQuantity!: number;
 
 	@IsArray()
-	@IsNotEmpty()
+	@IsNotEmpty({
+		message: 'Al menos debe poseer una categoría',
+	})
 	@IsInt({ each: true })
 	categoryIds!: number[]; // Para relaciones ManyToMany con Category
 
 	@IsInt()
-	@IsNotEmpty()
+	@IsNotEmpty({
+		message: 'La editorial es requerida',
+	})
 	publisherId!: number; // Para relación ManyToMany con Publisher
 }
 

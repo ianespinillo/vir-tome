@@ -1,6 +1,7 @@
 import type { UseMutationResult } from '@tanstack/react-query';
 import type * as React from 'react';
 import type { CreateBookDto, UpdateBookDto } from '../dto/books/book.dto';
+import { IPaginatedResponse } from './common.types';
 
 export interface IBook {
 	id: number;
@@ -16,13 +17,6 @@ export interface ICategory {
 	name: string;
 	created_at: Date;
 	updated_at: Date;
-}
-
-export interface IPaginatedResponse<T> {
-	data: T[];
-	total: number;
-	current_page: number;
-	last_page: number;
 }
 
 export interface IPublisherResponse {

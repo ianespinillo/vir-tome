@@ -93,6 +93,13 @@ export const useBooks = () => {
 			return await response.json();
 		},
 	});
+	const fullBooks = useMutation({
+		mutationKey: ['fullBooks'],
+		mutationFn: () =>
+			fetch(`${process.env.NEXT_PUBLIC_API_URL}/book?full=true`).then((res) =>
+				res.json(),
+			),
+	});
 	return {
 		books: {
 			...books,
@@ -105,5 +112,6 @@ export const useBooks = () => {
 		findBook,
 		updateBook,
 		deleteBook,
+		fullBooks,
 	};
 };

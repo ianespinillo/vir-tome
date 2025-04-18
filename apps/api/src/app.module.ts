@@ -31,7 +31,6 @@ import { UsersModule } from './users/users.module';
 					PublisherEntity,
 					CategoryEntity,
 				],
-				logging: true,
 			}),
 			inject: [ConfigService],
 			imports: [ConfigModule],

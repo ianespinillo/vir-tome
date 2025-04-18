@@ -6,5 +6,6 @@ export * from './hooks/use-auth';
 export * from './hooks/use-category';
 export * from './hooks/use-publishers';
 export * from './hooks/use-books';
+export * from './hooks/use-loans';
 
 export type { InfiniteData } from '@tanstack/react-query';
