@@ -5,5 +5,8 @@ import React from 'react';
 
 export default function SignInPage() {
 	const router = useRouter();
-	return <LoginForm onSuccess={() => router.push('/dashboard')} />;
+	const handleLogin = async () => {
+		router.push('/dashboard');
+	};
+	return <LoginForm onSuccess={handleLogin} />;
 }

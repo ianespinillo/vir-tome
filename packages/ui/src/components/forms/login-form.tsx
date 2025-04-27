@@ -1,7 +1,7 @@
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { useAuth } from '@repo/hooks';
 import { Lock, Mail } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { SignInDto } from '../../../../common/src/dto/auth/sign-in.dto';
 import { Button } from '../../ui/button';
@@ -25,16 +25,32 @@ export function LoginForm({ onSuccess }: Readonly<Props>) {
 	} = useForm({
 		resolver: classValidatorResolver(SignInDto),
 	});
-	const { SignIn } = useAuth();
-	const onSubmit = handleSubmit((data) => {
-		SignIn.mutate(data as SignInDto);
-		if (SignIn.isError) {
-			setError(SignIn.error.message);
-			setTimeout(() => {
+	const { signIn } = useAuth();
+	useEffect(() => {
+		if (error) {
+			const timer = setTimeout(() => {
 				setError(null);
 			}, 3000);
+			return () => clearTimeout(timer);
 		}
-		onSuccess();
+	}, [error]);
+	const onSubmit = handleSubmit((data) => {
+		signIn.mutateAsync(data as SignInDto, {
+			onSuccess: (data) => {
+				if (data) {
+					onSuccess();
+				} else {
+					setError('Invalid credentials');
+				}
+			},
+			onError: (error) => {
+				if (error instanceof Error) {
+					setError(error.message);
+				} else {
+					setError('Invalid credentials');
+				}
+			},
+		});
 	});
 	return (
 		<div className="h-screen flex items-center justify-center">

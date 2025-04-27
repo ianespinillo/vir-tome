@@ -30,6 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 	private async findUser(email: string) {
 		const u = await this.userService.findUserByEmail(email);
 		if (!u) throw new NotFoundException('User not found');
-		return u;
+		const { password, ...user } = u;
+		return user;
 	}
 }
