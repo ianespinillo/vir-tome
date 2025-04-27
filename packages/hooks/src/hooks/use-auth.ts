@@ -1,19 +1,123 @@
-import { SignInDto } from '@repo/common';
-import { useMutation } from '@tanstack/react-query';
+import {
+	IAuthResponse,
+	UpdatePasswordDto,
+	UpdatePersonalDataDto,
+} from '@repo/common';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 export const useAuth = () => {
-	const SignIn = useMutation({
-		mutationKey: ['signIn'],
-		mutationFn: async ({ email, password }: SignInDto) => {
-			const response = await fetch(`${process.env.API_URL}/api/auth/signin`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
+	const session = useQuery({
+		queryKey: ['session'],
+		queryFn: async () => {
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/auth/user`,
+				{
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					credentials: 'include',
 				},
-				body: JSON.stringify({ email, password }),
-			});
+			);
+			if (!response.ok) {
+				throw new Error('Failed to fetch session');
+			}
+			return response.json() as Promise<IAuthResponse>;
+		},
+	});
+	const signIn = useMutation({
+		mutationFn: async (data: { email: string; password: string }) => {
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/auth/sign-in`,
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					credentials: 'include',
+					body: JSON.stringify(data),
+				},
+			);
+			if (!response.ok) {
+				throw new Error('Failed to sign in');
+			}
 			return response.json();
 		},
 	});
-	return { SignIn };
+	const signOut = useMutation({
+		mutationFn: async () => {
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/auth/sign-out`,
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					credentials: 'include',
+				},
+			);
+			if (!response.ok) {
+				throw new Error('Failed to sign out');
+			}
+			return response.json();
+		},
+	});
+	const updateUser = useMutation({
+		mutationFn: async (data: UpdatePersonalDataDto) => {
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/auth/update-user`,
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					credentials: 'include',
+					body: JSON.stringify(data),
+				},
+			);
+			if (!response.ok) {
+				throw new Error('Failed to update user');
+			}
+			return response.json();
+		},
+	});
+	const updatePassword = useMutation({
+		mutationFn: async (data: UpdatePasswordDto) => {
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/auth/update-password`,
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					credentials: 'include',
+					body: JSON.stringify(data),
+				},
+			);
+			if (!response.ok) {
+				throw new Error('Failed to update password');
+			}
+			return response.json();
+		},
+	});
+	const confirmEmail = useMutation({
+		mutationFn: async (token: string) => {
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/auth/confirm-email`,
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					credentials: 'include',
+					body: JSON.stringify({ token }),
+				},
+			);
+			if (!response.ok) {
+				throw new Error('Failed to confirm email');
+			}
+			return response.json();
+		},
+	});
+	return { session, signIn, signOut, updateUser, updatePassword, confirmEmail };
 };

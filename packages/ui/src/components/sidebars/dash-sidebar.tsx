@@ -65,7 +65,7 @@ const menuSections: MenuSection[] = [
 const footerLinks: MenuLink[] = [
 	{
 		title: 'Perfil',
-		href: '#',
+		href: '/dashboard/profile',
 		icon: Settings,
 		tooltip: 'Perfil',
 	},
