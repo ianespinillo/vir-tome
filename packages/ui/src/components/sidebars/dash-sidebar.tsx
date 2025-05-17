@@ -22,6 +22,7 @@ import {
 	SidebarRail,
 } from '@/ui/sidebar';
 
+import { useAuth } from '@repo/hooks';
 import type { LucideIcon } from 'lucide-react';
 
 interface MenuLink {
@@ -78,6 +79,7 @@ const footerLinks: MenuLink[] = [
 ];
 
 export function DashSidebar() {
+	const { signOut } = useAuth();
 	return (
 		<Sidebar className="bg-sidebar-background text-sidebar-foreground border-r border-sidebar-border">
 			<SidebarHeader className="border-b border-sidebar-border">
@@ -140,10 +142,21 @@ export function DashSidebar() {
 								asChild
 								className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
 							>
-								<a href={link.href} className="text-sidebar-foreground">
-									<link.icon className="mr-2" />
-									<span>{link.title}</span>
-								</a>
+								{link.href.includes('#') ? (
+									<a
+										href={link.href}
+										onClick={() => signOut.mutate()}
+										className="text-sidebar-foreground"
+									>
+										<link.icon className="mr-2" />
+										<span>{link.title}</span>
+									</a>
+								) : (
+									<a href={link.href} className="text-sidebar-foreground">
+										<link.icon className="mr-2" />
+										<span>{link.title}</span>
+									</a>
+								)}
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					))}

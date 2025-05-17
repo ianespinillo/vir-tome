@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { AppModule } from './app.module';
 import { AuthModule } from './auth/auth.module';
 import { BookModule } from './book/book.module';
@@ -26,7 +27,7 @@ async function bootstrap() {
 		.setVersion('1.0')
 		.build();
 	const document = SwaggerModule.createDocument(app, config, {
-		include: [UsersModule, LoanModule, AuthModule, BookModule],
+		include: [UsersModule, LoanModule, AuthModule, BookModule, AnalyticsModule],
 	});
 	SwaggerModule.setup('api/docs', app, document);
 	await app.listen(process.env.PORT ?? 3000);

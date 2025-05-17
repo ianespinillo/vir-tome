@@ -73,4 +73,41 @@ export class LoanService extends GenericService {
 			last_page: Math.ceil(total / 6),
 		};
 	}
+	async mostLoanedBooks(limit: number) {
+		return this.loanRepository
+			.createQueryBuilder('loan')
+			.select('book.id', 'id')
+			.addSelect('book.title', 'title')
+			.addSelect('COUNT(*)', 'count')
+			.innerJoin('loan.book', 'book') // Relación definida en tu entidad.
+			.groupBy('book.id')
+			.orderBy('count', 'DESC')
+			.limit(limit)
+			.getRawMany();
+	}
+	async lastsLoans() {
+		return this.loanRepository
+			.createQueryBuilder('loan')
+			.select('book.id', 'id')
+			.addSelect('book.title', 'title')
+			.addSelect('loan.loanDate', 'loanDate')
+			.addSelect('loan.returnDate', 'returnDate')
+			.innerJoin('loan.book', 'book') // Relación definida en tu entidad.
+			.orderBy('loan.loanDate', 'DESC')
+			.limit(3)
+			.getRawMany();
+	}
+	async getLastReturnedLoans() {
+		return this.loanRepository
+			.createQueryBuilder('loan')
+			.select('book.id', 'id')
+			.addSelect('book.title', 'title')
+			.addSelect('loan.loanDate', 'loanDate')
+			.addSelect('loan.returnDate', 'returnDate')
+			.innerJoin('loan.book', 'book') // Relación definida en tu entidad.
+			.where('loan.status = :status', { status: LoanStatus.RETURNED })
+			.orderBy('loan.returnDate', 'DESC')
+			.limit(3)
+			.getRawMany();
+	}
 }

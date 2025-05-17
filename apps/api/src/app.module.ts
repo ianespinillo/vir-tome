@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -40,6 +41,7 @@ import { UsersModule } from './users/users.module';
 		BookModule,
 		AuthModule,
 		EmailModule,
+		AnalyticsModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],
