@@ -27,8 +27,9 @@ interface GenericTableProps<T> {
 	columns: ColumnDef<T>[];
 	currentPage: number;
 	totalPages: number;
-	fetchNextPage: () => void;
-	fetchPreviousPage: () => void;
+	fetchNextPage?: () => void;
+	fetchPreviousPage?: () => void;
+	paginable?: boolean;
 }
 
 export const GenericTable = <T,>({
@@ -40,6 +41,7 @@ export const GenericTable = <T,>({
 	totalPages,
 	fetchNextPage,
 	fetchPreviousPage,
+	paginable = false,
 }: Readonly<GenericTableProps<T>>) => {
 	const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -52,6 +54,7 @@ export const GenericTable = <T,>({
 		getSortedRowModel: getSortedRowModel(),
 	});
 
+	console.log(data);
 	return (
 		<div className="rounded-md border">
 			<Table>
@@ -96,7 +99,7 @@ export const GenericTable = <T,>({
 				</TableBody>
 
 				{/* Pie de tabla con controles de paginación */}
-				<TableFooter>
+				<TableFooter className={paginable ? '' : 'hidden'}>
 					<TableRow>
 						<TableCell colSpan={columns.length}>
 							<div className="flex items-center justify-between">

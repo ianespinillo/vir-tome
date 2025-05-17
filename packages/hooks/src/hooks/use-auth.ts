@@ -61,6 +61,9 @@ export const useAuth = () => {
 			}
 			return response.json();
 		},
+		onSuccess() {
+			document.location.href = 'auth/sign-in';
+		},
 	});
 	const updateUser = useMutation({
 		mutationFn: async (data: UpdatePersonalDataDto) => {

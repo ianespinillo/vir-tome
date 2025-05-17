@@ -25,3 +25,4 @@ export type * from './types/books.types';
 export type * from './types/common.types';
 export type * from './types/loan.types';
 export type * from './types/emails.types';
+export type * from './types/analytics.types';

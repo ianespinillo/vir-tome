@@ -39,4 +39,9 @@ export abstract class GenericService {
 			where: { name: ILike(`%${name}%`), deleted_at: null },
 		});
 	}
+	async count() {
+		return this.repository.count({
+			where: { deleted_at: null },
+		});
+	}
 }

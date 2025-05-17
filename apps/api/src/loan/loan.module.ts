@@ -9,5 +9,6 @@ import { LoanService } from './loan.service';
 	controllers: [LoanController],
 	providers: [LoanService],
 	imports: [BookModule, TypeOrmModule.forFeature([LoanEntity])],
+	exports: [LoanService],
 })
 export class LoanModule {}
