@@ -23,5 +23,26 @@ export * from './ui/scroll-area';
 // charts
 export { MostLoanedBooks } from './components/cards/most-loaned-books';
 
+//landing
+export { CTAButtons } from './components/buttons/cta-buttons';
+export { FeatureCard } from './components/cards/feature-card';
+export { NavigationMenu } from './components/menus/navigation-menu';
+export { Logo } from './components/icons/logo';
+export { StatCard } from './components/cards/stat-card';
+
+// Shadcn
+export { Button } from './ui/button';
+
+//Lucide
+export {
+	Menu,
+	BookOpen,
+	Users,
+	BarChart3,
+	Shield,
+	Clock,
+	Smartphone,
+	Play,
+} from 'lucide-react';
 // Input
 export { BookFilter } from './components/inputs/book-filter';
