@@ -1,0 +1,70 @@
+# .github/workflows/auto-merge.yml
+name: Auto Merge PR
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - develop
+      - main
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    # Solo para PRs de ciertos usuarios o bots
+    if: |
+      github.actor == 'dependabot[bot]' || 
+      github.actor == 'renovate[bot]' ||
+      contains(github.head_ref, 'auto/') ||
+      contains(github.event.pull_request.title, '[AUTO]')
+    
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js and Pnpm
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.16.0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.8.0
+          
+      - name: Install dependencies
+        run: pnpm install
+        
+      - name: Run all checks
+        run: |
+          pnpm build --filter=@repo/*
+          pnpm ts:check
+          pnpm biome ci .
+          pnpm lint:check
+          pnpm run test
+          
+      - name: Check PR requirements
+        id: pr-check
+        run: |
+          # Verificar que el PR tenga ciertos criterios
+          if [[ "${{ github.event.pull_request.changed_files }}" -lt 10 ]]; then
+            echo "small_change=true" >> $GITHUB_OUTPUT
+          else
+            echo "small_change=false" >> $GITHUB_OUTPUT
+          fi
+          
+      # Solo hacer auto-merge si cumple condiciones
+      - name: Enable auto-merge
+        if: steps.pr-check.outputs.small_change == 'true'
+        run: |
+          gh pr merge "${{ github.event.pull_request.number }}" \
+            --auto \
+            --squash \
+            --delete-branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Add comment if not auto-merged
+        if: steps.pr-check.outputs.small_change == 'false'
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --body "🤖 Tests passed but PR is too large for auto-merge. Manual review required."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
