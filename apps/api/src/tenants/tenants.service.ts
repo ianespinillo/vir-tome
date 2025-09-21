@@ -17,7 +17,7 @@ export class TenantsService {
 		private readonly tenantRepository: Repository<TenantEntity>,
 	) {}
 
-	async create(createTenantDto: CreateTenantDto): Promise<TenantEntity> {
+	async create(createTenantDto: CreateTenantDto): Promise<TenantEntity | TenantEntity[]> {
 		// Verificar que el subdomain no existe
 		const existingTenant = await this.tenantRepository.findOne({
 			where: { subdomain: createTenantDto.subdomain, deleted_at: IsNull() },

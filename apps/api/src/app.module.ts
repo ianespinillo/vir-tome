@@ -19,6 +19,7 @@ import { TokensModule } from './tokens/tokens.module';
 import { RoleEntity } from './users/entities/role.entity';
 import { UserEntity } from './users/entities/user.entity';
 import { UsersModule } from './users/users.module';
+import { MultiTenantEntity } from './core/multi-tenant.entity';
 
 @Module({
 	imports: [
@@ -28,6 +29,7 @@ import { UsersModule } from './users/users.module';
 				type: 'postgres',
 				url: config.get('DATABASE_URL'),
 				synchronize: true,
+				autoLoadEntities: true,
 				dropSchema: true,
 				logger: 'simple-console',
 				entities: [
@@ -39,6 +41,7 @@ import { UsersModule } from './users/users.module';
 					CategoryEntity,
 					TokenEntity,
 					TenantEntity,
+					MultiTenantEntity
 				],
 			}),
 			inject: [ConfigService],
