@@ -12,6 +12,8 @@ import { PublisherEntity } from './book/entities/publisher.entity';
 import { EmailModule } from './email/email.module';
 import { LoanEntity } from './loan/entities/loan.entity';
 import { LoanModule } from './loan/loan.module';
+import { TenantEntity } from './tenants/entities/tenant.entity';
+import { TenantsModule } from './tenants/tenants.module';
 import { TokenEntity } from './tokens/entities/tokens-entity';
 import { TokensModule } from './tokens/tokens.module';
 import { RoleEntity } from './users/entities/role.entity';
@@ -26,6 +28,8 @@ import { UsersModule } from './users/users.module';
 				type: 'postgres',
 				url: config.get('DATABASE_URL'),
 				synchronize: true,
+				dropSchema: true,
+				logger: 'simple-console',
 				entities: [
 					UserEntity,
 					RoleEntity,
@@ -34,6 +38,7 @@ import { UsersModule } from './users/users.module';
 					PublisherEntity,
 					CategoryEntity,
 					TokenEntity,
+					TenantEntity,
 				],
 			}),
 			inject: [ConfigService],
@@ -46,6 +51,7 @@ import { UsersModule } from './users/users.module';
 		EmailModule,
 		AnalyticsModule,
 		TokensModule,
+		TenantsModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],
