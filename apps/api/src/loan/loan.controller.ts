@@ -92,7 +92,9 @@ export class LoanController {
 	@ApiConflictResponse({
 		description: 'No hay suficientes ejemplares disponibles',
 	})
-	async createLoan(@Body() data: CreateLoanDto): Promise<LoanEntity> {
+	async createLoan(
+		@Body() data: CreateLoanDto,
+	): Promise<LoanEntity | LoanEntity[]> {
 		return await this.loanService.create(data);
 	}
 
