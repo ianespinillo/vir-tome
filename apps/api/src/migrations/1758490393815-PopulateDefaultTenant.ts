@@ -40,7 +40,7 @@ export class PopulateDefaultTenant1758490393815 implements MigrationInterface {
 		console.log(`📝 Tenant por defecto creado con ID: ${defaultTenantId}`);
 
 		// 3. Actualizar todas las tablas con el tenant_id por defecto
-		const tables = ['user', 'role', 'book', 'category', 'publisher', 'loan'];
+		const tables = ['user', 'role', 'book', 'category', 'publisher'];
 
 		for (const tableName of tables) {
 			// Verificar si la tabla tiene datos
