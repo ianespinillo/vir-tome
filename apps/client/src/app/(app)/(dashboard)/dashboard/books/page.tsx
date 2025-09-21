@@ -1,5 +1,5 @@
 'use client';
-import { AddBook, BookProvider, BooksTable } from '@repo/ui';
+import { AddBook, BookFilter, BookProvider, BooksTable } from '@repo/ui';
 import React, { useEffect, useState } from 'react';
 
 export default function BooksPage() {
@@ -17,7 +17,9 @@ export default function BooksPage() {
 						Estos son los libros disponibles
 					</span>
 				</div>
-				<div className="px-5 flex justify-end">
+
+				<div className="px-5 flex justify-end gap-x-4">
+					<BookFilter />
 					<AddBook />
 				</div>
 				<BooksTable />
