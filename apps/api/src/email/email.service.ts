@@ -1,5 +1,6 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
+import { ForgotPasswordEmail } from '@repo/common';
 import {
 	ChangeEmailRequest,
 	ConfirmEmailChange,
@@ -54,5 +55,18 @@ export class EmailService {
 				actual_year: new Date().getFullYear(),
 			},
 		});
+	}
+	async forgotPasswordEmail({email, token, expires}: ForgotPasswordEmail){
+		await this.emailService.sendMail({
+			to: email,
+			subject: 'Recuperación de contraseña',
+			template:'./forgot-password',
+			context:{
+				email,
+				token,
+				expires: new Date(expires).toLocaleDateString(),
+				actual_year: new Date().getFullYear()
+			}
+		})
 	}
 }

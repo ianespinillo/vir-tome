@@ -8,7 +8,7 @@ export const BooksCount = () => {
 
 	useEffect(() => {
 		countBooks.mutate();
-	}, [countBooks]);
+	}, []);
 
 	if (!countBooks.data) return null;
 

@@ -5,7 +5,7 @@ import { GenericCountCard } from './generic-count';
 
 export const LoansCount = () => {
 	const { countLoans } = useAnalytics();
-	useEffect(() => countLoans.mutate(), [countLoans]);
+	useEffect(() => countLoans.mutate(), []);
 	if (!countLoans.data) return null;
 	return (
 		<GenericCountCard

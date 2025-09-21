@@ -15,6 +15,8 @@ import { LoanModule } from './loan/loan.module';
 import { RoleEntity } from './users/entities/role.entity';
 import { UserEntity } from './users/entities/user.entity';
 import { UsersModule } from './users/users.module';
+import { TokensModule } from './tokens/tokens.module';
+import { TokenEntity } from './tokens/entities/tokens-entity';
 
 @Module({
 	imports: [
@@ -31,6 +33,7 @@ import { UsersModule } from './users/users.module';
 					BookEntity,
 					PublisherEntity,
 					CategoryEntity,
+					TokenEntity
 				],
 			}),
 			inject: [ConfigService],
@@ -42,6 +45,7 @@ import { UsersModule } from './users/users.module';
 		AuthModule,
 		EmailModule,
 		AnalyticsModule,
+		TokensModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],
