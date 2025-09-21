@@ -56,17 +56,17 @@ export class EmailService {
 			},
 		});
 	}
-	async forgotPasswordEmail({email, token, expires}: ForgotPasswordEmail){
+	async forgotPasswordEmail({ email, token, expires }: ForgotPasswordEmail) {
 		await this.emailService.sendMail({
 			to: email,
 			subject: 'Recuperación de contraseña',
-			template:'./forgot-password',
-			context:{
+			template: './forgot-password',
+			context: {
 				email,
 				token,
 				expires: new Date(expires).toLocaleDateString(),
-				actual_year: new Date().getFullYear()
-			}
-		})
+				actual_year: new Date().getFullYear(),
+			},
+		});
 	}
 }

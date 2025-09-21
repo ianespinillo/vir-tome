@@ -1,4 +1,5 @@
 import { EmailModule } from '@/email/email.module';
+import { TokensModule } from '@/tokens/tokens.module';
 import { UsersModule } from '@/users/users.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -6,7 +7,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { TokensModule } from '@/tokens/tokens.module';
 @Module({
 	providers: [ConfigService, AuthService, JwtStrategy],
 	controllers: [AuthController],
@@ -21,7 +21,7 @@ import { TokensModule } from '@/tokens/tokens.module';
 			}),
 		}),
 		EmailModule,
-		TokensModule
+		TokensModule,
 	],
 })
 export class AuthModule {}
