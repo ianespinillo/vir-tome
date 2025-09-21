@@ -8,5 +8,5 @@ export * from './hooks/use-publishers';
 export * from './hooks/use-books';
 export * from './hooks/use-loans';
 export * from './hooks/use-analytics';
-
+export * from './hooks/use-debounce';
 export type { InfiniteData } from '@tanstack/react-query';

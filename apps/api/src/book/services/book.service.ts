@@ -1,3 +1,4 @@
+import { title } from 'node:process';
 import { GenericService } from '@/core/generic.service';
 import {
 	BadRequestException,
@@ -6,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateBookDto, IBooKForm, UpdateBookDto } from '@repo/common';
-import { IsNull, Repository, UpdateResult } from 'typeorm';
+import { ILike, IsNull, Like, Repository, UpdateResult } from 'typeorm';
 import { BookEntity } from '../entities/book.entity';
 import { CategoryService } from './category.service';
 import { PublisherService } from './publisher.service';
@@ -160,5 +161,20 @@ export class BookService extends GenericService {
 
 	async remove(id: number): Promise<UpdateResult> {
 		return await this.bookRepository.update(id, { deleted_at: new Date() });
+	}
+	async findBookByName(name: string) {
+		const [data, total] = await this.bookRepository.findAndCount({
+			where: {
+				deleted_at: IsNull(),
+				title: ILike(`%${name}%`),
+			},
+			order: { id: 'ASC' },
+		});
+		return {
+			data,
+			total,
+			current_page: 1,
+			last_page: Math.ceil(total / 6),
+		};
 	}
 }

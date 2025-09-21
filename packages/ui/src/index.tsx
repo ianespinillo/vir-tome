@@ -23,6 +23,7 @@ export * from './ui/scroll-area';
 // charts
 export { MostLoanedBooks } from './components/cards/most-loaned-books';
 
+
 //landing
 export { CTAButtons } from './components/buttons/cta-buttons';
 export { FeatureCard } from './components/cards/feature-card';
@@ -44,3 +45,6 @@ export {
 	Smartphone,
 	Play,
 } from 'lucide-react';
+// Input
+export { BookFilter } from './components/inputs/book-filter';
+
