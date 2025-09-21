@@ -15,7 +15,14 @@
 		"start:prod": "node dist/main",
 		"lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
 		"ts:check": "tsc --noEmit",
-		"test": "jest"
+		"test": "jest",
+		"typeorm": "typeorm-ts-node-commonjs",
+		"migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/core/typeorm-config.ts",
+		"migration:run": "typeorm-ts-node-commonjs migration:run -d src/core/typeorm-config.ts",
+		"migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/core/typeorm-config.ts",
+		"migration:show": "typeorm-ts-node-commonjs migration:show -d src/core/typeorm-config.ts",
+		"migration:verify": "ts-node scripts/verify-migration.ts",
+		"migration:backup": "ts-node scripts/backup-before-migration.ts"
 	},
 	"dependencies": {
 		"@nestjs-modules/mailer": "^2.0.2",

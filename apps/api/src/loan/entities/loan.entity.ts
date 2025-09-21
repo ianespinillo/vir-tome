@@ -1,14 +1,12 @@
 import { LoanStatus } from '@repo/common';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { BookEntity } from '../../book/entities/book.entity';
+import { GenericEntity } from '../../core/generic.entity';
 
 @Entity({
 	name: 'loan',
 })
-export class LoanEntity {
-	@PrimaryGeneratedColumn()
-	id!: number;
-
+export class LoanEntity extends GenericEntity {
 	@Column()
 	borrowerName!: string;
 

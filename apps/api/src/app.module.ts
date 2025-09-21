@@ -9,13 +9,12 @@ import { BookModule } from './book/book.module';
 import { BookEntity } from './book/entities/book.entity';
 import { CategoryEntity } from './book/entities/category.entity';
 import { PublisherEntity } from './book/entities/publisher.entity';
-import { MultiTenantEntity } from './core/multi-tenant.entity';
 import { EmailModule } from './email/email.module';
 import { LoanEntity } from './loan/entities/loan.entity';
 import { LoanModule } from './loan/loan.module';
 import { TenantEntity } from './tenants/entities/tenant.entity';
 import { TenantsModule } from './tenants/tenants.module';
-import { TokenEntity } from './tokens/entities/tokens-entity';
+import { TokenEntity } from './tokens/entities/tokens.entity';
 import { TokensModule } from './tokens/tokens.module';
 import { RoleEntity } from './users/entities/role.entity';
 import { UserEntity } from './users/entities/user.entity';
@@ -41,7 +40,6 @@ import { UsersModule } from './users/users.module';
 					CategoryEntity,
 					TokenEntity,
 					TenantEntity,
-					MultiTenantEntity,
 				],
 			}),
 			inject: [ConfigService],
