@@ -3,7 +3,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TokenTypes } from '@repo/common';
 import { Repository } from 'typeorm';
-import { TokenEntity } from './entities/tokens-entity';
+import { TokenEntity } from './entities/tokens.entity';
 
 interface TokenOptions {
 	user_id: number;

@@ -1,5 +1,5 @@
-import { GenericEntity } from '@/core/generic.entity';
 import { Column, Entity } from 'typeorm';
+import { GenericEntity } from '../../core/generic.entity';
 
 @Entity({
 	name: 'role',

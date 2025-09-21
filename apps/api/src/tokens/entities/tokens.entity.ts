@@ -1,5 +1,3 @@
-import { User } from '@/auth/decorators/user.decorator';
-import { UserEntity } from '@/users/entities/user.entity';
 import { TokenTypes } from '@repo/common';
 import {
 	Column,
@@ -11,6 +9,7 @@ import {
 	PrimaryGeneratedColumn,
 	UpdateDateColumn,
 } from 'typeorm';
+import { UserEntity } from '../../users/entities/user.entity';
 
 @Entity('tokens')
 export class TokenEntity {
