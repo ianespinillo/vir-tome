@@ -1,11 +1,11 @@
 import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { GenericEntity } from '../../core/generic.entity';
+import { MultiTenantEntity } from '../../core/multi-tenant.entity';
 import { BookEntity } from './book.entity';
 
 @Entity({
 	name: 'category',
 })
-export class CategoryEntity extends GenericEntity {
+export class CategoryEntity extends MultiTenantEntity {
 	@Column()
 	name!: string;
 

@@ -7,13 +7,13 @@ import {
 	ManyToOne,
 	OneToMany,
 } from 'typeorm';
-import { GenericEntity } from '../../core/generic.entity';
+import { MultiTenantEntity } from '../../core/multi-tenant.entity';
 import { LoanEntity } from '../../loan/entities/loan.entity';
 import { CategoryEntity } from './category.entity';
 import { PublisherEntity } from './publisher.entity';
 
 @Entity({ name: 'book' })
-export class BookEntity extends GenericEntity {
+export class BookEntity extends MultiTenantEntity {
 	@Column()
 	title!: string;
 
