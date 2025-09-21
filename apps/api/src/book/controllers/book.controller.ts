@@ -227,9 +227,13 @@ export class BookController {
 	async findAll(
 		@Query('page', new ParseIntPipe({ optional: true })) page = 1,
 		@Query('full', new ParseBoolPipe({ optional: true })) full = false,
+		@Query('search') search?: string,
 	) {
 		if (full) {
 			return this.bookService.findAll();
+		}
+		if (search) {
+			return this.bookService.findBookByName(search);
 		}
 		return this.bookService.findByPage(page);
 	}

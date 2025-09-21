@@ -22,3 +22,6 @@ export * from './ui/scroll-area';
 
 // charts
 export { MostLoanedBooks } from './components/cards/most-loaned-books';
+
+// Input
+export { BookFilter } from './components/inputs/book-filter';

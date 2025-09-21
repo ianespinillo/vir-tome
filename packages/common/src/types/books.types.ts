@@ -56,6 +56,9 @@ export interface IBookContext {
 	refetch: () => void;
 	fetchNextPage: () => void;
 	fetchPreviousPage: () => void;
+	setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
+	searchTerm: string;
+	debouncedSearchTerm: string;
 	createBook: UseMutationResult<IBook, Error, CreateBookDto, unknown>;
 	findBook: UseMutationResult<IBooKForm, Error, string | number, unknown>;
 	updateBook: UseMutationResult<IBook, Error, UpdateBookDto, unknown>;
