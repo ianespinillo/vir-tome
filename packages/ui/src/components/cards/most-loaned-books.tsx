@@ -22,7 +22,7 @@ export const MostLoanedBooks = () => {
 
 	useEffect(() => {
 		mostLoanedBooks.mutate();
-	}, [mostLoanedBooks]);
+	}, []);
 
 	const config = {
 		count: {

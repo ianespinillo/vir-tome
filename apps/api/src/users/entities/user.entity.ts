@@ -1,4 +1,5 @@
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { TokenEntity } from '@/tokens/entities/tokens-entity';
+import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { GenericEntity } from '../../core/generic.entity';
 import { RoleEntity } from './role.entity';
 
@@ -14,4 +15,9 @@ export class UserEntity extends GenericEntity {
 	email!: string;
 	@Column({ type: 'varchar', length: 255, nullable: false })
 	password!: string;
+	@OneToMany(
+		() => TokenEntity,
+		(token) => token.user,
+	)
+	tokens?: TokenEntity[];
 }

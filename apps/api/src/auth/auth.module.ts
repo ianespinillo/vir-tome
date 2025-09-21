@@ -1,4 +1,5 @@
 import { EmailModule } from '@/email/email.module';
+import { TokensModule } from '@/tokens/tokens.module';
 import { UsersModule } from '@/users/users.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -20,6 +21,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 			}),
 		}),
 		EmailModule,
+		TokensModule,
 	],
 })
 export class AuthModule {}

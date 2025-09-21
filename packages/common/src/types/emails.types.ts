@@ -16,3 +16,9 @@ export interface ConfirmEmailChange {
 	name: string;
 	new_email: string;
 }
+
+export interface ForgotPasswordEmail {
+	email: string;
+	token: string;
+	expires: Date;
+}

@@ -28,6 +28,9 @@
 			},
 			"style": {
 				"useImportType": "off"
+			},
+			"correctness": {
+				"useExhaustiveDependencies": "off"
 			}
 		}
 	},

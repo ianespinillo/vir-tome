@@ -55,14 +55,14 @@ export function LoginForm({ onSuccess }: Readonly<Props>) {
 	return (
 		<div className="h-screen flex items-center justify-center">
 			<Card className="w-full max-w-md shadow-lg transition-all duration-300 hover:shadow-xl">
-				{error && (
-					<div className="flex items-center justify-center rounded-md bg-red-500 px-4 py-3 text-white">
-						<p>{error}</p>
-					</div>
-				)}
 				<CardHeader className="space-y-1 text-center">
 					<CardTitle className="text-2xl font-bold">Vir-tome</CardTitle>
 					<CardDescription>
+						{error && (
+							<div className="flex items-center justify-center rounded-md bg-red-500 px-4 py-3 text-white">
+								<p>{error}</p>
+							</div>
+						)}
 						Por favor ingrese sus datos para iniciar sesión
 					</CardDescription>
 				</CardHeader>

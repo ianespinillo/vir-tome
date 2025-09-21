@@ -1,5 +1,6 @@
 import { PasswordAdapter } from '@/core/passport-adapter';
 import { EmailService } from '@/email/email.service';
+import { TokensService } from '@/tokens/tokens.service';
 import { UserEntity } from '@/users/entities/user.entity';
 import { UsersService } from '@/users/services/users.service';
 import {
@@ -9,9 +10,11 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import {
+	ForgotPasswordDTO,
 	IAuthPayload,
 	SignInDto,
 	SignUpDto,
+	TokenTypes,
 	UpdatePasswordDto,
 	UpdatePersonalDataDto,
 } from '@repo/common';
@@ -22,6 +25,7 @@ export class AuthService {
 		private readonly usersService: UsersService,
 		private readonly jwtService: JwtService,
 		private readonly emailService: EmailService,
+		private readonly tokenService: TokensService,
 	) {}
 
 	async signUp(payload: SignUpDto) {
@@ -157,6 +161,23 @@ export class AuthService {
 		await this.usersService.update(user_id, user);
 		return {
 			message: 'Contraseña actualizada correctamente',
+		};
+	}
+	async forgotPassword({ email }: ForgotPasswordDTO) {
+		const user = await this.usersService.findUserByEmail(email);
+		if (!user) throw new NotFoundException('Usuario no encontrado');
+		const { expires, token } = await this.tokenService.generateToken({
+			expiresInHours: 2,
+			user_id: user.id,
+			type: TokenTypes.FORGOT_PASSWORD,
+		});
+		await this.emailService.forgotPasswordEmail({
+			email: user.email,
+			token,
+			expires,
+		});
+		return {
+			message: 'Correo enviado satisfactoriamente',
 		};
 	}
 }
