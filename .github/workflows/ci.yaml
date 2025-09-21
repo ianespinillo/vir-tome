@@ -29,15 +29,9 @@ jobs:
       
       - name: Check transpiler
         run: pnpm ts:check
-      
-      - name: Add biome
-        run: pnpx @biomejs/biome ci
-
-      - name: Check Biome formatting
-        run: pnpm biome ci .
         
       - name: Check eslint
         run: pnpm lint:check
 
       - name: Check tests
-        run: pnpm run test
+        run: pnpm run test  
