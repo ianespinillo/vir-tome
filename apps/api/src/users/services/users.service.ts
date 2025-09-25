@@ -1,10 +1,10 @@
-import { EmailService } from '@/email/email.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SignUpDto } from '@repo/common';
 import { Repository } from 'typeorm';
 import { GenericService } from '../../core/generic.service';
 import { PasswordAdapter } from '../../core/passport-adapter';
+import { EmailService } from '../../email/email.service';
 import { UserEntity } from '../entities/user.entity';
 
 @Injectable()
