@@ -90,7 +90,7 @@ export class TenantsService {
 		return tenant;
 	}
 
-	async findBySubdomain(subdomain: string): Promise<TenantEntity> {
+	async findBySubdomain(subdomain: string): Promise<TenantEntity | null> {
 		const tenant = await this.tenantRepository.findOne({
 			where: { subdomain, deleted_at: IsNull() },
 		});
@@ -119,7 +119,7 @@ export class TenantsService {
 		// Si se está actualizando el subdomain, verificar que no existe
 		if (
 			updateTenantDto.subdomain &&
-			updateTenantDto.subdomain !== tenant.subdomain
+			updateTenantDto.subdomain !== tenant?.subdomain
 		) {
 			const existingSubdomain = await this.tenantRepository.findOne({
 				where: { subdomain: updateTenantDto.subdomain, deleted_at: IsNull() },
@@ -135,7 +135,7 @@ export class TenantsService {
 		// Si se está actualizando el email, verificar que no existe
 		if (
 			updateTenantDto.contact_email &&
-			updateTenantDto.contact_email !== tenant.contact_email
+			updateTenantDto.contact_email !== tenant?.contact_email
 		) {
 			const existingEmail = await this.tenantRepository.findOne({
 				where: {
@@ -154,7 +154,7 @@ export class TenantsService {
 		// Merge settings si se proporcionan
 		if (updateTenantDto.settings) {
 			updateTenantDto.settings = {
-				...tenant.settings,
+				...tenant?.settings,
 				...updateTenantDto.settings,
 			};
 		}
@@ -165,8 +165,7 @@ export class TenantsService {
 
 	async remove(id: number): Promise<void> {
 		const tenant = await this.findById(id);
-
-		// Soft delete
+		if (!tenant) throw new NotFoundException(`Tenant with ID ${id} not founded`); // Soft delete
 		await this.tenantRepository.update(id, {
 			deleted_at: new Date(),
 			is_active: false,
