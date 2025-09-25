@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AnalyticsModule } from './analytics/analytics.module';
@@ -13,6 +13,7 @@ import { EmailModule } from './email/email.module';
 import { LoanEntity } from './loan/entities/loan.entity';
 import { LoanModule } from './loan/loan.module';
 import { TenantEntity } from './tenants/entities/tenant.entity';
+import { TenantMiddleware } from './tenants/middlewares/tenant-middleware/tenant.middleware';
 import { TenantsModule } from './tenants/tenants.module';
 import { TokenEntity } from './tokens/entities/tokens.entity';
 import { TokensModule } from './tokens/tokens.module';
@@ -55,4 +56,8 @@ import { UsersModule } from './users/users.module';
 	controllers: [AppController],
 	providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+	configure(consumer: MiddlewareConsumer) {
+		consumer.apply(TenantMiddleware).forRoutes('*');
+	}
+}
