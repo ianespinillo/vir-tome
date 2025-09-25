@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AppController } from './app.controller';
@@ -13,6 +14,7 @@ import { EmailModule } from './email/email.module';
 import { LoanEntity } from './loan/entities/loan.entity';
 import { LoanModule } from './loan/loan.module';
 import { TenantEntity } from './tenants/entities/tenant.entity';
+import { TenantGuard } from './tenants/guards/tenant.guard';
 import { TenantMiddleware } from './tenants/middlewares/tenant-middleware/tenant.middleware';
 import { TenantsModule } from './tenants/tenants.module';
 import { TokenEntity } from './tokens/entities/tokens.entity';
@@ -54,7 +56,13 @@ import { UsersModule } from './users/users.module';
 		TenantsModule,
 	],
 	controllers: [AppController],
-	providers: [AppService],
+	providers: [
+		AppService,
+		{
+			provide: APP_GUARD,
+			useClass: TenantGuard,
+		},
+	],
 })
 export class AppModule implements NestModule {
 	configure(consumer: MiddlewareConsumer) {
