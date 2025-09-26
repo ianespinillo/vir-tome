@@ -10,6 +10,8 @@ import { BookModule } from './book/book.module';
 import { BookEntity } from './book/entities/book.entity';
 import { CategoryEntity } from './book/entities/category.entity';
 import { PublisherEntity } from './book/entities/publisher.entity';
+import { DatabaseModule } from './database/database.module';
+import { DemoModule } from './demo/demo.module';
 import { EmailModule } from './email/email.module';
 import { LoanEntity } from './loan/entities/loan.entity';
 import { LoanModule } from './loan/loan.module';
@@ -54,6 +56,8 @@ import { UsersModule } from './users/users.module';
 		AnalyticsModule,
 		TokensModule,
 		TenantsModule,
+		DatabaseModule,
+		DemoModule,
 	],
 	controllers: [AppController],
 	providers: [

@@ -24,7 +24,8 @@
 			},
 			"complexity": {
 				"noForEach": "off",
-				"noStaticOnlyClass": "off"
+				"noStaticOnlyClass": "off",
+				"useLiteralKeys": "off"
 			},
 			"style": {
 				"useImportType": "off"
