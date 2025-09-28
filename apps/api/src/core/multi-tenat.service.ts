@@ -6,6 +6,8 @@ import {
 	FindOneOptions,
 	FindOptionsWhere,
 	ILike,
+	In,
+	IsNull,
 	Repository,
 } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity.js';
@@ -131,9 +133,11 @@ export abstract class MultiTenantService<T extends MultiTenantEntity> {
 	async delete(tenantId: number, id: number): Promise<void> {
 		// Verificar que la entidad existe y pertenece al tenant
 		await this.findByIdOrFail(tenantId, id);
-
 		// Soft delete
-		await this.repository.update(id, { deleted_at: new Date() } as any);
+		await this.repository.update(
+			{ id, tenant_id: tenantId } as any,
+			{ deleted_at: new Date() } as any,
+		);
 	}
 
 	async hardDelete(tenantId: number, id: number): Promise<void> {
@@ -181,12 +185,13 @@ export abstract class MultiTenantService<T extends MultiTenantEntity> {
 
 	async findByName(
 		tenantId: number,
-		name: string,
+		search: string,
+		field: keyof T = 'name' as keyof T, // default 'name'
 		options?: Omit<FindManyOptions<T>, 'where'>,
 	): Promise<T[]> {
 		return this.repository.find({
 			where: this.addTenantFilter(tenantId, {
-				name: ILike(`%${name}%`),
+				[field]: ILike(`%${search}%`),
 			} as unknown as FindOptionsWhere<T>),
 			...options,
 		});
@@ -278,7 +283,7 @@ export abstract class MultiTenantService<T extends MultiTenantEntity> {
 		// Verificar que todas las entidades pertenecen al tenant
 		const entities = await this.repository.find({
 			where: {
-				id: { $in: ids } as any,
+				id: In(ids) as any,
 				tenant_id: tenantId,
 				deleted_at: null,
 			} as FindOptionsWhere<T>,
@@ -306,15 +311,15 @@ export abstract class MultiTenantService<T extends MultiTenantEntity> {
 		const [total, active] = await Promise.all([
 			this.repository.count({
 				where: { tenant_id: tenantId } as FindOptionsWhere<T>,
+				withDeleted: true,
 			}),
 			this.repository.count({
 				where: {
 					tenant_id: tenantId,
-					deleted_at: null,
+					deleted_at: IsNull(),
 				} as unknown as FindOptionsWhere<T>,
 			}),
 		]);
-
 		return {
 			total,
 			active,

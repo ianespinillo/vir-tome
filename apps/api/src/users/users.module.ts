@@ -1,6 +1,6 @@
-import { EmailModule } from '@/email/email.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { EmailModule } from '../email/email.module';
 import { RoleEntity } from './entities/role.entity';
 import { UserEntity } from './entities/user.entity';
 import { RoleService } from './services/role.service';

@@ -147,7 +147,7 @@ describe('MultiTenantService', () => {
 
 		await service.delete(tenantId, 1);
 		expect(repo.update).toHaveBeenCalledWith(
-			1,
+			{ id: 1, tenant_id: tenantId },
 			expect.objectContaining({ deleted_at: expect.any(Date) }),
 		);
 	});
