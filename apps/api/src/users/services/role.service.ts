@@ -1,7 +1,7 @@
-import { GenericService } from '@/core/generic.service';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { GenericService } from '../../core/generic.service';
 import { RoleEntity } from '../entities/role.entity';
 
 @Injectable()

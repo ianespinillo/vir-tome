@@ -1,7 +1,7 @@
-import { UsersModule } from '@/users/users.module';
 // src/tenants/tenants.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsersModule } from '../users/users.module';
 import { TenantEntity } from './entities/tenant.entity';
 import { TenantGuard } from './guards/tenant.guard';
 import { TenantsController } from './tenants.controller';
