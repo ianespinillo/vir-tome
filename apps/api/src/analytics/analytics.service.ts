@@ -8,23 +8,24 @@ export class AnalyticsService {
 		private readonly loanService: LoanService,
 	) {}
 
-	async getMostLoanedBooks(limit: number) {
-		const data = await this.loanService.mostLoanedBooks(limit);
+	async getMostLoanedBooks(limit: number, tenantId: number) {
+		const data = await this.loanService.mostLoanedBooks(limit, tenantId);
 		return data.map((book) => ({
 			...book,
 			count: Number(book.count),
 		}));
 	}
-	async getLastLoans() {
-		return this.loanService.lastsLoans();
+	async getLastLoans(tenantId: number) {
+		return this.loanService.lastsLoans(tenantId);
 	}
 	async countBooks() {
-		return this.bookService.count();
+		const count = await this.bookService.count();
+		return { count };
 	}
-	async countLoans() {
-		return this.loanService.count();
+	async countLoans(tenantId: number) {
+		return this.loanService.countLoans(tenantId);
 	}
-	async getLastReturns() {
-		return this.loanService.getLastReturnedLoans();
+	async getLastReturns(tenantId: number) {
+		return this.loanService.getLastReturnedLoans(tenantId);
 	}
 }

@@ -1,3 +1,5 @@
+import { CurrentTenant } from '@/tenants/decorators/current-tenant.decorator';
+import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import {
 	Body,
 	Controller,
@@ -175,8 +177,8 @@ export class LoanController {
 			},
 		},
 	})
-	async findAll(@Query('page') page = 1) {
-		return await this.loanService.paginatedLoans(page);
+	async findAll(@CurrentTenant() tenant: TenantEntity, @Query('page') page = 1) {
+		return await this.loanService.paginatedLoans(page, tenant.id);
 	}
 
 	@Get(':id')

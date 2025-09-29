@@ -3,7 +3,6 @@ import {
 	ForbiddenException,
 	UnauthorizedException,
 } from '@nestjs/common';
-// test/guards/tenant.guard.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { TenantsService } from '../../tenants/tenants.service';
 import { UsersService } from '../../users/services/users.service';
@@ -28,7 +27,7 @@ const mockTenant = {
 const mockUser = {
 	id: 1,
 	email: 'user@test.com',
-	tenantId: 1,
+	tenant_id: 1,
 };
 
 describe('TenantGuard', () => {
@@ -44,7 +43,13 @@ describe('TenantGuard', () => {
 		}).compile();
 
 		guard = module.get<TenantGuard>(TenantGuard);
+
 		jest.clearAllMocks();
+
+		// Defaults
+		mockTenantService.findById.mockResolvedValue(mockTenant);
+		mockTenantService.findBySubdomain.mockResolvedValue(mockTenant);
+		mockUsersService.findById.mockResolvedValue(mockUser);
 	});
 
 	const createMockContext = (requestData: any) =>
@@ -61,11 +66,9 @@ describe('TenantGuard', () => {
 				hostname: 'api.localhost',
 				ip: '127.0.0.1',
 				user: null,
-				path: '/api/products', // 👈 AÑADIR path
-				method: 'GET', // 👈 AÑADIR method
+				path: '/api/products',
+				method: 'GET',
 			};
-
-			mockTenantService.findById.mockResolvedValue(mockTenant);
 
 			const result = await guard.canActivate(createMockContext(mockRequest));
 
@@ -79,12 +82,9 @@ describe('TenantGuard', () => {
 				hostname: 'test.example.com',
 				ip: '127.0.0.1',
 				user: null,
-				path: '/api/products', // 👈 AÑADIR path
-				method: 'GET', // 👈 AÑADIR method
+				path: '/api/products',
+				method: 'GET',
 			};
-
-			mockTenantService.findBySubdomain.mockResolvedValue(mockTenant);
-			mockTenantService.findById.mockResolvedValue(mockTenant);
 
 			const result = await guard.canActivate(createMockContext(mockRequest));
 
@@ -97,18 +97,16 @@ describe('TenantGuard', () => {
 				headers: { 'x-tenant-id': '1' },
 				hostname: 'api.localhost',
 				ip: '127.0.0.1',
-				user: { id: 1 },
-				path: '/api/products', // 👈 AÑADIR path
-				method: 'GET', // 👈 AÑADIR method
+				user: { id: 1, tenant_id: 1 },
+				tenant: { id: 1 },
+				path: '/api/products',
+				method: 'GET',
 			};
-
-			mockTenantService.findById.mockResolvedValue(mockTenant);
-			mockUsersService.findById.mockResolvedValue(mockUser);
 
 			const result = await guard.canActivate(createMockContext(mockRequest));
 
 			expect(result).toBe(true);
-			expect(mockUsersService.findById).toHaveBeenCalledWith(1);
+			expect(mockUsersService.findById).toHaveBeenCalledWith(1, 1); // tenantId, userId
 		});
 	});
 
@@ -119,7 +117,7 @@ describe('TenantGuard', () => {
 				hostname: 'api.localhost',
 				ip: '127.0.0.1',
 				user: null,
-				path: '/api/health', // 👈 Ruta pública
+				path: '/api/health',
 				method: 'GET',
 			};
 
@@ -135,7 +133,7 @@ describe('TenantGuard', () => {
 				hostname: 'api.localhost',
 				ip: '127.0.0.1',
 				user: null,
-				path: '/auth/login', // 👈 Ruta pública
+				path: '/auth/login',
 				method: 'POST',
 			};
 
@@ -150,10 +148,10 @@ describe('TenantGuard', () => {
 		it('should deny access without tenant on protected routes', async () => {
 			const mockRequest = {
 				headers: {},
-				hostname: 'api.localhost', // subdomain especial
+				hostname: 'api.localhost',
 				ip: '127.0.0.1',
 				user: null,
-				path: '/api/products', // 👈 Ruta protegida
+				path: '/api/products',
 				method: 'GET',
 			};
 
@@ -187,7 +185,7 @@ describe('TenantGuard', () => {
 				method: 'GET',
 			};
 
-			mockTenantService.findById.mockResolvedValue(null);
+			mockTenantService.findById.mockResolvedValueOnce(null);
 
 			await expect(
 				guard.canActivate(createMockContext(mockRequest)),
@@ -204,9 +202,8 @@ describe('TenantGuard', () => {
 				method: 'GET',
 			};
 
-			const userFromDifferentTenant = { ...mockUser, tenantId: 2 };
-			mockTenantService.findById.mockResolvedValue(mockTenant);
-			mockUsersService.findById.mockResolvedValue(userFromDifferentTenant);
+			const userFromDifferentTenant = { ...mockUser, tenant_id: 2 };
+			mockUsersService.findById.mockResolvedValueOnce(userFromDifferentTenant);
 
 			await expect(
 				guard.canActivate(createMockContext(mockRequest)),
@@ -218,7 +215,7 @@ describe('TenantGuard', () => {
 		it('should handle special subdomains correctly', async () => {
 			const mockRequest = {
 				headers: {},
-				hostname: 'www.example.com', // subdomain especial
+				hostname: 'www.example.com',
 				ip: '127.0.0.1',
 				user: null,
 				path: '/api/products',
@@ -237,13 +234,12 @@ describe('TenantGuard', () => {
 				headers: { 'x-tenant-id': '1' },
 				hostname: 'api.localhost',
 				ip: '127.0.0.1',
-				user: { id: 999 }, // usuario no existe
+				user: { id: 999 },
 				path: '/api/products',
 				method: 'GET',
 			};
 
-			mockTenantService.findById.mockResolvedValue(mockTenant);
-			mockUsersService.findById.mockResolvedValue(null);
+			mockUsersService.findById.mockResolvedValueOnce(null);
 
 			await expect(
 				guard.canActivate(createMockContext(mockRequest)),

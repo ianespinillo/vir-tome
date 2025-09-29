@@ -19,7 +19,8 @@ import {
 	UpdatePersonalDataDto,
 } from '@repo/common';
 
-@Injectable()
+// TODO: implement with multi-tenancy
+/* @Injectable()
 export class AuthService {
 	constructor(
 		private readonly usersService: UsersService,
@@ -180,4 +181,4 @@ export class AuthService {
 			message: 'Correo enviado satisfactoriamente',
 		};
 	}
-}
+} */

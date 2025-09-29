@@ -1,3 +1,5 @@
+import { CurrentTenant } from '@/tenants/decorators/current-tenant.decorator';
+import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import { Controller, Get, ParseIntPipe, Query } from '@nestjs/common';
 import {
 	ApiOkResponse,
@@ -31,9 +33,10 @@ export class AnalyticsController {
 		},
 	})
 	getMostLoanedBooks(
+		@CurrentTenant() tenant: TenantEntity,
 		@Query('limit', new ParseIntPipe({ optional: true })) limit = 5,
 	) {
-		return this.analyticsService.getMostLoanedBooks(limit);
+		return this.analyticsService.getMostLoanedBooks(limit, tenant.id);
 	}
 
 	@Get('last-loans')
@@ -47,8 +50,8 @@ export class AnalyticsController {
 			],
 		},
 	})
-	getLastLoans() {
-		return this.analyticsService.getLastLoans();
+	getLastLoans(@CurrentTenant() tenant: TenantEntity) {
+		return this.analyticsService.getLastLoans(tenant.id);
 	}
 
 	@Get('count-books')
@@ -71,8 +74,8 @@ export class AnalyticsController {
 			example: { count: 150 },
 		},
 	})
-	async countLoans() {
-		return this.analyticsService.countLoans();
+	async countLoans(@CurrentTenant() tenant: TenantEntity) {
+		return this.analyticsService.countLoans(tenant.id);
 	}
 
 	@Get('last-returns')
@@ -86,7 +89,7 @@ export class AnalyticsController {
 			],
 		},
 	})
-	async getLastReturns() {
-		return this.analyticsService.getLastReturns();
+	async getLastReturns(@CurrentTenant() tenant: TenantEntity) {
+		return this.analyticsService.getLastReturns(tenant.id);
 	}
 }

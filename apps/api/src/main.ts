@@ -4,7 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AppModule } from './app.module';
-import { AuthModule } from './auth/auth.module';
+// import { AuthModule } from './auth/auth.module';
 import { BookModule } from './book/book.module';
 import { LoanModule } from './loan/loan.module';
 import { TenantsModule } from './tenants/tenants.module';
@@ -31,7 +31,7 @@ async function bootstrap() {
 		include: [
 			UsersModule,
 			LoanModule,
-			AuthModule,
+			// AuthModule,
 			BookModule,
 			AnalyticsModule,
 			TenantsModule,

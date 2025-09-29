@@ -27,4 +27,8 @@ export class LoanEntity extends GenericEntity {
 
 	@Column({ default: LoanStatus.ACTIVE, type: 'enum', enum: LoanStatus }) // active, returned, overdue
 	status!: LoanStatus;
+
+	public get tenant_id(): number {
+		return this.book.tenant_id;
+	}
 }

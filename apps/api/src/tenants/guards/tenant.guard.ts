@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { UsersService } from '../../users/services/users.service';
+import { TenantEntity } from '../entities/tenant.entity';
 import { TenantsService } from '../tenants.service';
 
 @Injectable()
@@ -115,17 +116,21 @@ export class TenantGuard implements CanActivate {
 		return await this.tenantService.findById(tenantId);
 	}
 
-	private async validateUserTenantAccess(req: Request, tenant: any) {
+	private async validateUserTenantAccess(req: Request, tenant: TenantEntity) {
 		if (req.user) {
-			const user = await this.usersService.findById((req.user as any).id);
+			// Pass tenant.id as the first argument (tenantId) and user.id as second argument (id)
+			const user = await this.usersService.findById(
+				tenant.id,
+				(req.user as any).id,
+			);
 
 			if (!user) {
 				throw new ForbiddenException('User not found');
 			}
 
-			if (user.tenantId !== tenant.id) {
+			if (user.tenant_id !== tenant.id) {
 				this.logger.warn(
-					`User ${user.id} attempted to access tenant ${tenant.id} but belongs to tenant ${user.tenantId}`,
+					`User ${user.id} attempted to access tenant ${tenant.id} but belongs to tenant ${user.tenant_id}`,
 				);
 				throw new ForbiddenException('Access to this tenant is not allowed');
 			}
