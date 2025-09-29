@@ -1,4 +1,4 @@
-import { UserEntity } from '@/users/entities/user.entity';
+/* import { UserEntity } from '@/users/entities/user.entity';
 import { Body, Controller, Get, Post, Res } from '@nestjs/common';
 import {
 	ApiBody,
@@ -299,3 +299,4 @@ export class AuthController {
 		return this.authService.changePassword(user.id, body);
 	}
 }
+ */

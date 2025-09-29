@@ -12,6 +12,7 @@ import { TenantsModule } from '../tenants/tenants.module';
 import { RoleEntity } from '../users/entities/role.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { testDatabaseConfig } from './database-test.config';
+import { getTestDataSource } from './setup';
 
 describe('Multi-tenant Integration', () => {
 	let app: INestApplication;
@@ -33,7 +34,7 @@ describe('Multi-tenant Integration', () => {
 		}).compile();
 
 		app = moduleFixture.createNestApplication();
-		dataSource = moduleFixture.get<DataSource>(DataSource);
+		dataSource = getTestDataSource();
 		await app.init();
 
 		// Crear tenants FUERA de las transacciones (persistentes)
@@ -82,7 +83,16 @@ describe('Multi-tenant Integration', () => {
 		it('should isolate data between tenants', async () => {
 			const userRepo = getRepository(UserEntity);
 			const bookRepo = getRepository(BookEntity);
-
+			const roleRepo = getRepository(RoleEntity);
+			// Create roles for each tenant
+			const role1 = await roleRepo.save({
+				name: 'Admin',
+				tenant_id: tenant1.id,
+			});
+			const role2 = await roleRepo.save({
+				name: 'Admin',
+				tenant_id: tenant2.id,
+			});
 			// Create users for different tenants
 			const user1 = await userRepo.save({
 				name: 'User',
@@ -90,6 +100,7 @@ describe('Multi-tenant Integration', () => {
 				email: 'user1@tenant1.com',
 				password: 'password',
 				tenant_id: tenant1.id,
+				role: { id: role1.id },
 			});
 
 			const user2 = await userRepo.save({
@@ -98,6 +109,7 @@ describe('Multi-tenant Integration', () => {
 				email: 'user2@tenant2.com',
 				password: 'password',
 				tenant_id: tenant2.id,
+				role: { id: role2.id },
 			});
 
 			// Create books for different tenants
@@ -208,6 +220,7 @@ describe('Multi-tenant Integration', () => {
 				email: 'admin@tenant1.com',
 				password: 'password',
 				tenant_id: tenant1.id,
+				role: { id: role1.id },
 			});
 
 			const user2 = await userRepo.save({
@@ -216,6 +229,7 @@ describe('Multi-tenant Integration', () => {
 				email: 'admin@tenant2.com',
 				password: 'password',
 				tenant_id: tenant2.id,
+				role: { id: role2.id },
 			});
 
 			// Verify roles are isolated by tenant

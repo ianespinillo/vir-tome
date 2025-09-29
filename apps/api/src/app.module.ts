@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
+// 		import { AuthModule } from './auth/auth.module';
 import { BookModule } from './book/book.module';
 import { BookEntity } from './book/entities/book.entity';
 import { CategoryEntity } from './book/entities/category.entity';
@@ -51,7 +51,7 @@ import { UsersModule } from './users/users.module';
 		UsersModule,
 		LoanModule,
 		BookModule,
-		AuthModule,
+		// AuthModule,
 		EmailModule,
 		AnalyticsModule,
 		TokensModule,

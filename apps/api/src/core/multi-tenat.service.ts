@@ -60,7 +60,7 @@ export abstract class MultiTenantService<T extends MultiTenantEntity> {
 	): Promise<T[]> {
 		return this.repository.find({
 			where: this.addTenantFilter(tenantId),
-			order: { id: 'DESC' } as any,
+			order: { id: 'ASC' } as any,
 			...options,
 		});
 	}

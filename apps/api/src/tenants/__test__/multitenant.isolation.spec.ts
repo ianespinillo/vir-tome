@@ -521,6 +521,7 @@ describe('Multi-tenant Data Isolation', () => {
 				email: 'john@alpha.edu',
 				password: 'password123',
 				tenant_id: tenant1.id,
+				role: { id: 1 },
 			});
 
 			const user2 = await userRepository.save({
@@ -529,6 +530,9 @@ describe('Multi-tenant Data Isolation', () => {
 				email: 'jane@beta.edu',
 				password: 'password123',
 				tenant_id: tenant2.id,
+				role: {
+					id: 2,
+				},
 			});
 
 			// Verificar aislamiento de roles

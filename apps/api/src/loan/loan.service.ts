@@ -21,6 +21,13 @@ export class LoanService extends GenericService {
 		super(loanRepository);
 	}
 
+	async findAllByTenant(tenantId: number): Promise<LoanEntity[]> {
+		return this.loanRepository.find({
+			where: { book: { tenant_id: tenantId } },
+			relations: ['book'],
+		});
+	}
+
 	async create(data: CreateLoanDto) {
 		const book = await this.bookService.findOne(data.bookId);
 		if (!book) throw new NotFoundException('Book not found');
@@ -55,10 +62,17 @@ export class LoanService extends GenericService {
 		loan.returnDate = new Date(Date.now());
 		return await this.update(loanId, loan);
 	}
-
-	async paginatedLoans(page: number) {
+	//contar prestamos por tenant
+	async countLoans(tenantId: number): Promise<{ count: number }> {
+		const count = await this.loanRepository.count({
+			where: { book: { tenant_id: tenantId } },
+		});
+		return { count };
+	}
+	async paginatedLoans(page: number, tenantId: number) {
 		const [data, total] = await this.loanRepository.findAndCount({
 			relations: ['book'],
+			where: { book: { tenant_id: tenantId } },
 			order: { id: 'ASC' },
 			take: 6,
 			skip: (page - 1) * 6,
@@ -73,19 +87,20 @@ export class LoanService extends GenericService {
 			last_page: Math.ceil(total / 6),
 		};
 	}
-	async mostLoanedBooks(limit: number) {
+	async mostLoanedBooks(limit: number, tenantId: number) {
 		return this.loanRepository
 			.createQueryBuilder('loan')
 			.select('book.id', 'id')
 			.addSelect('book.title', 'title')
 			.addSelect('COUNT(*)', 'count')
 			.innerJoin('loan.book', 'book') // Relación definida en tu entidad.
+			.where('book.tenant_id = :tenantId', { tenantId: tenantId }) // Filtrar por tenant_id
 			.groupBy('book.id')
 			.orderBy('count', 'DESC')
 			.limit(limit)
 			.getRawMany();
 	}
-	async lastsLoans() {
+	async lastsLoans(tenantId: number) {
 		return this.loanRepository
 			.createQueryBuilder('loan')
 			.select('book.id', 'id')
@@ -93,11 +108,12 @@ export class LoanService extends GenericService {
 			.addSelect('loan.loanDate', 'loanDate')
 			.addSelect('loan.returnDate', 'returnDate')
 			.innerJoin('loan.book', 'book') // Relación definida en tu entidad.
+			.where('book.tenant_id = :tenantId', { tenantId: tenantId }) // Filtrar por tenant_id
 			.orderBy('loan.loanDate', 'DESC')
 			.limit(3)
 			.getRawMany();
 	}
-	async getLastReturnedLoans() {
+	async getLastReturnedLoans(tenantId: number) {
 		return this.loanRepository
 			.createQueryBuilder('loan')
 			.select('book.id', 'id')
@@ -105,6 +121,7 @@ export class LoanService extends GenericService {
 			.addSelect('loan.loanDate', 'loanDate')
 			.addSelect('loan.returnDate', 'returnDate')
 			.innerJoin('loan.book', 'book') // Relación definida en tu entidad.
+			.where('book.tenant_id = :tenantId', { tenantId: tenantId }) // Filtrar por tenant_id
 			.where('loan.status = :status', { status: LoanStatus.RETURNED })
 			.orderBy('loan.returnDate', 'DESC')
 			.limit(3)
