@@ -49,4 +49,9 @@ export class TokenEntity {
 
 	@UpdateDateColumn({ type: 'timestamp with time zone' })
 	updated_at: Date;
+
+	async getTenantId(): Promise<number> {
+		if (this.user) return this.user.tenant_id;
+		throw new Error('User not loaded');
+	}
 }
