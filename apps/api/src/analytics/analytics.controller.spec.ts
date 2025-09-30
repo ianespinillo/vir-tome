@@ -1,3 +1,4 @@
+import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AnalyticsController } from './analytics.controller';
 import { AnalyticsService } from './analytics.service';
@@ -79,10 +80,10 @@ describe('AnalyticsController', () => {
 
 	describe('countBooks', () => {
 		it('should call service without params and return its result', async () => {
-			const result = await controller.countBooks();
+			const result = await controller.countBooks({ id: 1 } as TenantEntity);
 
 			expect(mockAnalyticsService.countBooks).toHaveBeenCalledTimes(1);
-			expect(mockAnalyticsService.countBooks).toHaveBeenCalledWith();
+			expect(mockAnalyticsService.countBooks).toHaveBeenCalledWith(1);
 			expect(result).toEqual({ count: 42 });
 		});
 	});
@@ -134,7 +135,9 @@ describe('AnalyticsController', () => {
 			(
 				mockAnalyticsService.countBooks as unknown as jest.Mock
 			).mockRejectedValueOnce(new Error('boom'));
-			await expect(controller.countBooks()).rejects.toThrow('boom');
+			await expect(
+				controller.countBooks({ id: 1 } as TenantEntity),
+			).rejects.toThrow('boom');
 		});
 
 		it('countLoans should propagate service errors', async () => {

@@ -121,9 +121,10 @@ export class LoanController {
 		description: 'El préstamo ya fue devuelto anteriormente',
 	})
 	async returnBook(
+		@CurrentTenant() tenant: TenantEntity,
 		@Param('id', ParseIntPipe) loanId: number,
 	): Promise<UpdateResult> {
-		return await this.loanService.returnBook(loanId);
+		return await this.loanService.returnBook(tenant.id, loanId);
 	}
 
 	@Get()

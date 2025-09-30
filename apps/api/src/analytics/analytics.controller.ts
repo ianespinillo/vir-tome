@@ -62,8 +62,8 @@ export class AnalyticsController {
 			example: { count: 42 },
 		},
 	})
-	async countBooks() {
-		return this.analyticsService.countBooks();
+	async countBooks(@CurrentTenant() tenant: TenantEntity) {
+		return this.analyticsService.countBooks(tenant.id);
 	}
 
 	@Get('count-loans')

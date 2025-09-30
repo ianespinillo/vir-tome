@@ -1,4 +1,6 @@
 import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
+import { CurrentTenant } from '@/tenants/decorators/current-tenant.decorator';
+import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import {
 	Body,
 	Controller,
@@ -83,8 +85,11 @@ export class BookController {
 		type: BookEntity,
 	})
 	@ApiBadRequestResponse({ description: 'Bad Request - Invalid input data' })
-	async create(@Body() createBookDto: CreateBookDto): Promise<BookEntity> {
-		return await this.bookService.create(createBookDto);
+	async create(
+		@CurrentTenant() tenant: TenantEntity,
+		@Body() createBookDto: CreateBookDto,
+	): Promise<BookEntity> {
+		return await this.bookService.createBook(tenant.id, createBookDto);
 	}
 
 	@Put('stock/:id')
@@ -131,10 +136,11 @@ export class BookController {
 		description: 'Bad Request - Invalid quantity or insufficient stock',
 	})
 	async updateStock(
+		@CurrentTenant() tenant: TenantEntity,
 		@Param('id', ParseIntPipe) id: number,
 		@Body() data: UpdateStockDto,
 	) {
-		return this.bookService.updateStock(id, data.quantity);
+		return this.bookService.updateStock(tenant.id, id, data.quantity);
 	}
 
 	@Put(':id')
@@ -178,10 +184,11 @@ export class BookController {
 	})
 	@ApiBadRequestResponse({ description: 'Bad Request - Invalid input data' })
 	async updateBook(
+		@CurrentTenant() tenant: TenantEntity,
 		@Param('id', ParseIntPipe) id: number,
 		@Body() data: UpdateBookDto,
 	) {
-		return this.bookService.updateBook(id, data);
+		return this.bookService.updateBook(tenant.id, id, data);
 	}
 
 	@Get()
@@ -225,17 +232,18 @@ export class BookController {
 		},
 	})
 	async findAll(
+		@CurrentTenant() tenant: TenantEntity,
 		@Query('page', new ParseIntPipe({ optional: true })) page = 1,
 		@Query('full', new ParseBoolPipe({ optional: true })) full = false,
 		@Query('search') search?: string,
 	) {
 		if (full) {
-			return this.bookService.findAll();
+			return this.bookService.findAll(tenant.id);
 		}
 		if (search) {
-			return this.bookService.findBookByName(search);
+			return this.bookService.findBookByName(tenant.id, search);
 		}
-		return this.bookService.findByPage(page);
+		return this.bookService.findByPage(tenant.id, page);
 	}
 
 	@Get(':id')
@@ -256,8 +264,11 @@ export class BookController {
 	@ApiNotFoundResponse({
 		description: 'Not Found - Book with specified ID not found',
 	})
-	async findById(@Param('id', ParseIntPipe) id: number): Promise<IBooKForm> {
-		return await this.bookService.findOne(id);
+	async findById(
+		@CurrentTenant() tenant: TenantEntity,
+		@Param('id', ParseIntPipe) id: number,
+	): Promise<IBooKForm> {
+		return await this.bookService.findOneBook(tenant.id, id);
 	}
 
 	@Delete(':id')
@@ -276,7 +287,10 @@ export class BookController {
 	@ApiNotFoundResponse({
 		description: 'Not Found - Book with specified ID not found',
 	})
-	async remove(@Param('id', ParseIntPipe) id: number): Promise<UpdateResult> {
-		return await this.bookService.remove(id);
+	async remove(
+		@CurrentTenant() tenant: TenantEntity,
+		@Param('id', ParseIntPipe) id: number,
+	): Promise<void> {
+		return await this.bookService.delete(tenant.id, id);
 	}
 }

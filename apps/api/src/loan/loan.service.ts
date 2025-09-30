@@ -28,9 +28,11 @@ export class LoanService extends GenericService {
 		});
 	}
 
-	async create(data: CreateLoanDto) {
-		const book = await this.bookService.findOne(data.bookId);
+	async createLoan(tenantId: number, data: CreateLoanDto) {
+		const book = await this.bookService.findById(tenantId, data.bookId);
 		if (!book) throw new NotFoundException('Book not found');
+		if (data.quantity <= 0)
+			throw new BadRequestException('Quantity must be greater than zero');
 		if (new Date(Date.now()) > data.returnDate)
 			throw new BadRequestException('Return date cannot be in the past');
 		if (book.availableQuantity < data.quantity)
@@ -44,20 +46,23 @@ export class LoanService extends GenericService {
 		});
 		await this.loanRepository.manager.transaction(
 			async (transactionalEntityManager) => {
-				await this.bookService.removeStock(data.bookId, data.quantity);
+				await this.bookService.removeStock(tenantId, data.bookId, data.quantity);
 				await transactionalEntityManager.save(loan);
 			},
 		);
 		return loan;
 	}
-	async returnBook(loanId: number): Promise<UpdateResult> {
+	async returnBook(tenantId: number, loanId: number): Promise<UpdateResult> {
 		const loan = await this.loanRepository.findOne({
 			where: { id: loanId },
 			relations: ['book'],
 		});
 		if (!loan) throw new NotFoundException('Loan not found');
-		const book = await this.bookService.findById(loan.book.id);
-		await this.bookService.updateStock(book.id, loan.quantity);
+		const book = await this.bookService.findById(tenantId, loan.book.id);
+		if (!book) throw new NotFoundException('Book not found');
+		if (loan.status === LoanStatus.RETURNED)
+			throw new BadRequestException('Book already returned');
+		await this.bookService.updateStock(tenantId, book.id, loan.quantity);
 		loan.status = LoanStatus.RETURNED;
 		loan.returnDate = new Date(Date.now());
 		return await this.update(loanId, loan);

@@ -6,6 +6,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { AppModule } from './app.module';
 // import { AuthModule } from './auth/auth.module';
 import { BookModule } from './book/book.module';
+import { AllExceptionsFilter } from './core/http-exception.filter';
 import { LoanModule } from './loan/loan.module';
 import { TenantsModule } from './tenants/tenants.module';
 import { UsersModule } from './users/users.module';
@@ -14,7 +15,8 @@ async function bootstrap() {
 	app.useGlobalPipes(new ValidationPipe());
 	app.setGlobalPrefix('api');
 	app.use(cookieParser());
-	await app.enableCors({
+	app.use(new AllExceptionsFilter());
+	app.enableCors({
 		origin: 'http://localhost:3000',
 		credentials: true,
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
