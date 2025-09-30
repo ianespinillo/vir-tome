@@ -1,10 +1,13 @@
 import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
+import { CurrentTenant } from '@/tenants/decorators/current-tenant.decorator';
+import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import {
 	Body,
 	Controller,
 	Delete,
 	Get,
 	Param,
+	ParseIntPipe,
 	Patch,
 	Post,
 } from '@nestjs/common';
@@ -88,8 +91,11 @@ export class PublisherController {
 			},
 		},
 	})
-	async create(@Body() createDto: CreatePublisherDto): Promise<PublisherEntity> {
-		return this.publisherService.createPublisher(createDto);
+	async create(
+		@CurrentTenant() tenant: TenantEntity,
+		@Body() createDto: CreatePublisherDto,
+	): Promise<PublisherEntity> {
+		return this.publisherService.create(tenant.id, createDto);
 	}
 
 	@Get()
@@ -116,8 +122,10 @@ export class PublisherController {
 			],
 		},
 	})
-	async findAll(): Promise<PublisherEntity[]> {
-		return this.publisherService.findAll();
+	async findAll(
+		@CurrentTenant() tenant: TenantEntity,
+	): Promise<PublisherEntity[]> {
+		return this.publisherService.findAll(tenant.id);
 	}
 
 	@Get(':id')
@@ -150,8 +158,11 @@ export class PublisherController {
 			},
 		},
 	})
-	async findOne(@Param('id') id: number): Promise<PublisherEntity | null> {
-		return this.publisherService.findById(id);
+	async findOne(
+		@CurrentTenant() tenant: TenantEntity,
+		@Param('id', ParseIntPipe) id: number,
+	): Promise<PublisherEntity | null> {
+		return this.publisherService.findById(tenant.id, id);
 	}
 
 	@Patch(':id')
@@ -187,10 +198,11 @@ export class PublisherController {
 		description: 'Nombre inválido o ya existe',
 	})
 	async update(
+		@CurrentTenant() tenant: TenantEntity,
 		@Param('id') id: number,
 		@Body() updateDto: UpdatePublisherDto,
 	): Promise<void> {
-		await this.publisherService.updatePublisher(id, updateDto);
+		await this.publisherService.update(tenant.id, id, updateDto);
 	}
 
 	@Delete(':id')
@@ -221,7 +233,10 @@ export class PublisherController {
 			},
 		},
 	})
-	async remove(@Param('id') id: number): Promise<void> {
-		await this.publisherService.delete(id);
+	async remove(
+		@CurrentTenant() tenant: TenantEntity,
+		@Param('id') id: number,
+	): Promise<void> {
+		await this.publisherService.delete(tenant.id, id);
 	}
 }

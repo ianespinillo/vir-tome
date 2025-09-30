@@ -1,3 +1,4 @@
+import { MultiTenantService } from '@/core/multi-tenat.service';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateCategoryDto, UpdateCategoryDto } from '@repo/common';
@@ -6,7 +7,7 @@ import { GenericService } from '../../core/generic.service';
 import { CategoryEntity } from '../entities/category.entity';
 
 @Injectable()
-export class CategoryService extends GenericService {
+export class CategoryService extends MultiTenantService<CategoryEntity> {
 	constructor(
 		@InjectRepository(CategoryEntity)
 		private readonly categoryRepository: Repository<CategoryEntity>,
@@ -14,17 +15,7 @@ export class CategoryService extends GenericService {
 		super(categoryRepository);
 	}
 
-	async createCategory(createDto: CreateCategoryDto): Promise<CategoryEntity> {
-		return this.create(createDto);
-	}
-
-	async updateCategory(id: number, updateDto: UpdateCategoryDto): Promise<void> {
-		await this.update(id, updateDto);
-	}
-
-	async findAllOfBook(id: number[]): Promise<CategoryEntity[]> {
-		return this.categoryRepository.findBy({
-			id: In(id),
-		});
+	async findAllOfBook(tenat: number, id: number[]): Promise<CategoryEntity[]> {
+		return this.findBy(tenat, { id: In(id) });
 	}
 }

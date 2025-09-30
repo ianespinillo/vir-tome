@@ -1,5 +1,4 @@
-import { title } from 'node:process';
-import { GenericService } from '@/core/generic.service';
+import { MultiTenantService } from '@/core/multi-tenat.service';
 import {
 	BadRequestException,
 	Injectable,
@@ -7,13 +6,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateBookDto, IBooKForm, UpdateBookDto } from '@repo/common';
-import { ILike, IsNull, Like, Repository, UpdateResult } from 'typeorm';
+import { ILike, In, IsNull, Like, Repository, UpdateResult } from 'typeorm';
 import { BookEntity } from '../entities/book.entity';
 import { CategoryService } from './category.service';
 import { PublisherService } from './publisher.service';
 
 @Injectable()
-export class BookService extends GenericService {
+export class BookService extends MultiTenantService<BookEntity> {
 	constructor(
 		@InjectRepository(BookEntity)
 		private readonly bookRepository: Repository<BookEntity>,
@@ -23,51 +22,72 @@ export class BookService extends GenericService {
 		super(bookRepository);
 	}
 
-	async create(createBookDto: CreateBookDto): Promise<BookEntity> {
+	async createBook(
+		tenantId: number,
+		createBookDto: CreateBookDto,
+	): Promise<BookEntity> {
 		const { categoryIds, publisherId, ...bookData } = createBookDto;
-		const categories = await this.categoryService.findAllOfBook(categoryIds);
+		const categories = await this.categoryService.findBy(tenantId, {
+			id: In(categoryIds),
+		});
 		if (!categories || categories.length === 0)
-			throw new BadRequestException('Categorías no encontradas');
-		const publisher = await this.publishersService.findById(publisherId);
-		if (!publisher) throw new NotFoundException('Editorial no encontrada');
-		return this.bookRepository.save({
+			throw new BadRequestException('Categories not founded or empty');
+		const publisher = await this.publishersService.findById(
+			tenantId,
+			publisherId,
+		);
+		if (!publisher) throw new NotFoundException('Publisher not founded');
+		return this.create(tenantId, {
+			tenant_id: tenantId,
 			...bookData,
 			categories,
 			publisher,
 		});
 	}
 
-	async updateStock(bookId: number, change: number): Promise<void> {
-		const book = await this.bookRepository.findOneBy({ id: bookId });
-		if (!book) throw new NotFoundException('Libro no encontrado');
+	async updateStock(
+		tenantId: number,
+		bookId: number,
+		change: number,
+	): Promise<void> {
+		const book = await this.findById(tenantId, bookId);
+		if (!book) throw new NotFoundException('Book not founded');
 
 		book.availableQuantity += change;
 		await this.bookRepository.save(book);
 	}
-	async removeStock(bookId: number, quantity: number): Promise<void> {
-		const book = await this.bookRepository.findOneBy({ id: bookId });
-		if (!book) throw new NotFoundException('Libro no encontrado');
+	async removeStock(
+		tenantId: number,
+		bookId: number,
+		quantity: number,
+	): Promise<void> {
+		const book = await this.findById(tenantId, bookId);
+		if (!book) throw new NotFoundException('Book not founded');
 		if (book.availableQuantity < quantity)
-			throw new BadRequestException('No hay suficientes ejemplares disponibles');
-		console.log(quantity);
+			throw new BadRequestException('No enough stock available');
 		book.availableQuantity -= quantity;
 		await this.bookRepository.save(book);
 	}
 
-	async findAll(): Promise<BookEntity[]> {
-		const books = await this.bookRepository.find({
-			where: { deleted_at: IsNull() },
-			relations: ['categories', 'publisher'],
-		});
+	async findAll(tenantId: number): Promise<BookEntity[]> {
+		const books = await this.findBy(
+			tenantId,
+			{},
+			{ relations: ['categories', 'publisher'] },
+		);
 		const transformedBooks: any = [];
 		for (const book of books) {
 			let categories: any = [];
 			if (book.categories) {
 				categories = await this.categoryService.findAllOfBook(
+					tenantId,
 					book.categories.map((c) => c.id),
 				);
 			}
-			const publisher = await this.publishersService.findById(book.publisher.id);
+			const publisher = await this.publishersService.findById(
+				tenantId,
+				book.publisher.id,
+			);
 			transformedBooks.push({
 				...book,
 				categories,
@@ -76,14 +96,17 @@ export class BookService extends GenericService {
 		}
 		return transformedBooks;
 	}
-	async findAllWithDetailsPaginated(page: number) {
-		const [data, total] = await this.bookRepository.findAndCount({
-			where: { deleted_at: IsNull() },
-			relations: ['categories', 'publisher'],
-			order: { id: 'ASC' },
-			take: 6,
-			skip: (page - 1) * 6,
-		});
+	async findAllWithDetailsPaginated(tenantId: number, page: number) {
+		const [data, total] = await this.findAndCount(
+			tenantId,
+			{},
+			{
+				relations: ['categories', 'publisher'],
+				order: { id: 'ASC' },
+				take: 6,
+				skip: (page - 1) * 6,
+			},
+		);
 		return {
 			data: data.map((book) => ({
 				...book,
@@ -95,12 +118,17 @@ export class BookService extends GenericService {
 			last_page: Math.ceil(total / 6),
 		};
 	}
-	async findOne(id: number): Promise<IBooKForm> {
-		const book = await this.bookRepository.findOne({
-			where: { id },
-			relations: ['categories', 'publisher'],
-		});
-		if (!book) throw new NotFoundException('Libro no encontrado');
+	async findOneBook(tenantId: number, id: number): Promise<IBooKForm> {
+		const book = await this.findOne(
+			tenantId,
+			{
+				id,
+			},
+			{
+				relations: ['categories', 'publisher'],
+			},
+		);
+		if (!book) throw new NotFoundException('Book not founded');
 		return {
 			id: book.id,
 			title: book.title,
@@ -112,17 +140,21 @@ export class BookService extends GenericService {
 	}
 
 	async updateBook(
+		tenantId: number,
 		id: number,
 		updateBookDto: UpdateBookDto,
 	): Promise<BookEntity> {
 		// 1. Obtener el libro existente con sus relaciones
-		const book = await this.bookRepository.findOne({
-			where: { id },
-			relations: ['categories', 'publisher'],
-		});
+		const book = await this.findOne(
+			tenantId,
+			{ id },
+			{
+				relations: ['categories', 'publisher'],
+			},
+		);
 
 		if (!book) {
-			throw new NotFoundException('Libro no encontrado');
+			throw new NotFoundException('Book not founded');
 		}
 
 		// 2. Actualizar propiedades simples
@@ -135,12 +167,13 @@ export class BookService extends GenericService {
 		// 3. Manejar la relación con publisher si viene en el DTO
 		if (updateBookDto.publisherId) {
 			const publisher = await this.publishersService.findById(
+				tenantId,
 				updateBookDto.publisherId,
 			);
 
 			if (!publisher) {
 				throw new NotFoundException(
-					`Editorial con ID ${updateBookDto.publisherId} no encontrada`,
+					`Publisher with ID ${updateBookDto.publisherId} not founded`,
 				);
 			}
 
@@ -150,6 +183,7 @@ export class BookService extends GenericService {
 		// 4. Manejar las categorías si vienen en el DTO
 		if (updateBookDto.categoryIds) {
 			const categories = await this.categoryService.findAllOfBook(
+				tenantId,
 				updateBookDto.categoryIds,
 			);
 			book.categories = categories;
@@ -159,17 +193,17 @@ export class BookService extends GenericService {
 		return await this.bookRepository.save(book);
 	}
 
-	async remove(id: number): Promise<UpdateResult> {
-		return await this.bookRepository.update(id, { deleted_at: new Date() });
-	}
-	async findBookByName(name: string) {
-		const [data, total] = await this.bookRepository.findAndCount({
-			where: {
-				deleted_at: IsNull(),
+	async findBookByName(tenantId: number, name: string) {
+		const [data, total] = await this.findAndCount(
+			tenantId,
+			{
 				title: ILike(`%${name}%`),
 			},
-			order: { id: 'ASC' },
-		});
+			{
+				relations: ['categories', 'publisher'],
+				order: { id: 'ASC' },
+			},
+		);
 		return {
 			data,
 			total,

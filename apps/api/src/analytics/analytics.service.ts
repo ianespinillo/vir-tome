@@ -18,9 +18,8 @@ export class AnalyticsService {
 	async getLastLoans(tenantId: number) {
 		return this.loanService.lastsLoans(tenantId);
 	}
-	async countBooks() {
-		const count = await this.bookService.count();
-		return { count };
+	async countBooks(tenantId: number) {
+		return this.bookService.count(tenantId);
 	}
 	async countLoans(tenantId: number) {
 		return this.loanService.countLoans(tenantId);

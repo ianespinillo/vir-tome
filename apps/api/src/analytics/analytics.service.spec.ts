@@ -86,11 +86,11 @@ describe('AnalyticsService', () => {
 
 	describe('countBooks', () => {
 		it('should return { count } to match controller docs', async () => {
-			const res = await service.countBooks();
+			const res = await service.countBooks(1);
 			expect(mockBookService.count as unknown as jest.Mock).toHaveBeenCalledTimes(
 				1,
 			);
-			expect(res).toEqual({ count: 42 });
+			expect(res).toEqual(42);
 		});
 	});
 

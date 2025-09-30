@@ -1,4 +1,6 @@
 import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
+import { CurrentTenant } from '@/tenants/decorators/current-tenant.decorator';
+import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import {
 	Body,
 	Controller,
@@ -100,8 +102,11 @@ export class CategoryController {
 	@ApiBadRequestResponse({
 		description: 'Datos inválidos o categoría padre no existe',
 	})
-	async create(@Body() createDto: CreateCategoryDto): Promise<CategoryEntity> {
-		return this.categoryService.createCategory(createDto);
+	async create(
+		@CurrentTenant() tenant: TenantEntity,
+		@Body() createDto: CreateCategoryDto,
+	): Promise<CategoryEntity> {
+		return this.categoryService.create(tenant.id, createDto);
 	}
 
 	@Get()
@@ -150,13 +155,14 @@ export class CategoryController {
 		},
 	})
 	async findAll(
+		@CurrentTenant() tenant: TenantEntity,
 		@Query('page', new ParseIntPipe({ optional: true })) page = 1,
 		@Query('full', new ParseBoolPipe({ optional: true })) full = false,
 	) {
 		if (full) {
-			return this.categoryService.findAll();
+			return this.categoryService.findAll(tenant.id);
 		}
-		return this.categoryService.findByPage(page);
+		return this.categoryService.findByPage(tenant.id, page);
 	}
 
 	@Get(':id')
@@ -201,8 +207,11 @@ export class CategoryController {
 		},
 	})
 	@ApiNotFoundResponse({ description: 'Categoría no encontrada' })
-	async findOne(@Param('id') id: number): Promise<CategoryEntity | null> {
-		return this.categoryService.findById(id);
+	async findOne(
+		@CurrentTenant() tenant: TenantEntity,
+		@Param('id', ParseIntPipe) id: number,
+	): Promise<CategoryEntity | null> {
+		return this.categoryService.findById(tenant.id, id);
 	}
 
 	@Patch(':id')
@@ -232,10 +241,11 @@ export class CategoryController {
 	@ApiNotFoundResponse({ description: 'Categoría no encontrada' })
 	@ApiBadRequestResponse({ description: 'Datos inválidos' })
 	async update(
+		@CurrentTenant() tenant: TenantEntity,
 		@Param('id') id: number,
 		@Body() updateDto: UpdateCategoryDto,
 	): Promise<void> {
-		await this.categoryService.updateCategory(id, updateDto);
+		await this.categoryService.update(tenant.id, id, updateDto);
 	}
 
 	@Delete(':id')
@@ -255,7 +265,10 @@ export class CategoryController {
 	@ApiBadRequestResponse({
 		description: 'No se puede eliminar - La categoría tiene libros asociados',
 	})
-	async remove(@Param('id') id: number): Promise<void> {
-		await this.categoryService.delete(id);
+	async remove(
+		@CurrentTenant() tenant: TenantEntity,
+		@Param('id') id: number,
+	): Promise<void> {
+		await this.categoryService.delete(tenant.id, id);
 	}
 }
