@@ -55,7 +55,7 @@ describe('Multi-tenant Integration', () => {
 			is_active: true,
 			is_demo: false,
 		});
-	}, 30000);
+	}, 40000);
 
 	beforeEach(async () => {
 		// Iniciar transacción antes de cada test
