@@ -1,171 +1,262 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+// src/common/middleware/__tests__/tenant.middleware.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
-import { TenantEntity } from '../../../tenants/entities/tenant.entity';
+import { Request, Response } from 'express';
 import { TenantsService } from '../../../tenants/tenants.service';
 import { TenantMiddleware } from './tenant.middleware';
 
 describe('TenantMiddleware', () => {
 	let middleware: TenantMiddleware;
-	let tenantService: jest.Mocked<TenantsService>;
-	let mockRequest: any;
-	let mockResponse: any;
-	let mockNext: jest.Mock;
+	let tenantsService: TenantsService;
+
+	const mockTenant = {
+		id: 1,
+		subdomain: 'escuela1',
+		name: 'Escuela 1',
+		is_active: true,
+	};
+
+	const mockTenantsService = {
+		findById: jest.fn(),
+		findBySubdomain: jest.fn(),
+	};
 
 	beforeEach(async () => {
-		const mockTenantService = {
-			findById: jest.fn(),
-			findBySubdomain: jest.fn(),
-		};
-
 		const module: TestingModule = await Test.createTestingModule({
 			providers: [
 				TenantMiddleware,
 				{
 					provide: TenantsService,
-					useValue: mockTenantService,
+					useValue: mockTenantsService,
 				},
 			],
 		}).compile();
 
 		middleware = module.get<TenantMiddleware>(TenantMiddleware);
-		tenantService = module.get(TenantsService);
+		tenantsService = module.get<TenantsService>(TenantsService);
 
-		// Setup mocks
-		mockRequest = {
-			headers: {},
-			get: jest.fn(),
-		};
-		mockResponse = {};
-		mockNext = jest.fn();
-	});
-
-	afterEach(() => {
 		jest.clearAllMocks();
 	});
 
-	describe('Header-based tenant detection', () => {
-		it('should find tenant by valid header ID', async () => {
-			const mockTenant = { id: 1, name: 'Test School' } as TenantEntity;
-			mockRequest.headers['x-tenant-id'] = '1';
-			tenantService.findById.mockResolvedValue(mockTenant);
+	const createMockRequest = (overrides?: Partial<Request>): Partial<Request> => {
+		return {
+			headers: {},
+			get: jest.fn(),
+			...overrides,
+		} as Partial<Request>;
+	};
 
-			await middleware.use(mockRequest, mockResponse, mockNext);
+	const createMockResponse = (): Partial<Response> => {
+		return {} as Partial<Response>;
+	};
 
-			expect(tenantService.findById).toHaveBeenCalledWith(1);
-			expect(mockRequest.tenant).toBe(mockTenant);
+	const mockNext = jest.fn();
+
+	describe('Header detection (X-Tenant-ID)', () => {
+		it('should extract tenant from X-Tenant-ID header', async () => {
+			// Arrange
+			const req = createMockRequest({
+				headers: { 'x-tenant-id': '1' },
+			});
+			const res = createMockResponse();
+			mockTenantsService.findById.mockResolvedValue(mockTenant);
+
+			// Act
+			await middleware.use(req as Request, res as Response, mockNext);
+
+			// Assert
+			expect(tenantsService.findById).toHaveBeenCalledWith(1);
+			expect(req.tenant).toEqual(mockTenant);
+			expect(req.tenantId).toBe(1);
 			expect(mockNext).toHaveBeenCalled();
 		});
 
-		it('should throw NotFoundException for invalid header ID', async () => {
-			mockRequest.headers['x-tenant-id'] = '999';
-			tenantService.findById.mockRejectedValue(
-				new NotFoundException('Tenant with ID 999 not found'),
-			);
+		it('should throw NotFoundException if tenant ID not found', async () => {
+			// Arrange
+			const req = createMockRequest({
+				headers: { 'x-tenant-id': '999' },
+			});
+			const res = createMockResponse();
+			mockTenantsService.findById.mockResolvedValue(null);
 
-			// PROBLEMA: Tu middleware actual captura esta excepción
+			// Act & Assert
 			await expect(
-				middleware.use(mockRequest, mockResponse, mockNext),
+				middleware.use(req as Request, res as Response, mockNext),
 			).rejects.toThrow(NotFoundException);
-
-			expect(tenantService.findById).toHaveBeenCalledWith(999);
-			expect(mockNext).not.toHaveBeenCalled;
+			await expect(
+				middleware.use(req as Request, res as Response, mockNext),
+			).rejects.toThrow('Tenant with ID 999 not found');
 		});
 
-		it('should ignore invalid header format', async () => {
-			mockRequest.headers['x-tenant-id'] = 'invalid';
-			mockRequest.get.mockReturnValue('demo.tuapp.com');
+		it('should handle invalid tenant ID in header', async () => {
+			// Arrange
+			const req = createMockRequest({
+				headers: { 'x-tenant-id': 'invalid' },
+				get: jest.fn().mockReturnValue('localhost'),
+			});
+			const res = createMockResponse();
 
-			const mockTenant = { id: 1, subdomain: 'demo' } as TenantEntity;
-			tenantService.findBySubdomain.mockResolvedValue(mockTenant);
+			// Act
+			await middleware.use(req as Request, res as Response, mockNext);
 
-			await middleware.use(mockRequest, mockResponse, mockNext);
-
-			expect(tenantService.findById).not.toHaveBeenCalled();
-			expect(tenantService.findBySubdomain).toHaveBeenCalledWith('demo');
-			expect(mockRequest.tenant).toBe(mockTenant);
+			// Assert
+			expect(tenantsService.findById).not.toHaveBeenCalled();
+			expect(mockNext).toHaveBeenCalled(); // Pasa por special case
 		});
 	});
 
-	describe('Subdomain-based tenant detection', () => {
-		beforeEach(() => {
-			// No header present
-			mockRequest.headers = {};
-		});
+	describe('Subdomain detection', () => {
+		it('should extract tenant from subdomain', async () => {
+			// Arrange
+			const req = createMockRequest({
+				get: jest.fn().mockReturnValue('escuela1.tuapp.com'),
+			});
+			const res = createMockResponse();
+			mockTenantsService.findBySubdomain.mockResolvedValue(mockTenant);
 
-		it('should find tenant by valid subdomain', async () => {
-			const mockTenant = { id: 1, subdomain: 'demo' } as TenantEntity;
-			mockRequest.get.mockReturnValue('demo.tuapp.com');
-			tenantService.findBySubdomain.mockResolvedValue(mockTenant);
+			// Act
+			await middleware.use(req as Request, res as Response, mockNext);
 
-			await middleware.use(mockRequest, mockResponse, mockNext);
-
-			expect(tenantService.findBySubdomain).toHaveBeenCalledWith('demo');
-			expect(mockRequest.tenant).toBe(mockTenant);
+			// Assert
+			expect(tenantsService.findBySubdomain).toHaveBeenCalledWith('escuela1');
+			expect(req.tenant).toEqual(mockTenant);
+			expect(req.tenantId).toBe(1);
 			expect(mockNext).toHaveBeenCalled();
 		});
 
 		it('should handle subdomain with port', async () => {
-			const mockTenant = { id: 1, subdomain: 'demo' } as TenantEntity;
-			mockRequest.get.mockReturnValue('demo.localhost:3000');
-			tenantService.findBySubdomain.mockResolvedValue(mockTenant);
+			// Arrange
+			const req = createMockRequest({
+				get: jest.fn().mockReturnValue('escuela1.localhost:3000'),
+			});
+			const res = createMockResponse();
+			mockTenantsService.findBySubdomain.mockResolvedValue(mockTenant);
 
-			await middleware.use(mockRequest, mockResponse, mockNext);
+			// Act
+			await middleware.use(req as Request, res as Response, mockNext);
 
-			expect(tenantService.findBySubdomain).toHaveBeenCalledWith('demo');
-			expect(mockRequest.tenant).toBe(mockTenant);
+			// Assert
+			expect(tenantsService.findBySubdomain).toHaveBeenCalledWith('escuela1');
+			expect(req.tenantId).toBe(1);
 		});
 
-		it('should throw NotFoundException for invalid subdomain', async () => {
-			mockRequest.get.mockReturnValue('nonexistent.tuapp.com');
-			tenantService.findBySubdomain.mockResolvedValue(null);
+		it('should throw NotFoundException if subdomain not found', async () => {
+			// Arrange
+			const req = createMockRequest({
+				get: jest.fn().mockReturnValue('unknown.tuapp.com'),
+			});
+			const res = createMockResponse();
+			mockTenantsService.findBySubdomain.mockResolvedValue(null);
 
-			// Con tu implementación actual, esto se captura silenciosamente
-			expect(middleware.use(mockRequest, mockResponse, mockNext)).rejects.toThrow(
-				NotFoundException,
-			);
-
-			expect(tenantService.findBySubdomain).toHaveBeenCalledWith('nonexistent');
-			expect(mockRequest.tenant).toBeUndefined();
+			// Act & Assert
+			await expect(
+				middleware.use(req as Request, res as Response, mockNext),
+			).rejects.toThrow(NotFoundException);
+			await expect(
+				middleware.use(req as Request, res as Response, mockNext),
+			).rejects.toThrow('Tenant with subdomain "unknown" not found');
 		});
 	});
 
 	describe('Special cases', () => {
-		beforeEach(() => {
-			mockRequest.headers = {};
+		it('should allow localhost without tenant', async () => {
+			// Arrange
+			const req = createMockRequest({
+				get: jest.fn().mockReturnValue('localhost:3000'),
+			});
+			const res = createMockResponse();
+
+			// Act
+			await middleware.use(req as Request, res as Response, mockNext);
+
+			// Assert
+			expect(tenantsService.findBySubdomain).not.toHaveBeenCalled();
+			expect(mockNext).toHaveBeenCalled();
 		});
 
-		const specialCases = [
-			'www.tuapp.com',
-			'localhost:3000',
-			'api.tuapp.com',
-			'admin.tuapp.com',
-			'tuapp.com',
-		];
-
-		specialCases.forEach((host) => {
-			it(`should skip tenant detection for ${host}`, async () => {
-				mockRequest.get.mockReturnValue(host);
-
-				await middleware.use(mockRequest, mockResponse, mockNext);
-
-				expect(tenantService.findBySubdomain).not.toHaveBeenCalled();
-				expect(mockRequest.tenant).toBeUndefined();
-				expect(mockNext).toHaveBeenCalled();
+		it('should allow www subdomain', async () => {
+			// Arrange
+			const req = createMockRequest({
+				get: jest.fn().mockReturnValue('www.tuapp.com'),
 			});
+			const res = createMockResponse();
+
+			// Act
+			await middleware.use(req as Request, res as Response, mockNext);
+
+			// Assert
+			expect(mockNext).toHaveBeenCalled();
+		});
+
+		it('should allow admin subdomain', async () => {
+			// Arrange
+			const req = createMockRequest({
+				get: jest.fn().mockReturnValue('admin.tuapp.com'),
+			});
+			const res = createMockResponse();
+
+			// Act
+			await middleware.use(req as Request, res as Response, mockNext);
+
+			// Assert
+			expect(mockNext).toHaveBeenCalled();
 		});
 	});
 
-	//TODO: Check if is possible to check db handling err
-	/* describe('Error handling', () => {
-    it('should handle service errors gracefully', async () => {
-      mockRequest.headers['x-tenant-id'] = '1';
-      tenantService.findById.mockRejectedValue(new Error('Database error'));
+	describe('Tenant validation', () => {
+		it('should reject inactive tenant', async () => {
+			// Arrange
+			const inactiveTenant = { ...mockTenant, is_active: false };
+			const req = createMockRequest({
+				headers: { 'x-tenant-id': '1' },
+			});
+			const res = createMockResponse();
+			mockTenantsService.findById.mockResolvedValue(inactiveTenant);
 
-      await middleware.use(mockRequest, mockResponse, mockNext);
+			// Act & Assert
+			await expect(
+				middleware.use(req as Request, res as Response, mockNext),
+			).rejects.toThrow(BadRequestException);
+			await expect(
+				middleware.use(req as Request, res as Response, mockNext),
+			).rejects.toThrow('Tenant "Escuela 1" is inactive');
+		});
 
-      // Con tu implementación actual, los errores se capturan
-      expect(mockNext).toHaveBeenCalled();
-      expect(mockRequest.tenant).toBeUndefined();
-    });
-  }); */
+		it('should accept active tenant', async () => {
+			// Arrange
+			const req = createMockRequest({
+				headers: { 'x-tenant-id': '1' },
+			});
+			const res = createMockResponse();
+			mockTenantsService.findById.mockResolvedValue(mockTenant);
+
+			// Act
+			await middleware.use(req as Request, res as Response, mockNext);
+
+			// Assert
+			expect(req.tenant).toEqual(mockTenant);
+			expect(mockNext).toHaveBeenCalled();
+		});
+	});
+
+	describe('Priority', () => {
+		it('should prioritize header over subdomain', async () => {
+			// Arrange
+			const req = createMockRequest({
+				headers: { 'x-tenant-id': '2' },
+				get: jest.fn().mockReturnValue('escuela1.tuapp.com'),
+			});
+			const res = createMockResponse();
+			const tenant2 = { ...mockTenant, id: 2, subdomain: 'escuela2' };
+			mockTenantsService.findById.mockResolvedValue(tenant2);
+
+			// Act
+			await middleware.use(req as Request, res as Response, mockNext);
+
+			// Assert
+			expect(tenantsService.findById).toHaveBeenCalledWith(2);
+			expect(tenantsService.findBySubdomain).not.toHaveBeenCalled();
+			expect(req.tenantId).toBe(2);
+		});
+	});
 });

@@ -1,4 +1,9 @@
-import { Injectable, NestMiddleware, NotFoundException } from '@nestjs/common';
+import {
+	BadRequestException,
+	Injectable,
+	NestMiddleware,
+	NotFoundException,
+} from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { TenantsService } from '../../../tenants/tenants.service';
 import { TenantEntity } from '../../entities/tenant.entity';
@@ -35,7 +40,7 @@ export class TenantMiddleware implements NestMiddleware {
 				tenant = await this.tenantService.findBySubdomain(subdomain);
 				if (!tenant) {
 					throw new NotFoundException(
-						`Tenant with subdomain ${subdomain} not found`,
+						`Tenant with subdomain "${subdomain}" not found`,
 					);
 				}
 			}
@@ -43,7 +48,11 @@ export class TenantMiddleware implements NestMiddleware {
 
 		// 3. Asignar tenant al request
 		if (tenant) {
+			if (!tenant.is_active) {
+				throw new BadRequestException(`Tenant "${tenant.name}" is inactive`);
+			}
 			req.tenant = tenant;
+			req.tenantId = tenant.id;
 		}
 
 		next();
