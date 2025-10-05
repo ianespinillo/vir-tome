@@ -1,8 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
-// src/users/__tests__/user-multitenant.spec.ts - CORREGIDO
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SignUpDto } from '@repo/common';
+import { ROLES, SignUpDto } from '@repo/common';
 import { DataSource } from 'typeorm';
 import { testDatabaseConfig } from '../../__tests__/database-test.config';
 import { getTestDataSource } from '../../__tests__/setup';
@@ -25,7 +24,6 @@ describe('Users Multi-tenant Integration', () => {
 	let defaultRole1: RoleEntity;
 	let defaultRole2: RoleEntity;
 
-	// Mock EmailService para tests
 	const mockEmailService = {
 		sendEmailWelcome: jest.fn().mockResolvedValue(true),
 	};
@@ -67,8 +65,8 @@ describe('Users Multi-tenant Integration', () => {
 		});
 
 		// Crear roles por defecto para ambos tenants
-		defaultRole1 = await roleService.createRole('Student', tenant1.id);
-		defaultRole2 = await roleService.createRole('Student', tenant2.id);
+		defaultRole1 = await roleService.createRole(ROLES.STUDENT, tenant1.id);
+		defaultRole2 = await roleService.createRole(ROLES.STUDENT, tenant2.id);
 	});
 
 	afterAll(async () => {
@@ -77,8 +75,15 @@ describe('Users Multi-tenant Integration', () => {
 	});
 
 	beforeEach(async () => {
-		// Limpiar solo usuarios entre tests (mantener roles)
+		// Limpiar usuarios Y roles entre tests
 		await dataSource.getRepository(UserEntity).delete({});
+		await dataSource.getRepository(RoleEntity).delete({ tenant_id: tenant1.id });
+		await dataSource.getRepository(RoleEntity).delete({ tenant_id: tenant2.id });
+
+		// Recrear roles por defecto
+		defaultRole1 = await roleService.createRole(ROLES.STUDENT, tenant1.id);
+		defaultRole2 = await roleService.createRole(ROLES.STUDENT, tenant2.id);
+
 		jest.clearAllMocks();
 	});
 
@@ -88,20 +93,17 @@ describe('Users Multi-tenant Integration', () => {
 				name: 'John',
 				surname: 'Doe',
 				email: 'john.doe@test.com',
-				roleId: defaultRole1.id, // AGREGADO: roleId requerido
+				roleId: defaultRole1.id,
 			};
 
 			const userData2: SignUpDto = {
 				name: 'Jane',
 				surname: 'Smith',
-				email: 'john.doe@test.com', // Mismo email, diferente tenant
-				roleId: defaultRole2.id, // AGREGADO: roleId para tenant2
+				email: 'john.doe@test.com',
+				roleId: defaultRole2.id,
 			};
 
-			// Crear usuario en tenant1
 			const user1 = await usersService.createUser(userData, tenant1.id);
-
-			// Crear usuario con mismo email en tenant2 (debe permitirlo)
 			const user2 = await usersService.createUser(userData2, tenant2.id);
 
 			expect(user1.tenant_id).toBe(tenant1.id);
@@ -109,10 +111,9 @@ describe('Users Multi-tenant Integration', () => {
 			expect(user1.name).toBe('John');
 
 			expect(user2.tenant_id).toBe(tenant2.id);
-			expect(user2.email).toBe('john.doe@test.com'); // Mismo email, diferente tenant
+			expect(user2.email).toBe('john.doe@test.com');
 			expect(user2.name).toBe('Jane');
 
-			// Verificar que el servicio de email fue llamado para ambos
 			expect(mockEmailService.sendEmailWelcome).toHaveBeenCalledTimes(2);
 		});
 
@@ -121,18 +122,16 @@ describe('Users Multi-tenant Integration', () => {
 				name: 'John',
 				surname: 'Doe',
 				email: 'duplicate@test.com',
-				roleId: defaultRole1.id, // AGREGADO
+				roleId: defaultRole1.id,
 			};
 
-			// Crear primer usuario
 			await usersService.createUser(userData, tenant1.id);
 
-			// Intentar crear segundo usuario con mismo email en mismo tenant
 			await expect(
 				usersService.createUser(
 					{
 						...userData,
-						name: 'Jane', // Diferente nombre pero mismo email y tenant
+						name: 'Jane',
 					},
 					tenant1.id,
 				),
@@ -144,17 +143,15 @@ describe('Users Multi-tenant Integration', () => {
 				name: 'Hacker',
 				surname: 'User',
 				email: 'hacker@test.com',
-				roleId: defaultRole2.id, // Rol de tenant2 en tenant1
+				roleId: defaultRole2.id,
 			};
 
-			// Intentar crear usuario en tenant1 con rol de tenant2
 			await expect(usersService.createUser(userData, tenant1.id)).rejects.toThrow(
 				BadRequestException,
 			);
 		});
 
 		test('should find users only from specific tenant', async () => {
-			// Crear usuarios para diferentes tenants
 			await usersService.createUser(
 				{
 					name: 'Alpha User 1',
@@ -183,7 +180,6 @@ describe('Users Multi-tenant Integration', () => {
 				tenant2.id,
 			);
 
-			// Verificar isolation
 			const tenant1Users = await usersService.findAll(tenant1.id);
 			const tenant2Users = await usersService.findAll(tenant2.id);
 
@@ -200,7 +196,6 @@ describe('Users Multi-tenant Integration', () => {
 		test('should find user by email within tenant only', async () => {
 			const email = 'shared@email.com';
 
-			// Crear usuarios con mismo email en diferentes tenants
 			await usersService.createUser(
 				{
 					name: 'User in Tenant 1',
@@ -220,7 +215,6 @@ describe('Users Multi-tenant Integration', () => {
 				tenant2.id,
 			);
 
-			// Buscar por email en cada tenant
 			const user1 = await usersService.findUserByEmail(email, tenant1.id);
 			const user2 = await usersService.findUserByEmail(email, tenant2.id);
 
@@ -232,7 +226,6 @@ describe('Users Multi-tenant Integration', () => {
 		});
 
 		test('should provide isolated user statistics', async () => {
-			// Crear usuarios para tenant1
 			await usersService.createUser(
 				{
 					name: 'User 1',
@@ -252,7 +245,6 @@ describe('Users Multi-tenant Integration', () => {
 				tenant1.id,
 			);
 
-			// Crear usuarios para tenant2
 			await usersService.createUser(
 				{
 					name: 'User 3',
@@ -276,49 +268,43 @@ describe('Users Multi-tenant Integration', () => {
 
 	describe('Role Isolation', () => {
 		test('should create roles isolated by tenant', async () => {
-			// Crear roles con mismo nombre en diferentes tenants
-			const role1 = await roleService.createRole('Administrator', tenant1.id);
-			const role2 = await roleService.createRole('Administrator', tenant2.id);
+			const role1 = await roleService.createRole(ROLES.ADMIN, tenant1.id);
+			const role2 = await roleService.createRole(ROLES.ADMIN, tenant2.id);
 
-			expect(role1.name).toBe('Administrator');
+			expect(role1.name).toBe(ROLES.ADMIN);
 			expect(role1.tenant_id).toBe(tenant1.id);
 
-			expect(role2.name).toBe('Administrator');
+			expect(role2.name).toBe(ROLES.ADMIN);
 			expect(role2.tenant_id).toBe(tenant2.id);
 		});
 
 		test('should prevent duplicate role names within same tenant', async () => {
-			await roleService.createRole('Teacher', tenant1.id);
+			await roleService.createRole(ROLES.TEACHER, tenant1.id);
 
-			await expect(roleService.createRole('Teacher', tenant1.id)).rejects.toThrow(
-				BadRequestException,
-			);
+			await expect(
+				roleService.createRole(ROLES.TEACHER, tenant1.id),
+			).rejects.toThrow(BadRequestException);
 		});
 
 		test('should find roles only from specific tenant', async () => {
-			// Crear roles adicionales para diferentes tenants
-			await roleService.createRole('Principal', tenant1.id);
-			// await roleService.createRole('Teacher', tenant1.id);
-			await roleService.createRole('Librarian', tenant2.id);
+			await roleService.createRole(ROLES.ADMIN, tenant1.id);
+			await roleService.createRole(ROLES.LIBRARIAN, tenant2.id);
 
 			const tenant1Roles = await roleService.findAll(tenant1.id);
 			const tenant2Roles = await roleService.findAll(tenant2.id);
 
-			// tenant1 tiene: Student (default) + Principal + Teacher = 3
-			expect(tenant1Roles).toHaveLength(4);
+			expect(tenant1Roles).toHaveLength(2);
 			expect(tenant1Roles.every((role) => role.tenant_id === tenant1.id)).toBe(
 				true,
 			);
 
-			// tenant2 tiene: Student (default) + Librarian = 2
-			expect(tenant2Roles).toHaveLength(3);
+			expect(tenant2Roles).toHaveLength(2);
 			expect(tenant2Roles.every((role) => role.tenant_id === tenant2.id)).toBe(
 				true,
 			);
 		});
 
 		test('should initialize default roles independently per tenant', async () => {
-			// Crear nuevos tenants para este test
 			const newTenant1 = await tenantRepository.save({
 				subdomain: 'new-school-1',
 				name: 'New School 1',
@@ -342,34 +328,36 @@ describe('Users Multi-tenant Integration', () => {
 			expect(roles2).toHaveLength(4);
 			expect(roles2.every((role) => role.tenant_id === newTenant2.id)).toBe(true);
 
-			// Verificar que los nombres son los esperados
-			const expectedRoleNames = [
-				'Administrator',
-				'Librarian',
-				'Student',
-				'Teacher',
-			];
-			expect(roles1.map((r) => r.name).sort()).toEqual(expectedRoleNames);
-			expect(roles2.map((r) => r.name).sort()).toEqual(expectedRoleNames);
+			const roleNames1 = roles1.map((r) => r.name);
+			const roleNames2 = roles2.map((r) => r.name);
+
+			expect(roleNames1).toContain(ROLES.ADMIN);
+			expect(roleNames1).toContain(ROLES.LIBRARIAN);
+			expect(roleNames1).toContain(ROLES.TEACHER);
+			expect(roleNames1).toContain(ROLES.STUDENT);
+
+			expect(roleNames2).toContain(ROLES.ADMIN);
+			expect(roleNames2).toContain(ROLES.LIBRARIAN);
+			expect(roleNames2).toContain(ROLES.TEACHER);
+			expect(roleNames2).toContain(ROLES.STUDENT);
 		});
 
 		test('should get default roles only from specific tenant', async () => {
-			// Usar tenants existentes y agregar roles por defecto
+			await dataSource.getRepository(RoleEntity).delete({ tenant_id: tenant1.id });
+			await dataSource.getRepository(RoleEntity).delete({ tenant_id: tenant2.id });
+
 			await roleService.initializeDefaultRoles(tenant1.id);
 			await roleService.initializeDefaultRoles(tenant2.id);
-
-			// Crear rol custom en tenant1
-			await roleService.createRole('Custom Role', tenant1.id);
 
 			const defaultRoles1 = await roleService.getDefaultRoles(tenant1.id);
 			const defaultRoles2 = await roleService.getDefaultRoles(tenant2.id);
 
-			expect(defaultRoles1.length).toBeGreaterThanOrEqual(4); // Al menos los 4 por defecto
+			expect(defaultRoles1).toHaveLength(4);
 			expect(defaultRoles1.every((role) => role.tenant_id === tenant1.id)).toBe(
 				true,
 			);
 
-			expect(defaultRoles2.length).toBeGreaterThanOrEqual(4);
+			expect(defaultRoles2).toHaveLength(4);
 			expect(defaultRoles2.every((role) => role.tenant_id === tenant2.id)).toBe(
 				true,
 			);
@@ -378,10 +366,10 @@ describe('Users Multi-tenant Integration', () => {
 
 	describe('Cross-Entity Relationships', () => {
 		test('should maintain proper relationships within tenant boundaries', async () => {
-			// Crear roles en tenant1
-			const adminRole = await roleService.createRole('Admin', tenant1.id);
-			console.log(adminRole);
-			// Crear usuarios en tenant1
+			await dataSource.getRepository(RoleEntity).delete({ tenant_id: tenant1.id });
+
+			const adminRole = await roleService.createRole(ROLES.ADMIN, tenant1.id);
+
 			const user1 = await usersService.createUser(
 				{
 					name: 'Admin User',
@@ -392,7 +380,6 @@ describe('Users Multi-tenant Integration', () => {
 				tenant1.id,
 			);
 
-			// Verificar que los IDs no se cruzan entre tenants
 			expect(user1.tenant_id).toBe(tenant1.id);
 			expect(adminRole.tenant_id).toBe(tenant1.id);
 		});

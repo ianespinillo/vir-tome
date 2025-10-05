@@ -1,12 +1,6 @@
-import {
-	Column,
-	Entity,
-	Index,
-	ManyToMany,
-	ManyToOne,
-	OneToMany,
-} from 'typeorm';
+import { Column, Entity, Index, OneToMany } from 'typeorm';
 
+import { ROLES } from '@repo/common';
 import { MultiTenantEntity } from '../../core/multi-tenant.entity';
 import { UserEntity } from './user.entity';
 
@@ -15,7 +9,7 @@ import { UserEntity } from './user.entity';
 })
 @Index(['name', 'tenant_id'], { unique: true })
 export class RoleEntity extends MultiTenantEntity {
-	@Column({ type: 'varchar', length: 255, nullable: false })
+	@Column({ type: 'enum', enum: ROLES })
 	name!: string;
 	@OneToMany(
 		() => UserEntity,

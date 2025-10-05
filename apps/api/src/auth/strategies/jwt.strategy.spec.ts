@@ -259,7 +259,7 @@ describe('JwtStrategy', () => {
 			// Arrange - Tenant 2, User 2
 			const tenant2 = { ...mockTenant, id: 2, subdomain: 'escuela2' };
 			const user2 = { ...mockUser, id: 2, tenant_id: 2 };
-			const payload2 = { ...validPayload, sub: 2, tenantId: 2 };
+			const payload2 = { ...validPayload, sub: 2, tenant_id: 2 };
 
 			mockTenantsService.findById.mockResolvedValueOnce(tenant2);
 			mockUsersService.findById.mockResolvedValueOnce(user2);
