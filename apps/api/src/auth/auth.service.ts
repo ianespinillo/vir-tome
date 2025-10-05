@@ -1,20 +1,32 @@
 import { PasswordAdapter } from '@/core/passport-adapter';
+import { EmailService } from '@/email/email.service';
+import { TokensService } from '@/tokens/tokens.service';
 // src/auth/auth.service.ts
 import {
 	BadRequestException,
 	Injectable,
+	InternalServerErrorException,
 	UnauthorizedException,
 } from '@nestjs/common';
+import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 import { JwtService } from '@nestjs/jwt';
-import { IAuthPayload, SignInDto as LoginDto, SignUpDto } from '@repo/common';
+import {
+	ForgotPasswordDTO,
+	IAuthPayload,
+	SignInDto as LoginDto,
+	ResetPasswordDto,
+	SignUpDto,
+	TokenTypes,
+} from '@repo/common';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/services/users.service';
-
 @Injectable()
 export class AuthService {
 	constructor(
 		private readonly usersService: UsersService,
 		private readonly jwtService: JwtService,
+		private readonly tokensService: TokensService,
+		private readonly emailService: EmailService,
 	) {}
 
 	/**
@@ -171,5 +183,49 @@ export class AuthService {
 		return {
 			access_token: this.jwtService.sign(payload),
 		};
+	}
+	async forgotPassword({ email }: ForgotPasswordDTO, tenantId: number) {
+		const user = await this.usersService.findUserByEmail(email, tenantId);
+		if (!user) return { message: 'If email exists, reset link sent' };
+		const token = await this.tokensService.generateToken({
+			expiresInHours: 1,
+			user_id: user.id,
+			type: TokenTypes.FORGOT_PASSWORD,
+			metadata: { tenantId },
+		});
+		await this.emailService.forgotPasswordEmail({
+			email,
+			token: token.token,
+			expires: new Date(Date.now() + 1000),
+		});
+	}
+	async resetPassword(
+		{ token, newPassword }: ResetPasswordDto,
+		tenantId: number,
+	) {
+		const validToken = await this.tokensService.validateToken(token, tenantId);
+		if (validToken.metadata?.tenantId !== tenantId)
+			throw new BadRequestException('Invalid token for tenant');
+		const user = await this.usersService.findById(tenantId, validToken.user_id);
+		if (!user) {
+			throw new BadRequestException('User not found');
+		}
+		try {
+			const newHashedPassword = await PasswordAdapter.hashPassword(newPassword);
+			await this.usersService.update(tenantId, validToken.user_id, {
+				password: newHashedPassword,
+			});
+			await this.tokensService.markAsUsed(validToken.id, tenantId);
+			return {
+				message: 'Password reset successfully',
+			};
+		} catch (error) {
+			if (error instanceof Error) {
+				throw new InternalServerErrorException(
+					'Something wrong during password update',
+				);
+			}
+			throw error;
+		}
 	}
 }

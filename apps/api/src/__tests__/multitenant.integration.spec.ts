@@ -24,14 +24,7 @@ describe('Multi-tenant Integration', () => {
 
 	beforeAll(async () => {
 		const moduleFixture: TestingModule = await Test.createTestingModule({
-			imports: [
-				TypeOrmModule.forRoot({
-					...testDatabaseConfig,
-					synchronize: true,
-					dropSchema: true,
-				}),
-				TenantsModule,
-			],
+			imports: [TypeOrmModule.forRoot(testDatabaseConfig), TenantsModule],
 		}).compile();
 
 		app = moduleFixture.createNestApplication();

@@ -15,7 +15,7 @@ async function bootstrap() {
 	app.useGlobalPipes(new ValidationPipe());
 	app.setGlobalPrefix('api');
 	app.use(cookieParser());
-	app.use(new AllExceptionsFilter());
+	app.useGlobalFilters(new AllExceptionsFilter());
 	app.enableCors({
 		origin: 'http://localhost:3000',
 		credentials: true,
