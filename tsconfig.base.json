@@ -12,7 +12,6 @@
 		"forceConsistentCasingInFileNames": true,
 		"moduleResolution": "nodenext",
 		"isolatedModules": true,
-		"baseUrl": ".",
 		"paths": {
 			"@/*": ["./packages/ui/src/*"],
 			"@repo/common": ["packages/common/src"],

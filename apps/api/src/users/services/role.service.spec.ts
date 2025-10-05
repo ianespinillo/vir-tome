@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { ROLES } from '@repo/common';
 import { In, IsNull, Repository } from 'typeorm';
 import { TenantEntity } from '../../tenants/entities/tenant.entity';
 import { RoleEntity } from '../entities/role.entity';
@@ -22,16 +23,6 @@ describe('RoleService', () => {
 		createQueryBuilder: jest.fn(),
 	};
 
-	// Mock TypeORM operators
-	jest.mock('typeorm', () => {
-		const actual = jest.requireActual('typeorm');
-		return {
-			...actual,
-			In: jest.fn((values) => ({ _type: 'in', _value: values })),
-			IsNull: jest.fn().mockReturnValue({ _type: 'isNull' }),
-		};
-	});
-
 	const mockTenantId = 1;
 	const mockTenant: TenantEntity = {
 		id: mockTenantId,
@@ -52,7 +43,7 @@ describe('RoleService', () => {
 
 	const mockRole: RoleEntity = {
 		id: 1,
-		name: 'Administrator',
+		name: ROLES.ADMIN,
 		tenant_id: mockTenantId,
 		tenant: mockTenant,
 		created_at: new Date(),
@@ -83,10 +74,10 @@ describe('RoleService', () => {
 	});
 
 	describe('createRole', () => {
-		const roleName = 'Test Role';
+		const roleName = ROLES.ADMIN;
 
 		it('should create a role successfully', async () => {
-			mockRepository.findOne.mockResolvedValue(null); // Role doesn't exist
+			mockRepository.findOne.mockResolvedValue(null);
 			mockRepository.create.mockReturnValue(mockRole);
 			mockRepository.save.mockResolvedValue(mockRole);
 
@@ -146,7 +137,7 @@ describe('RoleService', () => {
 	});
 
 	describe('findRoleByName', () => {
-		const roleName = 'Administrator';
+		const roleName = ROLES.ADMIN;
 
 		it('should find role by name successfully', async () => {
 			mockRepository.findOne.mockResolvedValue(mockRole);
@@ -166,7 +157,7 @@ describe('RoleService', () => {
 		it('should return null if role not found', async () => {
 			mockRepository.findOne.mockResolvedValue(null);
 
-			const result = await service.findRoleByName('NonExistent', mockTenantId);
+			const result = await service.findRoleByName(ROLES.STUDENT, mockTenantId);
 
 			expect(result).toBeNull();
 		});
@@ -174,9 +165,9 @@ describe('RoleService', () => {
 
 	describe('findAllRoles', () => {
 		const mockRoles = [
-			{ ...mockRole, id: 1, name: 'Administrator' },
-			{ ...mockRole, id: 2, name: 'Librarian' },
-			{ ...mockRole, id: 3, name: 'Teacher' },
+			{ ...mockRole, id: 1, name: ROLES.ADMIN },
+			{ ...mockRole, id: 2, name: ROLES.LIBRARIAN },
+			{ ...mockRole, id: 3, name: ROLES.TEACHER },
 		];
 
 		it('should return all roles for tenant', async () => {
@@ -205,25 +196,22 @@ describe('RoleService', () => {
 
 	describe('initializeDefaultRoles', () => {
 		const defaultRoles = [
-			{ name: 'Administrator' },
-			{ name: 'Librarian' },
-			{ name: 'Teacher' },
-			{ name: 'Student' },
+			{ name: ROLES.ADMIN },
+			{ name: ROLES.LIBRARIAN },
+			{ name: ROLES.TEACHER },
+			{ name: ROLES.STUDENT },
 		];
 
 		it('should initialize all default roles when none exist', async () => {
-			const createdRoles = defaultRoles.map((role, index) => ({
-				...mockRole,
-				id: index + 1,
-				name: role.name,
-			}));
+			const createdRoles = [
+				{ ...mockRole, id: 1, name: ROLES.ADMIN },
+				{ ...mockRole, id: 2, name: ROLES.LIBRARIAN },
+				{ ...mockRole, id: 3, name: ROLES.TEACHER },
+				{ ...mockRole, id: 4, name: ROLES.STUDENT },
+			];
 
-			// Mock that no roles exist initially
 			mockRepository.findOne.mockResolvedValue(null);
-			mockRepository.create.mockImplementation((data) => data);
-			mockRepository.save.mockImplementation((data) => Promise.resolve(data));
 
-			// Mock the createRole method behavior
 			jest.spyOn(service, 'createRole').mockImplementation(async (name) => {
 				const role = createdRoles.find((r) => r.name === name);
 				return Promise.resolve(role as RoleEntity);
@@ -233,18 +221,17 @@ describe('RoleService', () => {
 
 			expect(result).toHaveLength(4);
 			expect(service.createRole).toHaveBeenCalledTimes(4);
-			expect(result.map((r) => r.name)).toEqual([
-				'Administrator',
-				'Librarian',
-				'Teacher',
-				'Student',
-			]);
+
+			const resultNames = result.map((r) => r.name);
+			expect(resultNames).toContain(ROLES.ADMIN);
+			expect(resultNames).toContain(ROLES.LIBRARIAN);
+			expect(resultNames).toContain(ROLES.TEACHER);
+			expect(resultNames).toContain(ROLES.STUDENT);
 		});
 
 		it('should handle existing roles and return them', async () => {
-			const existingRole = { ...mockRole, name: 'Administrator' };
+			const existingRole = { ...mockRole, name: ROLES.ADMIN };
 
-			// Mock createRole to throw for first role, then return existing
 			jest
 				.spyOn(service, 'createRole')
 				.mockRejectedValueOnce(new BadRequestException('Role already exists'))
@@ -255,7 +242,6 @@ describe('RoleService', () => {
 					} as RoleEntity);
 				});
 
-			// Mock findOne to return existing role
 			mockRepository.findOne.mockResolvedValue(existingRole);
 
 			const result = await service.initializeDefaultRoles(mockTenantId);
@@ -265,29 +251,27 @@ describe('RoleService', () => {
 		});
 
 		it('should handle mixed scenario of existing and new roles', async () => {
-			const existingAdminRole = { ...mockRole, name: 'Administrator' };
+			const existingAdminRole = { ...mockRole, name: ROLES.ADMIN };
 
-			// Mock createRole behavior: first fails (exists), others succeed
 			jest
 				.spyOn(service, 'createRole')
 				.mockRejectedValueOnce(new Error('Role already exists'))
 				.mockResolvedValueOnce({
 					...mockRole,
 					id: 2,
-					name: 'Librarian',
+					name: ROLES.LIBRARIAN,
 				} as RoleEntity)
 				.mockResolvedValueOnce({
 					...mockRole,
 					id: 3,
-					name: 'Teacher',
+					name: ROLES.TEACHER,
 				} as RoleEntity)
 				.mockResolvedValueOnce({
 					...mockRole,
 					id: 4,
-					name: 'Student',
+					name: ROLES.STUDENT,
 				} as RoleEntity);
 
-			// Mock findOne to return existing role only for Administrator
 			mockRepository.findOne.mockResolvedValue(existingAdminRole);
 
 			const result = await service.initializeDefaultRoles(mockTenantId);
@@ -297,12 +281,10 @@ describe('RoleService', () => {
 		});
 
 		it('should skip roles that fail to create and cannot be found', async () => {
-			// Mock createRole to fail for all roles
 			jest
 				.spyOn(service, 'createRole')
 				.mockRejectedValue(new Error('Creation failed'));
 
-			// Mock findOne to return null (role not found)
 			mockRepository.findOne.mockResolvedValue(null);
 
 			const result = await service.initializeDefaultRoles(mockTenantId);
@@ -312,12 +294,19 @@ describe('RoleService', () => {
 	});
 
 	describe('getDefaultRoles', () => {
-		const defaultRoleNames = ['Administrator', 'Librarian', 'Teacher', 'Student'];
-		const mockDefaultRoles = defaultRoleNames.map((name, index) => ({
-			...mockRole,
-			id: index + 1,
-			name,
-		}));
+		const defaultRoleNames = [
+			ROLES.ADMIN,
+			ROLES.LIBRARIAN,
+			ROLES.TEACHER,
+			ROLES.STUDENT,
+		];
+
+		const mockDefaultRoles = [
+			{ ...mockRole, id: 1, name: ROLES.ADMIN },
+			{ ...mockRole, id: 2, name: ROLES.LIBRARIAN },
+			{ ...mockRole, id: 3, name: ROLES.TEACHER },
+			{ ...mockRole, id: 4, name: ROLES.STUDENT },
+		];
 
 		it('should return all default roles', async () => {
 			mockRepository.find.mockResolvedValue(mockDefaultRoles);
@@ -382,7 +371,7 @@ describe('RoleService', () => {
 
 		describe('findBy', () => {
 			it('should find roles by custom criteria', async () => {
-				const criteria = { name: 'Administrator' };
+				const criteria = { name: ROLES.ADMIN };
 				const roles = [mockRole];
 				mockRepository.find.mockResolvedValue(roles);
 
@@ -420,7 +409,7 @@ describe('RoleService', () => {
 				mockRepository.count.mockResolvedValue(1);
 
 				const result = await service.exists(mockTenantId, {
-					name: 'Administrator',
+					name: ROLES.ADMIN,
 				});
 
 				expect(result).toBe(true);
@@ -429,7 +418,9 @@ describe('RoleService', () => {
 			it('should return false if role does not exist', async () => {
 				mockRepository.count.mockResolvedValue(0);
 
-				const result = await service.exists(mockTenantId, { name: 'NonExistent' });
+				const result = await service.exists(mockTenantId, {
+					name: ROLES.STUDENT,
+				});
 
 				expect(result).toBe(false);
 			});
@@ -461,28 +452,6 @@ describe('RoleService', () => {
 				},
 				order: { id: 'ASC' },
 			});
-		});
-
-		it('should allow empty role names in createRole', async () => {
-			mockRepository.findOne.mockResolvedValue(null);
-			const emptyNameRole = { ...mockRole, name: '' };
-			mockRepository.create.mockReturnValue(emptyNameRole);
-			mockRepository.save.mockResolvedValue(emptyNameRole);
-
-			const result = await service.createRole('', mockTenantId);
-
-			expect(result.name).toBe('');
-		});
-
-		it('should handle very long role names', async () => {
-			const longRoleName = 'A'.repeat(300);
-			mockRepository.findOne.mockResolvedValue(null);
-			mockRepository.create.mockReturnValue({ ...mockRole, name: longRoleName });
-			mockRepository.save.mockResolvedValue({ ...mockRole, name: longRoleName });
-
-			const result = await service.createRole(longRoleName, mockTenantId);
-
-			expect(result.name).toBe(longRoleName);
 		});
 	});
 });

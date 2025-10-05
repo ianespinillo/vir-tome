@@ -1,5 +1,7 @@
 // @repo/common/src/auth/auth.types.ts
 
+import { ROLES } from '../enum/roles.enum';
+
 /**
  * JWT Payload - Lo que va dentro del token
  */
@@ -40,5 +42,5 @@ export interface IRequestUser {
 	email: string;
 	tenantId: number;
 	roleId: number;
-	roleName: string; // Para usar en guards/decoradores
+	roleName: ROLES; // Para usar en guards/decoradores
 }

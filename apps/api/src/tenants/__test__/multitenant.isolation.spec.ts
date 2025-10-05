@@ -1,6 +1,7 @@
 // src/__tests__/tenant-isolation.integration.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ROLES } from '@repo/common';
 import { DataSource, MoreThan, Repository } from 'typeorm';
 import { testDatabaseConfig } from '../../__tests__/database-test.config';
 import { getTestDataSource } from '../../__tests__/setup';
@@ -505,12 +506,12 @@ describe('Multi-tenant Data Isolation', () => {
 		test('should isolate users and roles by tenant', async () => {
 			// Crear roles con el mismo nombre en diferentes tenants
 			const adminRole1 = await roleRepository.save({
-				name: 'Administrator',
+				name: ROLES.ADMIN,
 				tenant_id: tenant1.id,
 			});
 
 			const adminRole2 = await roleRepository.save({
-				name: 'Administrator',
+				name: ROLES.ADMIN,
 				tenant_id: tenant2.id,
 			});
 

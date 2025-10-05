@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 // src/common/__tests__/multitenant.integration.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ROLES } from '@repo/common';
 import * as request from 'supertest';
 import { DataSource, IsNull, QueryRunner } from 'typeorm';
 import { BookEntity } from '../book/entities/book.entity';
@@ -86,11 +87,11 @@ describe('Multi-tenant Integration', () => {
 			const roleRepo = getRepository(RoleEntity);
 			// Create roles for each tenant
 			const role1 = await roleRepo.save({
-				name: 'Admin',
+				name: ROLES.ADMIN,
 				tenant_id: tenant1.id,
 			});
 			const role2 = await roleRepo.save({
-				name: 'Admin',
+				name: ROLES.ADMIN,
 				tenant_id: tenant2.id,
 			});
 			// Create users for different tenants
@@ -203,13 +204,13 @@ describe('Multi-tenant Integration', () => {
 
 			// Create role for tenant1
 			const role1 = await roleRepo.save({
-				name: 'Admin',
+				name: ROLES.ADMIN,
 				tenant_id: tenant1.id,
 			});
 
 			// Create role for tenant2 with same name
 			const role2 = await roleRepo.save({
-				name: 'Admin',
+				name: ROLES.ADMIN,
 				tenant_id: tenant2.id,
 			});
 

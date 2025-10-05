@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ROLES } from '@repo/common';
 import { In, Repository } from 'typeorm';
 import { MultiTenantService } from '../../core/multi-tenat.service';
 import { RoleEntity } from '../entities/role.entity';
@@ -12,7 +13,7 @@ export class RoleService extends MultiTenantService<RoleEntity> {
 	) {
 		super(roleRepository);
 	}
-	async createRole(name: string, tenantId: number): Promise<RoleEntity> {
+	async createRole(name: ROLES, tenantId: number): Promise<RoleEntity> {
 		const exists = await this.findRoleByName(name, tenantId);
 		if (exists) {
 			throw new BadRequestException('Role already exists');
@@ -37,10 +38,10 @@ export class RoleService extends MultiTenantService<RoleEntity> {
 	}
 	async initializeDefaultRoles(tenantId: number): Promise<RoleEntity[]> {
 		const defaultRoles = [
-			{ name: 'Administrator' },
-			{ name: 'Librarian' },
-			{ name: 'Teacher' },
-			{ name: 'Student' },
+			{ name: ROLES.ADMIN },
+			{ name: ROLES.LIBRARIAN },
+			{ name: ROLES.TEACHER },
+			{ name: ROLES.STUDENT },
 		];
 
 		const roles: RoleEntity[] = [];
@@ -59,7 +60,12 @@ export class RoleService extends MultiTenantService<RoleEntity> {
 	}
 
 	async getDefaultRoles(tenantId: number): Promise<RoleEntity[]> {
-		const defaultRoleNames = ['Administrator', 'Librarian', 'Teacher', 'Student'];
+		const defaultRoleNames = [
+			ROLES.ADMIN,
+			ROLES.LIBRARIAN,
+			ROLES.TEACHER,
+			ROLES.STUDENT,
+		];
 
 		return this.findBy(tenantId, {
 			name: In(defaultRoleNames),
