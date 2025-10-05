@@ -1,3 +1,4 @@
+import { getTestDataSource } from '@/__tests__/setup';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 // src/book/__tests__/books-multitenant.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
@@ -38,7 +39,7 @@ describe('Books Multi-tenant Integration', () => {
 			providers: [BookService, CategoryService, PublisherService],
 		}).compile();
 
-		dataSource = app.get<DataSource>(DataSource);
+		dataSource = getTestDataSource();
 		bookService = app.get<BookService>(BookService);
 		categoryService = app.get<CategoryService>(CategoryService);
 		publisherService = app.get<PublisherService>(PublisherService);

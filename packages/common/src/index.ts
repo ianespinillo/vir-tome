@@ -7,6 +7,7 @@ export * from './dto/auth/sign-in.dto';
 export * from './enum/loan-status.enum';
 export * from './dto/auth/user.dto';
 export * from './dto/auth/forgot-password.dto';
+export * from './dto/auth/reset-password.dto';
 export * from './dto/tenants/create-tenant.dto';
 export * from './dto/tenants/update-tenant.dto';
 export * from './enum/roles.enum';

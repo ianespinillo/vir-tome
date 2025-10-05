@@ -27,7 +27,8 @@ services:
     ports:
       - "5439:5432"
     volumes:
-      - virtome_pg_data:/var/lib/pg
+      - virtome_pg_test_data:/var/lib/pg
 
 volumes:
   virtome_pg_data:
+  virtome_pg_test_data:
