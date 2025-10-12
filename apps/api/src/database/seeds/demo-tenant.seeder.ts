@@ -1,7 +1,7 @@
 // src/database/seeds/demo-tenant.seeder.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LoanStatus } from '@repo/common';
+import { LoanStatus, ROLES } from '@repo/common';
 import * as bcrypt from 'bcrypt';
 import { IsNull, Repository } from 'typeorm';
 import { BookEntity } from '../../book/entities/book.entity';
@@ -59,7 +59,7 @@ export class DemoSeeder {
 		console.log(`✅ Created ${books.length} books`);
 
 		// 7. Crear préstamos
-		const loans = await this.createLoans(demoTenant.id, books);
+		const loans = await this.createLoans(users, books);
 		console.log(`✅ Created ${loans.length} loans`);
 
 		console.log('🎉 Demo seed completed!');
@@ -80,6 +80,7 @@ export class DemoSeeder {
 		const tenantId = demoTenant.id;
 
 		// Eliminar en orden inverso por las foreign keys
+		await this.loanRepository.delete({ deleted_at: IsNull() });
 		await this.bookRepository.delete({ tenant_id: tenantId });
 		await this.categoryRepository.delete({ tenant_id: tenantId });
 		await this.publisherRepository.delete({ tenant_id: tenantId });
@@ -129,20 +130,19 @@ export class DemoSeeder {
 	}
 
 	private async createRoles(tenantId: number): Promise<RoleEntity[]> {
-		const roleNames = [
-			{ name: 'Administrador', description: 'Control total del sistema' },
-			{ name: 'Bibliotecario', description: 'Gestión de libros y préstamos' },
-			{ name: 'Profesor', description: 'Consulta y solicitud de préstamos' },
-			{ name: 'Estudiante', description: 'Solo consulta del catálogo' },
+		const rolesData = [
+			{ name: ROLES.ADMIN, description: 'Control total del sistema' },
+			{ name: ROLES.LIBRARIAN, description: 'Gestión de libros y préstamos' },
+			{ name: ROLES.TEACHER, description: 'Consulta y solicitud de préstamos' },
+			{ name: ROLES.STUDENT, description: 'Solo consulta del catálogo' },
 		];
 
 		const roles: RoleEntity[] = [];
-		for (const roleData of roleNames) {
+		for (const roleData of rolesData) {
 			let role = await this.roleRepository.findOne({
 				where: {
 					name: roleData.name,
 					tenant_id: tenantId,
-					deleted_at: IsNull(),
 				},
 			});
 
@@ -171,31 +171,31 @@ export class DemoSeeder {
 				name: 'María',
 				surname: 'González',
 				email: 'admin@demo.com',
-				role: 'Administrador',
+				role: ROLES.ADMIN,
 			},
 			{
 				name: 'Carlos',
 				surname: 'Ruiz',
 				email: 'bibliotecario@demo.com',
-				role: 'Bibliotecario',
+				role: ROLES.LIBRARIAN,
 			},
 			{
 				name: 'Ana',
 				surname: 'Martínez',
 				email: 'profesora@demo.com',
-				role: 'Profesor',
+				role: ROLES.TEACHER,
 			},
 			{
 				name: 'Lucas',
 				surname: 'Pérez',
 				email: 'estudiante1@demo.com',
-				role: 'Estudiante',
+				role: ROLES.STUDENT,
 			},
 			{
 				name: 'Sofía',
 				surname: 'López',
 				email: 'estudiante2@demo.com',
-				role: 'Estudiante',
+				role: ROLES.STUDENT,
 			},
 		];
 
@@ -210,14 +210,22 @@ export class DemoSeeder {
 			});
 
 			if (!user) {
+				const role = roles.find((r) => r.name === userData.role);
+				if (!role) {
+					console.warn(
+						`Role ${userData.role} not found, skipping user ${userData.email}`,
+					);
+					continue;
+				}
 				user = this.userRepository.create({
 					name: userData.name,
 					surname: userData.surname,
 					email: userData.email,
 					password: defaultPassword,
 					tenant_id: tenantId,
+					role,
 				});
-				user = await this.userRepository.save(user);
+				await this.userRepository.save(user);
 			}
 			users.push(user);
 		}
@@ -252,7 +260,7 @@ export class DemoSeeder {
 				});
 				category = await this.categoryRepository.save(category);
 			}
-			await categories.push(category);
+			categories.push(category);
 		}
 		return categories;
 	}
@@ -377,14 +385,9 @@ export class DemoSeeder {
 					deleted_at: IsNull(),
 				},
 			});
+
 			if (!book) {
-				console.log('categories raw:', categories);
-				console.log('publishers raw:', publishers);
-
-				const category = categories.find((c) => {
-					return c?.name === bookData.category;
-				});
-
+				const category = categories.find((c) => c?.name === bookData.category);
 				const publisher = publishers.find((p) => p.name === bookData.publisher);
 
 				book = this.bookRepository.create({
@@ -404,72 +407,77 @@ export class DemoSeeder {
 	}
 
 	private async createLoans(
-		tenantId: number,
+		users: UserEntity[],
 		books: BookEntity[],
 	): Promise<LoanEntity[]> {
 		const loansData = [
 			{
-				borrowerName: 'Lucas Pérez',
-				book: 'El Principito',
+				userEmail: 'estudiante1@demo.com',
+				bookTitle: 'El Principito',
 				quantity: 1,
-				loanDate: new Date('2024-01-15'),
-				returnDate: new Date('2024-01-29'),
+				loan_date: new Date('2024-01-15'),
+				return_date: new Date('2024-01-29'),
 				status: LoanStatus.RETURNED,
 			},
 			{
-				borrowerName: 'Sofía López',
-				book: 'Manuelita la Tortuga',
+				userEmail: 'estudiante2@demo.com',
+				bookTitle: 'Manuelita la Tortuga',
 				quantity: 1,
-				loanDate: new Date('2024-01-20'),
-				returnDate: IsNull(),
+				loan_date: new Date('2024-01-20'),
+				return_date: undefined,
 				status: LoanStatus.ACTIVE,
 			},
 			{
-				borrowerName: 'Ana Martínez',
-				book: 'Matemática 4to Grado',
+				userEmail: 'profesora@demo.com',
+				bookTitle: 'Matemática 4to Grado',
 				quantity: 2,
-				loanDate: new Date('2024-01-25'),
-				returnDate: IsNull(),
+				loan_date: new Date('2024-01-25'),
+				return_date: undefined,
 				status: LoanStatus.ACTIVE,
 			},
 			{
-				borrowerName: 'Carlos Ruiz',
-				book: 'Historia Argentina Ilustrada',
+				userEmail: 'bibliotecario@demo.com',
+				bookTitle: 'Historia Argentina Ilustrada',
 				quantity: 1,
-				loanDate: new Date('2024-01-10'),
-				returnDate: new Date('2024-01-12'),
+				loan_date: new Date('2024-01-10'),
+				return_date: new Date('2024-01-12'),
 				status: LoanStatus.RETURNED,
 			},
 			{
-				borrowerName: 'Lucas Pérez',
-				book: 'English for Kids - Level 1',
+				userEmail: 'estudiante1@demo.com',
+				bookTitle: 'English for Kids - Level 1',
 				quantity: 1,
-				loanDate: new Date('2024-01-01'),
-				returnDate: IsNull(),
+				loan_date: new Date('2024-01-01'),
+				return_date: undefined,
 				status: LoanStatus.OVERDUE,
 			},
 		];
 
 		const loans: LoanEntity[] = [];
 		for (const loanData of loansData) {
-			const book = books.find((b) => b.title === loanData.book);
-			if (!book) continue;
+			const user = users.find((u) => u.email === loanData.userEmail);
+			const book = books.find((b) => b.title === loanData.bookTitle);
+
+			if (!user || !book) {
+				console.warn('Skipping loan: user or book not found');
+				continue;
+			}
 
 			const existingLoan = await this.loanRepository.findOne({
 				where: {
-					borrowerName: loanData.borrowerName,
-					// book: { id: book.id }, // Esto puede causar problemas, mejor usar una verificación más simple
+					user_id: user.id,
+					book_id: book.id,
+					loan_date: loanData.loan_date,
 				},
 			});
 
 			if (!existingLoan) {
 				const loan = this.loanRepository.create({
-					borrowerName: loanData.borrowerName,
-					book: book,
+					user_id: user.id,
+					book_id: book.id,
 					quantity: loanData.quantity,
-					loanDate: loanData.loanDate,
-					returnDate:
-						loanData.returnDate instanceof Date ? loanData.returnDate : undefined,
+					loan_date: loanData.loan_date,
+					return_date: loanData.return_date,
 					status: loanData.status,
 				});
 				const savedLoan = await this.loanRepository.save(loan);

@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ROLES } from '@repo/common';
 import { In, Repository } from 'typeorm';
-import { MultiTenantService } from '../../core/multi-tenat.service';
+import { MultiTenantService } from '../../core/multi-tenant.service';
 import { RoleEntity } from '../entities/role.entity';
 
 @Injectable()

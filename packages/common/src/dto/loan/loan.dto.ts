@@ -4,11 +4,6 @@ export class CreateLoanDto {
 	@IsNotEmpty({
 		message: 'El nombre del responsable es requerido',
 	})
-	@IsString({
-		message: 'El nombre del responsable es requerido',
-	})
-	borrowerName!: string;
-
 	@IsNotEmpty({
 		message: 'El libro es requerido',
 	})

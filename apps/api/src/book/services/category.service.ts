@@ -1,4 +1,4 @@
-import { MultiTenantService } from '@/core/multi-tenat.service';
+import { MultiTenantService } from '@/core/multi-tenant.service';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateCategoryDto, UpdateCategoryDto } from '@repo/common';

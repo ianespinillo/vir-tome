@@ -7,7 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { LoanEntity } from './entities/loan.entity';
 
 import { CreateLoanDto, LoanStatus } from '@repo/common';
-import { Repository, UpdateResult } from 'typeorm';
+import { IsNull, Repository, UpdateResult } from 'typeorm';
 import { BookService } from '../book/services/book.service';
 import { GenericService } from '../core/generic.service';
 
@@ -28,7 +28,7 @@ export class LoanService extends GenericService {
 		});
 	}
 
-	async createLoan(tenantId: number, data: CreateLoanDto) {
+	async createLoan(tenantId: number, data: CreateLoanDto, userId: number) {
 		const book = await this.bookService.findById(tenantId, data.bookId);
 		if (!book) throw new NotFoundException('Book not found');
 		if (data.quantity <= 0)
@@ -39,10 +39,11 @@ export class LoanService extends GenericService {
 			throw new BadRequestException('Not enough books available');
 		const loan = this.loanRepository.create({
 			...data,
-			loanDate: new Date(Date.now()),
+			loan_date: new Date(Date.now()),
 			book: {
 				id: data.bookId,
 			},
+			user_id: userId,
 		});
 		await this.loanRepository.manager.transaction(
 			async (transactionalEntityManager) => {
@@ -64,7 +65,7 @@ export class LoanService extends GenericService {
 			throw new BadRequestException('Book already returned');
 		await this.bookService.updateStock(tenantId, book.id, loan.quantity);
 		loan.status = LoanStatus.RETURNED;
-		loan.returnDate = new Date(Date.now());
+		loan.return_date = new Date(Date.now());
 		return await this.update(loanId, loan);
 	}
 	//contar prestamos por tenant
@@ -91,6 +92,19 @@ export class LoanService extends GenericService {
 			current_page: page,
 			last_page: Math.ceil(total / 6),
 		};
+	}
+	async findByUser(tenantId: number, userId: number) {
+		return this.loanRepository.find({
+			where: {
+				tenant_id: tenantId,
+				user_id: userId,
+				deleted_at: IsNull(),
+			},
+			relations: ['book', 'book.category', 'book.publisher', 'user'],
+			order: {
+				loan_date: 'DESC',
+			},
+		});
 	}
 	async mostLoanedBooks(limit: number, tenantId: number) {
 		return this.loanRepository

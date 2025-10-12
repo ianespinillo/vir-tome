@@ -1,34 +1,49 @@
 import { LoanStatus } from '@repo/common';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+// src/loan/entities/loan.entity.ts
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BookEntity } from '../../book/entities/book.entity';
 import { GenericEntity } from '../../core/generic.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 
 @Entity({
 	name: 'loan',
 })
 export class LoanEntity extends GenericEntity {
 	@Column()
-	borrowerName!: string;
+	user_id!: number;
+
+	@ManyToOne(() => UserEntity)
+	@JoinColumn({ name: 'user_id' })
+	user!: UserEntity;
+
+	@Column()
+	book_id!: number;
 
 	@ManyToOne(
 		() => BookEntity,
 		(book) => book.loans,
 	)
+	@JoinColumn({ name: 'book_id' })
 	book!: BookEntity;
 
 	@Column()
 	quantity!: number;
 
 	@Column({ type: 'date' })
-	loanDate!: Date;
+	loan_date!: Date;
 
 	@Column({ type: 'date', nullable: true })
-	returnDate!: Date;
+	return_date!: Date;
 
-	@Column({ default: LoanStatus.ACTIVE, type: 'enum', enum: LoanStatus }) // active, returned, overdue
+	@Column({
+		default: LoanStatus.ACTIVE,
+		type: 'enum',
+		enum: LoanStatus,
+	})
 	status!: LoanStatus;
 
+	// Getter para compatibilidad con GenericEntity multi-tenant
 	public get tenant_id(): number {
-		return this.book.tenant_id;
+		return this.user?.tenant_id || this.book?.tenant_id;
 	}
 }

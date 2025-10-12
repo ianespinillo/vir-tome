@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SignUpDto } from '@repo/common';
 import { Repository } from 'typeorm';
-import { MultiTenantService } from '../../core/multi-tenat.service';
+import { MultiTenantService } from '../../core/multi-tenant.service';
 import { PasswordAdapter } from '../../core/passport-adapter';
 import { EmailService } from '../../email/email.service';
 import { UserEntity } from '../entities/user.entity';

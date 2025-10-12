@@ -1,3 +1,9 @@
+// src/loan/loan.controller.ts
+import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
+import { Roles } from '@/auth/decorators/roles.decorator';
+import { RolesGuard } from '@/auth/guard/role.guard';
+
+import { CurrentUserId } from '@/auth/decorators/user.decorator';
 import { CurrentTenant } from '@/tenants/decorators/current-tenant.decorator';
 import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import {
@@ -9,6 +15,7 @@ import {
 	Post,
 	Put,
 	Query,
+	UseGuards,
 } from '@nestjs/common';
 import {
 	ApiBadRequestResponse,
@@ -16,6 +23,7 @@ import {
 	ApiBody,
 	ApiConflictResponse,
 	ApiCreatedResponse,
+	ApiForbiddenResponse,
 	ApiNoContentResponse,
 	ApiNotFoundResponse,
 	ApiOkResponse,
@@ -23,67 +31,41 @@ import {
 	ApiParam,
 	ApiQuery,
 	ApiTags,
+	ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { CreateLoanDto } from '@repo/common';
+import { CreateLoanDto, ROLES } from '@repo/common';
 import { UpdateResult } from 'typeorm';
 import { LoanEntity } from './entities/loan.entity';
 import { LoanService } from './loan.service';
 
 @ApiTags('Préstamos')
 @ApiBearerAuth()
+@AuthBearer() // JWT + Multitenant guard
+@ApiUnauthorizedResponse({
+	description: 'No autorizado - Token inválido o faltante',
+})
+@ApiForbiddenResponse({
+	description: 'Prohibido - Permisos insuficientes',
+})
 @Controller('loan')
 export class LoanController {
 	constructor(private readonly loanService: LoanService) {}
 
 	@Post()
+	@UseGuards(RolesGuard)
+	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN)
 	@ApiOperation({
-		summary: 'Registrar nuevo préstamo',
-		description: 'Crea un nuevo registro de préstamo de libro(s) a un usuario',
+		summary: 'Registrar nuevo préstamo (Admin, Librarian)',
+		description:
+			'Crea un nuevo registro de préstamo de libro(s). Requiere permisos de admin o bibliotecario.',
 	})
 	@ApiBody({
 		type: CreateLoanDto,
 		description: 'Datos del préstamo',
-		examples: {
-			prestamoNormal: {
-				summary: 'Préstamo estándar',
-				value: {
-					borrowerName: 'Juan Pérez',
-					bookId: 5,
-					quantity: 1,
-					returnDate: '2023-12-15',
-				},
-			},
-			prestamoMultiple: {
-				summary: 'Préstamo múltiple',
-				value: {
-					borrowerName: 'María García',
-					bookId: 8,
-					quantity: 3,
-					returnDate: '2023-12-20',
-				},
-			},
-		},
 	})
 	@ApiCreatedResponse({
 		description: 'Préstamo registrado exitosamente',
 		type: LoanEntity,
-		content: {
-			'application/json': {
-				examples: {
-					prestamoCreado: {
-						value: {
-							id: 1,
-							borrowerName: 'Juan Pérez',
-							bookId: 5,
-							quantity: 1,
-							loanDate: '2023-11-10T10:00:00Z',
-							returnDate: '2023-12-15T00:00:00Z',
-							returned: false,
-						},
-					},
-				},
-			},
-		},
 	})
 	@ApiBadRequestResponse({
 		description: 'Datos inválidos o faltantes',
@@ -96,14 +78,19 @@ export class LoanController {
 	})
 	async createLoan(
 		@Body() data: CreateLoanDto,
+		@CurrentTenant() tenant: TenantEntity,
+		@CurrentUserId() userId: number,
 	): Promise<LoanEntity | LoanEntity[]> {
-		return await this.loanService.create(data);
+		return await this.loanService.createLoan(tenant.id, data, userId);
 	}
 
 	@Put('return/:id')
+	@UseGuards(RolesGuard)
+	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN)
 	@ApiOperation({
-		summary: 'Registrar devolución',
-		description: 'Marca un préstamo como devuelto en el sistema',
+		summary: 'Registrar devolución (Admin, Librarian)',
+		description:
+			'Marca un préstamo como devuelto. Requiere permisos de admin o bibliotecario.',
 	})
 	@ApiParam({
 		name: 'id',
@@ -128,9 +115,12 @@ export class LoanController {
 	}
 
 	@Get()
+	@UseGuards(RolesGuard)
+	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN, ROLES.TEACHER)
 	@ApiOperation({
-		summary: 'Listar préstamos',
-		description: 'Obtiene un listado paginado de todos los préstamos registrados',
+		summary: 'Listar préstamos (Admin, Librarian, Teacher)',
+		description:
+			'Obtiene un listado paginado de todos los préstamos. Requiere permisos de admin, bibliotecario o profesor.',
 	})
 	@ApiQuery({
 		name: 'page',
@@ -141,51 +131,37 @@ export class LoanController {
 	})
 	@ApiOkResponse({
 		description: 'Listado de préstamos',
-		content: {
-			'application/json': {
-				examples: {
-					prestamosPaginados: {
-						value: {
-							data: [
-								{
-									id: 1,
-									borrowerName: 'Juan Pérez',
-									bookTitle: 'Cien años de soledad',
-									quantity: 1,
-									loanDate: '2023-11-01',
-									returnDate: '2023-11-15',
-									returned: false,
-								},
-								{
-									id: 2,
-									borrowerName: 'Ana López',
-									bookTitle: 'El principito',
-									quantity: 2,
-									loanDate: '2023-11-05',
-									returnDate: '2023-11-19',
-									returned: true,
-								},
-							],
-							meta: {
-								total: 15,
-								page: 1,
-								lastPage: 3,
-								perPage: 5,
-							},
-						},
-					},
-				},
-			},
-		},
 	})
 	async findAll(@CurrentTenant() tenant: TenantEntity, @Query('page') page = 1) {
 		return await this.loanService.paginatedLoans(page, tenant.id);
 	}
 
-	@Get(':id')
+	@Get('my')
+	@UseGuards(RolesGuard)
+	@Roles(ROLES.STUDENT)
 	@ApiOperation({
-		summary: 'Obtener préstamo por ID',
-		description: 'Obtiene los detalles completos de un préstamo específico',
+		summary: 'Mis préstamos (Student only)',
+		description:
+			'Obtiene los préstamos del estudiante autenticado. Solo para estudiantes.',
+	})
+	@ApiOkResponse({
+		description: 'Préstamos del estudiante',
+	})
+	async getMyLoans(
+		@CurrentTenant() tenant: TenantEntity,
+		@CurrentUserId() userId: number,
+	) {
+		// TODO: Implementar método en LoanService
+		return await this.loanService.findByUser(tenant.id, userId);
+	}
+
+	@Get(':id')
+	@UseGuards(RolesGuard)
+	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN, ROLES.TEACHER)
+	@ApiOperation({
+		summary: 'Obtener préstamo por ID (Admin, Librarian, Teacher)',
+		description:
+			'Obtiene los detalles completos de un préstamo específico. Requiere permisos de admin, bibliotecario o profesor.',
 	})
 	@ApiParam({
 		name: 'id',
@@ -195,26 +171,6 @@ export class LoanController {
 	})
 	@ApiOkResponse({
 		description: 'Detalles del préstamo',
-		content: {
-			'application/json': {
-				examples: {
-					prestamoDetallado: {
-						value: {
-							id: 1,
-							borrowerName: 'Juan Pérez',
-							bookId: 5,
-							bookTitle: 'Cien años de soledad',
-							bookAuthor: 'Gabriel García Márquez',
-							quantity: 1,
-							loanDate: '2023-11-10T10:00:00Z',
-							returnDate: '2023-12-15T00:00:00Z',
-							returned: false,
-							returnedDate: null,
-						},
-					},
-				},
-			},
-		},
 	})
 	@ApiNotFoundResponse({
 		description: 'Préstamo no encontrado',

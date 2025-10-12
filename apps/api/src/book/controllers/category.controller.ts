@@ -1,4 +1,7 @@
+// src/category/controllers/category.controller.ts
 import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
+import { Roles } from '@/auth/decorators/roles.decorator';
+import { RolesGuard } from '@/auth/guard/role.guard';
 import { CurrentTenant } from '@/tenants/decorators/current-tenant.decorator';
 import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import {
@@ -12,6 +15,7 @@ import {
 	Patch,
 	Post,
 	Query,
+	UseGuards,
 } from '@nestjs/common';
 import {
 	ApiBadRequestResponse,
@@ -25,17 +29,16 @@ import {
 	ApiOperation,
 	ApiParam,
 	ApiQuery,
-	ApiResponse,
 	ApiTags,
 	ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { CreateCategoryDto, UpdateCategoryDto } from '@repo/common';
+import { CreateCategoryDto, ROLES, UpdateCategoryDto } from '@repo/common';
 import { CategoryEntity } from '../entities/category.entity';
 import { CategoryService } from '../services/category.service';
 
 @ApiTags('Categorias')
 @ApiBearerAuth()
-// @AuthBearer()
+@AuthBearer() // JWT + Multitenant guard
 @ApiUnauthorizedResponse({
 	description: 'Acceso no autorizado - Token inválido o faltante',
 })
@@ -45,59 +48,20 @@ export class CategoryController {
 	constructor(private readonly categoryService: CategoryService) {}
 
 	@Post()
+	@UseGuards(RolesGuard)
+	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN)
 	@ApiOperation({
-		summary: 'Crear nueva categoría académica',
+		summary: 'Crear nueva categoría (Admin, Librarian)',
 		description:
-			'Crea una nueva categoría para clasificar libros (ej: Matemáticas, Lengua, Historia)',
+			'Crea una nueva categoría para clasificar libros. Requiere permisos de admin o bibliotecario.',
 	})
 	@ApiBody({
 		type: CreateCategoryDto,
 		description: 'Datos para creación de categoría',
-		examples: {
-			matematica: {
-				summary: 'Categoría Matemáticas',
-				value: {
-					name: 'Matemáticas',
-					description:
-						'Libros de álgebra, cálculo, geometría y matemáticas avanzadas',
-				},
-			},
-			lengua: {
-				summary: 'Categoría Lengua',
-				value: {
-					name: 'Lengua y Literatura',
-					description:
-						'Libros de gramática, literatura española y análisis lingüístico',
-				},
-			},
-			historia: {
-				summary: 'Categoría Historia',
-				value: {
-					name: 'Historia Universal',
-					description:
-						'Libros sobre historia mundial, civilizaciones y eventos históricos',
-				},
-			},
-		},
 	})
 	@ApiCreatedResponse({
 		description: 'Categoría creada exitosamente',
 		type: CategoryEntity,
-		content: {
-			'application/json': {
-				examples: {
-					matematica: {
-						value: {
-							id: 1,
-							name: 'Matemáticas',
-							description:
-								'Libros de álgebra, cálculo, geometría y matemáticas avanzadas',
-							createdAt: '2023-11-15T10:00:00Z',
-						},
-					},
-				},
-			},
-		},
 	})
 	@ApiBadRequestResponse({
 		description: 'Datos inválidos o categoría padre no existe',
@@ -111,9 +75,9 @@ export class CategoryController {
 
 	@Get()
 	@ApiOperation({
-		summary: 'Obtener categorías académicas paginadas',
+		summary: 'Obtener categorías (All roles)',
 		description:
-			'Obtiene listado de categorías para libros académicos con paginación',
+			'Obtiene listado de categorías. Todos los usuarios autenticados pueden acceder.',
 	})
 	@ApiQuery({
 		name: 'page',
@@ -122,37 +86,15 @@ export class CategoryController {
 		example: 1,
 		type: Number,
 	})
+	@ApiQuery({
+		name: 'full',
+		required: false,
+		description: 'Obtener todas sin paginación',
+		example: false,
+		type: Boolean,
+	})
 	@ApiOkResponse({
 		description: 'Listado de categorías',
-		content: {
-			'application/json': {
-				example: {
-					data: [
-						{
-							id: 1,
-							name: 'Matemáticas',
-							bookCount: 45,
-						},
-						{
-							id: 2,
-							name: 'Lengua y Literatura',
-							bookCount: 32,
-						},
-						{
-							id: 3,
-							name: 'Historia Universal',
-							bookCount: 28,
-						},
-					],
-					meta: {
-						total: 3,
-						page: 1,
-						lastPage: 1,
-						perPage: 10,
-					},
-				},
-			},
-		},
 	})
 	async findAll(
 		@CurrentTenant() tenant: TenantEntity,
@@ -167,8 +109,9 @@ export class CategoryController {
 
 	@Get(':id')
 	@ApiOperation({
-		summary: 'Obtener categoría específica',
-		description: 'Obtiene los detalles completos de una categoría académica',
+		summary: 'Obtener categoría específica (All roles)',
+		description:
+			'Obtiene los detalles completos de una categoría. Todos los usuarios pueden acceder.',
 	})
 	@ApiParam({
 		name: 'id',
@@ -178,33 +121,6 @@ export class CategoryController {
 	})
 	@ApiOkResponse({
 		description: 'Detalles de la categoría',
-		content: {
-			'application/json': {
-				examples: {
-					matematica: {
-						value: {
-							id: 1,
-							name: 'Matemáticas',
-							description:
-								'Libros de álgebra, cálculo, geometría y matemáticas avanzadas',
-							bookCount: 45,
-							subcategories: [
-								{
-									id: 4,
-									name: 'Álgebra',
-								},
-								{
-									id: 5,
-									name: 'Geometría',
-								},
-							],
-							createdAt: '2023-11-10T08:30:00Z',
-							updatedAt: '2023-11-12T15:45:00Z',
-						},
-					},
-				},
-			},
-		},
 	})
 	@ApiNotFoundResponse({ description: 'Categoría no encontrada' })
 	async findOne(
@@ -215,9 +131,12 @@ export class CategoryController {
 	}
 
 	@Patch(':id')
+	@UseGuards(RolesGuard)
+	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN)
 	@ApiOperation({
-		summary: 'Actualizar categoría',
-		description: 'Actualiza los datos de una categoría académica existente',
+		summary: 'Actualizar categoría (Admin, Librarian)',
+		description:
+			'Actualiza los datos de una categoría. Requiere permisos de admin o bibliotecario.',
 	})
 	@ApiParam({
 		name: 'id',
@@ -228,18 +147,9 @@ export class CategoryController {
 	@ApiBody({
 		type: UpdateCategoryDto,
 		description: 'Datos de actualización',
-		examples: {
-			updateName: {
-				summary: 'Actualizar nombre',
-				value: {
-					name: 'Matemáticas Avanzadas',
-				},
-			},
-		},
 	})
 	@ApiNoContentResponse({ description: 'Categoría actualizada exitosamente' })
 	@ApiNotFoundResponse({ description: 'Categoría no encontrada' })
-	@ApiBadRequestResponse({ description: 'Datos inválidos' })
 	async update(
 		@CurrentTenant() tenant: TenantEntity,
 		@Param('id') id: number,
@@ -249,10 +159,12 @@ export class CategoryController {
 	}
 
 	@Delete(':id')
+	@UseGuards(RolesGuard)
+	@Roles(ROLES.ADMIN)
 	@ApiOperation({
-		summary: 'Eliminar categoría',
+		summary: 'Eliminar categoría (Admin only)',
 		description:
-			'Elimina una categoría académica (solo si no tiene libros asociados)',
+			'Elimina una categoría (solo si no tiene libros asociados). Requiere permisos de admin.',
 	})
 	@ApiParam({
 		name: 'id',

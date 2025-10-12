@@ -74,7 +74,6 @@ export function LoanForm({ onSuccess, id }: Readonly<LoanFormProps>) {
 	const form = useForm<CreateLoanDto>({
 		resolver: classValidatorResolver(CreateLoanDto),
 		defaultValues: {
-			borrowerName: '',
 			bookId: 0,
 			quantity: 1,
 			returnDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // Default to 2 weeks from now
@@ -121,7 +120,7 @@ export function LoanForm({ onSuccess, id }: Readonly<LoanFormProps>) {
 			<CardContent>
 				<Form {...form}>
 					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-						<FormField
+						{/* <FormField
 							control={form.control}
 							name="borrowerName"
 							render={({ field }) => (
@@ -148,7 +147,7 @@ export function LoanForm({ onSuccess, id }: Readonly<LoanFormProps>) {
 									)}
 								</FormItem>
 							)}
-						/>
+						/> */}
 
 						<div className="flex space-x-2 items-center">
 							<FormField

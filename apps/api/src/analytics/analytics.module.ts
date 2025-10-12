@@ -1,6 +1,6 @@
-import { BookModule } from '@/book/book.module';
-import { LoanModule } from '@/loan/loan.module';
 import { Module } from '@nestjs/common';
+import { BookModule } from '../book/book.module';
+import { LoanModule } from '../loan/loan.module';
 import { AnalyticsController } from './analytics.controller';
 import { AnalyticsService } from './analytics.service';
 

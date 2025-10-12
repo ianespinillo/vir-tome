@@ -6,7 +6,7 @@ import { DataSource, MoreThan, Repository } from 'typeorm';
 import { testDatabaseConfig } from '../../__tests__/database-test.config';
 import { getTestDataSource } from '../../__tests__/setup';
 import { BookEntity } from '../../book/entities/book.entity';
-import { MultiTenantService } from '../../core/multi-tenat.service';
+import { MultiTenantService } from '../../core/multi-tenant.service';
 import { TenantEntity } from '../../tenants/entities/tenant.entity';
 import { RoleEntity } from '../../users/entities/role.entity';
 import { UserEntity } from '../../users/entities/user.entity';

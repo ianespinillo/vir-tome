@@ -1,5 +1,6 @@
 import { PublisherEntity } from '@/book/entities/publisher.entity';
 import { TenantEntity } from '@/tenants/entities/tenant.entity';
+import { UserEntity } from '@/users/entities/user.entity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 // src/loans/services/loan.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
@@ -53,11 +54,13 @@ describe('LoanService', () => {
 
 	const mockLoan: LoanEntity = {
 		id: 1,
-		borrowerName: 'John Doe',
+		user_id: 1,
+		user: {} as UserEntity,
 		book: mockBook,
+		book_id: mockBook.id,
 		quantity: 2,
-		loanDate: new Date('2024-01-01'),
-		returnDate: new Date('2024-01-15'),
+		loan_date: new Date('2024-01-01'),
+		return_date: new Date('2024-01-15'),
 		status: LoanStatus.ACTIVE,
 		created_at: new Date(),
 		updated_at: new Date(),
@@ -116,7 +119,6 @@ describe('LoanService', () => {
 	describe('createLoan', () => {
 		const createLoanDto: CreateLoanDto = {
 			bookId: 1,
-			borrowerName: 'John Doe',
 			quantity: 2,
 			returnDate: new Date('2024-01-15'),
 		};
@@ -137,7 +139,11 @@ describe('LoanService', () => {
 			);
 			mockLoanRepository.save.mockResolvedValue(mockLoan);
 
-			const result = await loanService.createLoan(tenantId, dtoWithFutureDate);
+			const result = await loanService.createLoan(
+				tenantId,
+				dtoWithFutureDate,
+				mockLoan.user_id,
+			);
 
 			expect(bookService.findById).toHaveBeenCalledWith(
 				tenantId,
@@ -150,8 +156,9 @@ describe('LoanService', () => {
 			);
 			expect(loanRepository.create).toHaveBeenCalledWith({
 				...dtoWithFutureDate,
-				loanDate: expect.any(Date),
+				loan_date: expect.any(Date),
 				book: { id: createLoanDto.bookId },
+				user_id: 1,
 			});
 			expect(result).toEqual(mockLoan);
 		});
@@ -160,7 +167,7 @@ describe('LoanService', () => {
 			mockBookService.findById.mockResolvedValue(null);
 
 			await expect(
-				loanService.createLoan(tenantId, createLoanDto),
+				loanService.createLoan(tenantId, createLoanDto, mockLoan.user_id),
 			).rejects.toThrow(NotFoundException);
 		});
 
@@ -171,7 +178,7 @@ describe('LoanService', () => {
 			mockBookService.findById.mockResolvedValue(mockBook);
 
 			await expect(
-				loanService.createLoan(tenantId, dtoWithPastDate),
+				loanService.createLoan(tenantId, dtoWithPastDate, mockLoan.user_id),
 			).rejects.toThrow(BadRequestException);
 		});
 
@@ -182,7 +189,7 @@ describe('LoanService', () => {
 			});
 
 			await expect(
-				loanService.createLoan(tenantId, createLoanDto),
+				loanService.createLoan(tenantId, createLoanDto, mockLoan.user_id),
 			).rejects.toThrow(BadRequestException);
 		});
 		// Casos adicionales para el describe('createLoan')
@@ -190,7 +197,6 @@ describe('LoanService', () => {
 			it('should handle transaction rollback on error', async () => {
 				const createLoanDto: CreateLoanDto = {
 					bookId: 1,
-					borrowerName: 'John Doe',
 					quantity: 2,
 					returnDate: new Date(Date.now() + 86400000),
 				};
@@ -207,14 +213,13 @@ describe('LoanService', () => {
 				);
 
 				await expect(
-					loanService.createLoan(tenantId, createLoanDto),
+					loanService.createLoan(tenantId, createLoanDto, mockLoan.user_id),
 				).rejects.toThrow('Database error');
 			});
 
 			it('should handle zero quantity', async () => {
 				const createLoanDto: CreateLoanDto = {
 					bookId: 1,
-					borrowerName: 'John Doe',
 					quantity: 0,
 					returnDate: new Date(Date.now() + 86400000),
 				};
@@ -222,7 +227,7 @@ describe('LoanService', () => {
 				mockBookService.findById.mockResolvedValue(mockBook);
 
 				await expect(
-					loanService.createLoan(tenantId, createLoanDto),
+					loanService.createLoan(tenantId, createLoanDto, mockLoan.user_id),
 				).rejects.toThrow(BadRequestException);
 			});
 		});
@@ -282,7 +287,6 @@ describe('LoanService', () => {
 			expect(loanRepository.update).toHaveBeenCalledWith(1, {
 				...loanToReturn,
 				status: LoanStatus.RETURNED,
-				returnDate: expect.any(Date),
 			});
 			expect(result).toEqual(mockUpdateResult);
 		});
