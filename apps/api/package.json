@@ -25,7 +25,8 @@
 		"migration:backup": "ts-node scripts/backup-before-migration.ts",
 		"demo:reset": "curl -X POST http://localhost:3000/demo/reset",
 		"demo:seed": "curl -X POST http://localhost:3000/demo/seed",
-		"demo:status": "curl -X GET http://localhost:3000/demo/status"
+		"demo:status": "curl -X GET http://localhost:3000/demo/status",
+		"db:seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed-demo.ts"
 	},
 	"dependencies": {
 		"@nestjs-modules/mailer": "^2.0.2",

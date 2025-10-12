@@ -1,6 +1,3 @@
-import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
-import { CurrentTenant } from '@/tenants/decorators/current-tenant.decorator';
-import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import {
 	Body,
 	Controller,
@@ -12,6 +9,7 @@ import {
 	Post,
 	Put,
 	Query,
+	UseGuards,
 } from '@nestjs/common';
 import {
 	ApiBadRequestResponse,
@@ -25,22 +23,28 @@ import {
 	ApiOperation,
 	ApiParam,
 	ApiQuery,
-	ApiResponse,
 	ApiTags,
 	ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {
 	CreateBookDto,
 	IBooKForm,
+	ROLES,
 	UpdateBookDto,
 	UpdateStockDto,
 } from '@repo/common';
-import { UpdateResult } from 'typeorm';
+// src/book/controllers/book.controller.ts
+import { AuthBearer } from '../../auth/decorators/auth-bearer.decorators';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { RolesGuard } from '../../auth/guard/role.guard';
+import { CurrentTenant } from '../../tenants/decorators/current-tenant.decorator';
+import { TenantEntity } from '../../tenants/entities/tenant.entity';
 import { BookEntity } from '../entities/book.entity';
 import { BookService } from '../services/book.service';
 
 @ApiTags('Libros')
-// @ApiBearerAuth()
+@ApiBearerAuth()
+@AuthBearer() // JWT + Multitenant guard
 @ApiUnauthorizedResponse({
 	description: 'Unauthorized - Invalid or missing token',
 })
@@ -50,10 +54,12 @@ export class BookController {
 	constructor(private readonly bookService: BookService) {}
 
 	@Post()
+	@UseGuards(RolesGuard)
+	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN, ROLES.TEACHER)
 	@ApiOperation({
-		summary: 'Create a new book',
+		summary: 'Create a new book (Admin, Librarian, Teacher)',
 		description:
-			'Creates a new book entry in the system. Requires admin privileges.',
+			'Creates a new book entry in the system. Requires admin, librarian or teacher privileges.',
 	})
 	@ApiBody({
 		type: CreateBookDto,
@@ -67,15 +73,6 @@ export class BookController {
 					stock: 50,
 					description:
 						'A story of wealth, love, and the American Dream in the 1920s.',
-				},
-			},
-			technicalBook: {
-				summary: 'Technical book',
-				value: {
-					title: 'Clean Code',
-					author: 'Robert C. Martin',
-					stock: 30,
-					description: 'A handbook of agile software craftsmanship.',
 				},
 			},
 		},
@@ -93,8 +90,10 @@ export class BookController {
 	}
 
 	@Put('stock/:id')
+	@UseGuards(RolesGuard)
+	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN, ROLES.TEACHER)
 	@ApiOperation({
-		summary: 'Update book stock',
+		summary: 'Update book stock (Admin, Librarian, Teacher)',
 		description:
 			'Updates the inventory stock for a specific book. Requires inventory manager or admin privileges.',
 	})
@@ -107,33 +106,12 @@ export class BookController {
 	@ApiBody({
 		type: UpdateStockDto,
 		description: 'Stock update data',
-		examples: {
-			increaseStock: {
-				summary: 'Increase stock',
-				value: { quantity: 10 },
-			},
-			decreaseStock: {
-				summary: 'Decrease stock',
-				value: { quantity: -5 },
-			},
-		},
 	})
 	@ApiOkResponse({
 		description: 'Stock successfully updated',
-		schema: {
-			example: {
-				id: 1,
-				title: 'The Great Gatsby',
-				stock: 60,
-				previousStock: 50,
-			},
-		},
 	})
 	@ApiNotFoundResponse({
 		description: 'Not Found - Book with specified ID not found',
-	})
-	@ApiBadRequestResponse({
-		description: 'Bad Request - Invalid quantity or insufficient stock',
 	})
 	async updateStock(
 		@CurrentTenant() tenant: TenantEntity,
@@ -144,10 +122,12 @@ export class BookController {
 	}
 
 	@Put(':id')
+	@UseGuards(RolesGuard)
+	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN, ROLES.TEACHER)
 	@ApiOperation({
-		summary: 'Update book details',
+		summary: 'Update book details (Admin, Librarian, Teacher)',
 		description:
-			'Updates the details of a specific book. Requires admin privileges.',
+			'Updates the details of a specific book. Requires admin, librarian or teacher privileges.',
 	})
 	@ApiParam({
 		name: 'id',
@@ -158,22 +138,6 @@ export class BookController {
 	@ApiBody({
 		type: UpdateBookDto,
 		description: 'Book update data',
-		examples: {
-			updateTitle: {
-				summary: 'Update title',
-				value: {
-					title: 'The Great Gatsby - Special Edition',
-				},
-			},
-			fullUpdate: {
-				summary: 'Full update',
-				value: {
-					title: 'Clean Code: A Handbook of Agile Software Craftsmanship',
-					author: 'Robert C. Martin (Uncle Bob)',
-					description: 'Updated edition with new examples',
-				},
-			},
-		},
 	})
 	@ApiOkResponse({
 		description: 'Book successfully updated',
@@ -182,7 +146,6 @@ export class BookController {
 	@ApiNotFoundResponse({
 		description: 'Not Found - Book with specified ID not found',
 	})
-	@ApiBadRequestResponse({ description: 'Bad Request - Invalid input data' })
 	async updateBook(
 		@CurrentTenant() tenant: TenantEntity,
 		@Param('id', ParseIntPipe) id: number,
@@ -193,9 +156,9 @@ export class BookController {
 
 	@Get()
 	@ApiOperation({
-		summary: 'Get paginated list of books',
+		summary: 'Get paginated list of books (All roles)',
 		description:
-			'Retrieves a paginated list of all available books. Default page is 1.',
+			'Retrieves a paginated list of all available books. All authenticated users can access.',
 	})
 	@ApiQuery({
 		name: 'page',
@@ -204,32 +167,21 @@ export class BookController {
 		example: 1,
 		type: Number,
 	})
+	@ApiQuery({
+		name: 'full',
+		required: false,
+		description: 'Get all books without pagination',
+		example: false,
+		type: Boolean,
+	})
+	@ApiQuery({
+		name: 'search',
+		required: false,
+		description: 'Search books by title',
+		type: String,
+	})
 	@ApiOkResponse({
 		description: 'Paginated list of books',
-		schema: {
-			example: {
-				data: [
-					{
-						id: 1,
-						title: 'The Great Gatsby',
-						author: 'F. Scott Fitzgerald',
-						stock: 50,
-					},
-					{
-						id: 2,
-						title: 'Clean Code',
-						author: 'Robert C. Martin',
-						stock: 30,
-					},
-				],
-				meta: {
-					total: 2,
-					page: 1,
-					lastPage: 1,
-					perPage: 10,
-				},
-			},
-		},
 	})
 	async findAll(
 		@CurrentTenant() tenant: TenantEntity,
@@ -243,13 +195,14 @@ export class BookController {
 		if (search) {
 			return this.bookService.findBookByName(tenant.id, search);
 		}
-		return this.bookService.findByPage(tenant.id, page);
+		return this.bookService.findAllWithDetailsPaginated(tenant.id, page);
 	}
 
 	@Get(':id')
 	@ApiOperation({
-		summary: 'Get book by ID',
-		description: 'Retrieves detailed information about a specific book.',
+		summary: 'Get book by ID (All roles)',
+		description:
+			'Retrieves detailed information about a specific book. All authenticated users can access.',
 	})
 	@ApiParam({
 		name: 'id',
@@ -272,8 +225,10 @@ export class BookController {
 	}
 
 	@Delete(':id')
+	@UseGuards(RolesGuard)
+	@Roles(ROLES.ADMIN)
 	@ApiOperation({
-		summary: 'Delete a book',
+		summary: 'Delete a book (Admin only)',
 		description:
 			'Deletes a specific book from the system. Requires admin privileges.',
 	})

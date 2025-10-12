@@ -50,6 +50,7 @@ describe('BookController', () => {
 		findBookByName: jest.fn(),
 		findOneBook: jest.fn(),
 		delete: jest.fn(),
+		findAllWithDetailsPaginated: jest.fn(),
 	};
 
 	beforeEach(async () => {
@@ -158,11 +159,13 @@ describe('BookController', () => {
 				meta: { total: 1, page: 1, lastPage: 1, perPage: 10 },
 			};
 
-			mockBookService.findByPage.mockResolvedValue(paginatedResult);
+			mockBookService.findAllWithDetailsPaginated.mockResolvedValue(
+				paginatedResult,
+			);
 
 			const result = await controller.findAll(mockTenant, 1, false);
 
-			expect(bookService.findByPage).toHaveBeenCalledWith(1, 1);
+			expect(bookService.findAllWithDetailsPaginated).toHaveBeenCalledWith(1, 1);
 			expect(result).toEqual(paginatedResult);
 		});
 

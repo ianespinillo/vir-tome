@@ -1,6 +1,7 @@
 // src/database/seeds/demo-tenant.seeder.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { ROLES } from '@repo/common';
 import * as bcrypt from 'bcrypt';
 import { ObjectLiteral, Repository } from 'typeorm';
 import { BookEntity } from '../../book/entities/book.entity';
@@ -74,6 +75,9 @@ describe('DemoSeeder', () => {
 		bookRepo = module.get<MockRepo<BookEntity>>(getRepositoryToken(BookEntity), {
 			strict: false,
 		});
+		loanRepo = module.get<MockRepo<LoanEntity>>(getRepositoryToken(LoanEntity), {
+			strict: false,
+		});
 	});
 
 	describe('createDemoTenant', () => {
@@ -128,7 +132,7 @@ describe('DemoSeeder', () => {
 				Promise.resolve({ id: Date.now(), ...data }),
 			);
 
-			const roles: RoleEntity[] = [{ id: 1, name: 'Administrador' } as RoleEntity];
+			const roles: RoleEntity[] = [{ id: 1, name: ROLES.ADMIN } as RoleEntity];
 
 			const result = await seeder['createUsers'](1, roles);
 
@@ -143,6 +147,7 @@ describe('DemoSeeder', () => {
 		it('borra entidades y re-seedea si existe tenant demo', async () => {
 			tenantRepo.findOne?.mockResolvedValue({ id: 1, subdomain: 'demo' });
 
+			loanRepo.delete?.mockResolvedValue(undefined);
 			bookRepo.delete?.mockResolvedValue(undefined);
 			categoryRepo.delete?.mockResolvedValue(undefined);
 			publisherRepo.delete?.mockResolvedValue(undefined);
@@ -153,6 +158,9 @@ describe('DemoSeeder', () => {
 
 			await seeder.reset();
 
+			expect(loanRepo.delete).toHaveBeenCalledWith({
+				deleted_at: expect.any(Object),
+			});
 			expect(bookRepo.delete).toHaveBeenCalledWith({ tenant_id: 1 });
 			expect(categoryRepo.delete).toHaveBeenCalledWith({ tenant_id: 1 });
 			expect(publisherRepo.delete).toHaveBeenCalledWith({ tenant_id: 1 });

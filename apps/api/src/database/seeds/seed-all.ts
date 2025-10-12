@@ -1,8 +1,10 @@
 import { NestFactory } from '@nestjs/core';
+import { config } from 'dotenv';
 import { AppModule } from '../../app.module';
 import { DemoSeeder } from './demo-tenant.seeder';
-
-async function bootstrap() {
+config();
+process.env.SEED_MODE = 'true';
+export async function bootstrap() {
 	console.log('🌱 Starting complete seeding...');
 
 	const app = await NestFactory.createApplicationContext(AppModule);

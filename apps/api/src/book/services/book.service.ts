@@ -1,4 +1,4 @@
-import { MultiTenantService } from '@/core/multi-tenat.service';
+import { MultiTenantService } from '@/core/multi-tenant.service';
 import {
 	BadRequestException,
 	Injectable,

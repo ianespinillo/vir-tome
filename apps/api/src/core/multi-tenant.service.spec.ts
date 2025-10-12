@@ -2,7 +2,7 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 // test/multi-tenant.service.spec.ts
 import { Repository } from 'typeorm';
 import { MultiTenantEntity } from './multi-tenant.entity';
-import { MultiTenantService } from './multi-tenat.service';
+import { MultiTenantService } from './multi-tenant.service';
 
 class TestEntity extends MultiTenantEntity {
 	name!: string;
