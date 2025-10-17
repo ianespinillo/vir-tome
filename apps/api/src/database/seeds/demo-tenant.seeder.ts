@@ -46,6 +46,8 @@ export class DemoSeeder {
 		const users = await this.createUsers(demoTenant.id, roles);
 		console.log(`✅ Created ${users.length} users`);
 
+		await this.createSuperAdmin();
+		console.log('✅ Created super admin');
 		// 4. Crear categorías
 		const categories = await this.createCategories(demoTenant.id);
 		console.log(`✅ Created ${categories.length} categories`);
@@ -128,13 +130,33 @@ export class DemoSeeder {
 
 		return demoTenant;
 	}
+	private async createSuperAdmin() {
+		const superAdminRole = await this.roleRepository.findOne({
+			where: { name: ROLES.SUPER_ADMIN },
+		});
 
+		const existingSuperAdmin = await this.userRepository.findOne({
+			where: { email: 'superadmin@sistema.com' },
+		});
+
+		if (!existingSuperAdmin && superAdminRole) {
+			await this.userRepository.save({
+				email: 'superadmin@sistema.com',
+				name: 'Super',
+				surname: 'Admin',
+				password: await bcrypt.hash('superadmin123', 10),
+				tenant_id: undefined, // Sin tenant específico, o tenant 0
+				role_id: superAdminRole.id,
+			});
+		}
+	}
 	private async createRoles(tenantId: number): Promise<RoleEntity[]> {
 		const rolesData = [
 			{ name: ROLES.ADMIN, description: 'Control total del sistema' },
 			{ name: ROLES.LIBRARIAN, description: 'Gestión de libros y préstamos' },
 			{ name: ROLES.TEACHER, description: 'Consulta y solicitud de préstamos' },
 			{ name: ROLES.STUDENT, description: 'Solo consulta del catálogo' },
+			{ name: ROLES.SUPER_ADMIN, description: 'Super admin' },
 		];
 
 		const roles: RoleEntity[] = [];
