@@ -118,9 +118,9 @@ describe('DemoSeeder', () => {
 
 			const result = await seeder['createRoles'](1);
 
-			expect(roleRepo.findOne).toHaveBeenCalledTimes(4);
-			expect(roleRepo.save).toHaveBeenCalledTimes(4);
-			expect(result).toHaveLength(4);
+			expect(roleRepo.findOne).toHaveBeenCalledTimes(5);
+			expect(roleRepo.save).toHaveBeenCalledTimes(5);
+			expect(result).toHaveLength(5);
 		});
 	});
 

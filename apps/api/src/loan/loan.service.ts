@@ -20,7 +20,6 @@ export class LoanService extends GenericService {
 	) {
 		super(loanRepository);
 	}
-
 	async findAllByTenant(tenantId: number): Promise<LoanEntity[]> {
 		return this.loanRepository.find({
 			where: { book: { tenant_id: tenantId } },
