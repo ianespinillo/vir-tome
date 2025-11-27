@@ -119,18 +119,18 @@ export class TenantGuard implements CanActivate {
 	private async validateUserTenantAccess(req: Request, tenant: TenantEntity) {
 		if (req.user) {
 			// Pass tenant.id as the first argument (tenantId) and user.id as second argument (id)
-			const user = await this.usersService.findById(
-				tenant.id,
-				(req.user as any).id,
-			);
+			const user = await this.usersService.findById(tenant.id);
 
 			if (!user) {
 				throw new ForbiddenException('User not found');
 			}
 
-			if (user.tenant_id !== tenant.id) {
+			if (!user.hasAccessToTenant(tenant.id)) {
 				this.logger.warn(
-					`User ${user.id} attempted to access tenant ${tenant.id} but belongs to tenant ${user.tenant_id}`,
+					`User ${user.id} attempted to access tenant ${tenant.id} but belongs to tenant ${user
+						.getTenants()
+						.map((t) => t.id)
+						.join(', ')}`,
 				);
 				throw new ForbiddenException('Access to this tenant is not allowed');
 			}

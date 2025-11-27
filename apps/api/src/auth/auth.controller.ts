@@ -38,6 +38,34 @@ export class AuthController {
 		return this.authService.login(loginDto, req.tenantId);
 	}
 
+	@Post('general-login')
+	@ApiOperation({
+		summary: 'General Login',
+		description:
+			'Authenticate user without tenant context. Use for global users.',
+	})
+	@ApiResponse({
+		status: 201,
+		description: 'Login successful. Returns access token and user info.',
+	})
+	@ApiUnauthorizedResponse({ description: 'Invalid credentials' })
+	async generalLogin(@Body() loginDto: SignInDto) {
+		return this.authService.centralLogin(loginDto);
+	}
+
+	@Post('admin-login')
+	@ApiOperation({
+		summary: 'Login as Super Admin',
+		description: 'Authenticate as a Super Admin user.',
+	})
+	@ApiResponse({
+		status: 201,
+		description: 'Login successful. Returns access token and user info.',
+	})
+	@ApiUnauthorizedResponse({ description: 'Invalid credentials' })
+	async adminLogin(@Body() loginDto: SignInDto) {
+		return this.authService.adminLogin(loginDto);
+	}
 	@Post('register')
 	@ApiOperation({
 		summary: 'Register new user',

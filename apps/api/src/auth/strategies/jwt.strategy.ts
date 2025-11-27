@@ -1,3 +1,4 @@
+import { SuperAdminService } from '@/super-admin/services/super-admin.service';
 import { TenantsService } from '@/tenants/tenants.service';
 import { UsersService } from '@/users/services/users.service';
 import {
@@ -7,11 +8,15 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { IAuthPayload } from '@repo/common';
+import {
+	IAuthPayload,
+	ISuperAdminLoginPayload,
+	PAYLOAD_TYPE,
+} from '@repo/common';
 import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-// TODO: implement with multi-tenancy
+type JwtPayload = IAuthPayload | ISuperAdminLoginPayload;
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -19,6 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 		private readonly configService: ConfigService,
 		private readonly userService: UsersService,
 		private readonly tenantService: TenantsService,
+		private readonly superAdminService: SuperAdminService,
 	) {
 		super({
 			jwtFromRequest: ExtractJwt.fromExtractors([
@@ -30,31 +36,47 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 		});
 	}
 
-	async validate(payload: IAuthPayload) {
-		if (!payload.sub || !payload.tenantId)
-			throw new UnauthorizedException('Invalid token payload');
-		const t = await this.findTenant(payload.tenantId);
-		const user = await this.findUser(payload.sub, payload.tenantId);
-		// ✅ DEBERÍA SER (más limpio):
-		return {
-			userId: user.id,
-			email: user.email,
-			tenantId: t.id,
-			roleId: user.role.id,
-			roleName: user.role.name,
-			tenant: t, // Objeto completo para guards
-		};
-	}
-	private async findTenant(tenantId: number) {
-		const t = await this.tenantService.findById(tenantId);
-		if (!t) throw new UnauthorizedException('Tenant not found');
-		if (!t.is_active) throw new UnauthorizedException('Tenant is inactive');
-		return t;
-	}
-	private async findUser(sub: number, tenantId: number) {
-		const u = await this.userService.findById(tenantId, sub);
-		if (!u) throw new UnauthorizedException('User not found in tenant');
-		const { password, ...user } = u;
-		return user;
+	async validate(payload: JwtPayload) {
+		switch (payload.type) {
+			case PAYLOAD_TYPE.SUPER_ADMIN_LOGIN: {
+				const superAdmin = await this.superAdminService.findById(payload.sub);
+				if (!superAdmin) {
+					throw new UnauthorizedException('Super admin not found');
+				}
+				return {
+					userId: superAdmin.id,
+					email: superAdmin.email,
+					type: PAYLOAD_TYPE.SUPER_ADMIN_LOGIN,
+				};
+			}
+
+			case PAYLOAD_TYPE.USER_LOGIN: {
+				const tenant = await this.tenantService.findById(payload.tenantId);
+				if (!tenant) {
+					throw new UnauthorizedException('Tenant not found');
+				}
+
+				const user = await this.userService.findById(payload.sub);
+				if (!user) {
+					throw new UnauthorizedException('User not found');
+				}
+				const inTenant = user.hasAccessToTenant(tenant.id);
+				if (!inTenant) {
+					throw new UnauthorizedException('User has no access to tenant');
+				}
+				return {
+					userId: user.id,
+					email: user.email,
+					tenantId: tenant.id,
+					roleId: user.getRoleInTenant(tenant.id)?.id || null,
+					roleName: user.getRoleInTenant(tenant.id)?.name || null,
+					tenant, // full object if your guards need it
+					type: PAYLOAD_TYPE.USER_LOGIN,
+				};
+			}
+
+			default:
+				throw new UnauthorizedException('Invalid token payload type');
+		}
 	}
 }

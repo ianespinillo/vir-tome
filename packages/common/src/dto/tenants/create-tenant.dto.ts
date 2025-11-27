@@ -119,4 +119,46 @@ export class CreateTenantDto {
 
 	@IsOptional()
 	subscription_expires_at?: Date;
+	@IsEmail()
+	admin_email!: string;
+
+	@IsNotEmpty()
+	@IsString()
+	admin_name!: string;
+
+	@IsNotEmpty()
+	@IsString()
+	admin_surname!: string;
+}
+
+export interface TenantMetricsDto {
+	users: {
+		total: number;
+		active: number; // Últimos 30 días
+		by_role: {
+			admin: number;
+			librarian: number;
+			teacher: number;
+			student: number;
+		};
+	};
+	books: {
+		total: number;
+		available: number;
+		borrowed: number;
+	};
+	loans: {
+		total: number;
+		active: number;
+		overdue: number;
+		returned: number;
+	};
+	activity: {
+		last_login: Date | null;
+		recent_activity: Array<{
+			type: string;
+			count: number;
+			date: string;
+		}>;
+	};
 }

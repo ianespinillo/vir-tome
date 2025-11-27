@@ -16,7 +16,7 @@ export class MultitenantGuard implements CanActivate {
 		const req = context.switchToHttp().getRequest<Request>();
 		if (!req.user || !req.tenant)
 			throw new UnauthorizedException('Missing user or tenant context');
-		if (req.user.tenant_id !== req.tenant.id)
+		if (req.user.hasAccessToTenant(req.tenant.id) === false)
 			throw new UnauthorizedException('Access denied: tenant mismatch');
 		return true;
 	}

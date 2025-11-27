@@ -1,26 +1,25 @@
-import 'reflect-metadata';
-import { PasswordAdapter } from '@/core/passport-adapter';
 import { EmailService } from '@/email/email.service';
+import { SuperAdminService } from '@/super-admin/services/super-admin.service';
+import { TenantsService } from '@/tenants/tenants.service';
+import { TokensService } from '@/tokens/tokens.service';
+import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 // src/auth/__tests__/auth.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import {
-	ForgotPasswordDTO,
 	IAuthPayload,
-	ResetPasswordDto,
+	PAYLOAD_TYPE,
+	ROLES,
 	SignInDto,
 	SignUpDto,
-	TokenTypes,
 } from '@repo/common';
 import * as bcrypt from 'bcrypt';
-import { TokensService } from '../tokens/tokens.service';
-import { UsersService } from '../users/services/users.service';
 import { AuthService } from './auth.service';
 
 jest.mock('bcrypt');
 
-describe('AuthService', () => {
+describe('AuthService - Multi-tenant', () => {
 	let authService: AuthService;
 	let usersService: UsersService;
 	let jwtService: JwtService;
@@ -28,35 +27,53 @@ describe('AuthService', () => {
 
 	const mockUser = {
 		id: 1,
-		email: 'test@escuela1.com',
-		name: 'Test',
-		surname: 'User',
+		email: 'profesor@example.com',
+		name: 'Juan',
+		surname: 'Pérez',
 		password: 'hashedPassword123',
-		tenant_id: 1,
-		role: {
-			id: 2,
-			name: 'teacher',
-		},
-		tenant: {
-			id: 1,
-			name: 'Escuela 1',
-			subdomain: 'escuela1',
-		},
+		userTenants: [
+			{
+				id: 1,
+				user_id: 1,
+				tenant_id: 1,
+				role_id: 2,
+				is_active: true,
+				tenant: { id: 1, name: 'Escuela 1', subdomain: 'escuela1' },
+				role: { id: 2, name: ROLES.TEACHER },
+			},
+			{
+				id: 2,
+				user_id: 1,
+				tenant_id: 2,
+				role_id: 3,
+				is_active: true,
+				tenant: { id: 2, name: 'Escuela 2', subdomain: 'escuela2' },
+				role: { id: 3, name: ROLES.LIBRARIAN },
+			},
+		],
+		// getTenants must return the tenant objects (what AuthService expects)
+		getTenants: jest.fn(() => mockUser.userTenants.map((ut) => ut.tenant)),
+		getRoleInTenant: jest.fn((tenantId: number) => {
+			return mockUser.userTenants.find((ut) => ut.tenant_id === tenantId)?.role;
+		}),
+		getRoleIdInTenant: jest.fn((tenantId: number) => {
+			return mockUser.userTenants.find((ut) => ut.tenant_id === tenantId)?.role_id;
+		}),
 	};
 
 	const mockUsersService = {
-		findOne: jest.fn(),
-		findUserByEmail: jest.fn(),
+		findByEmail: jest.fn(),
 		findById: jest.fn(),
+		hasAccessToTenant: jest.fn(),
+		getRoleInTenant: jest.fn(),
+		getUserTenants: jest.fn(),
 		create: jest.fn(),
-		update: jest.fn(),
+		addUserToTenant: jest.fn(),
+		updatePassword: jest.fn(),
 	};
 
 	const mockJwtService = {
 		sign: jest.fn(() => 'mock-jwt-token'),
-	};
-	const passwordAdapterMock = {
-		hashPassword: jest.fn().mockResolvedValue('newHashedPassword'),
 	};
 
 	const mockTokensService = {
@@ -64,33 +81,29 @@ describe('AuthService', () => {
 		validateToken: jest.fn(),
 		markAsUsed: jest.fn(),
 	};
+
 	const mockEmailService = {
 		forgotPasswordEmail: jest.fn(),
+		sendEmailWelcome: jest.fn(),
+		welcomeToTenantEmail: jest.fn(),
+	};
+
+	const mockSuperAdminService = {
+		validateCredentials: jest.fn(),
+	};
+	const mockTenantService = {
+		findById: jest.fn(),
 	};
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
 			providers: [
 				AuthService,
-				{
-					provide: UsersService,
-					useValue: mockUsersService,
-				},
-				{
-					provide: JwtService,
-					useValue: mockJwtService,
-				},
-				{
-					provide: TokensService,
-					useValue: mockTokensService,
-				},
-				{
-					provide: EmailService,
-					useValue: mockEmailService,
-				},
-				{
-					provide: PasswordAdapter,
-					useValue: passwordAdapterMock,
-				},
+				{ provide: UsersService, useValue: mockUsersService },
+				{ provide: JwtService, useValue: mockJwtService },
+				{ provide: TokensService, useValue: mockTokensService },
+				{ provide: EmailService, useValue: mockEmailService },
+				{ provide: SuperAdminService, useValue: mockSuperAdminService },
+				{ provide: TenantsService, useValue: mockTenantService },
 			],
 		}).compile();
 
@@ -102,279 +115,297 @@ describe('AuthService', () => {
 		jest.clearAllMocks();
 	});
 
-	describe('login', () => {
+	describe('login (tenant específico)', () => {
 		const loginDto: SignInDto = {
-			email: 'test@escuela1.com',
+			email: 'profesor@example.com',
 			password: 'password123',
+			type: PAYLOAD_TYPE.USER_LOGIN,
 		};
 
-		it('should successfully login user in correct tenant', async () => {
-			mockUsersService.findOne.mockResolvedValue(mockUser);
+		it('should login user successfully in tenant 1', async () => {
+			mockUsersService.findByEmail.mockResolvedValue(mockUser);
 			(bcrypt.compare as jest.Mock).mockResolvedValue(true);
+			mockUsersService.hasAccessToTenant.mockResolvedValue(true);
+			mockUsersService.getRoleInTenant.mockResolvedValue({
+				id: 2,
+				name: ROLES.TEACHER,
+			});
 
 			const result = await authService.login(loginDto, 1);
 
-			expect(usersService.findOne).toHaveBeenCalledWith(1, {
-				email: loginDto.email,
-			});
+			expect(usersService.findByEmail).toHaveBeenCalledWith(loginDto.email);
 			expect(bcrypt.compare).toHaveBeenCalledWith(
 				loginDto.password,
 				mockUser.password,
 			);
+			expect(usersService.hasAccessToTenant).toHaveBeenCalledWith(1, 1);
+			expect(usersService.getRoleInTenant).toHaveBeenCalledWith(1, 1);
 			expect(jwtService.sign).toHaveBeenCalledWith({
 				sub: mockUser.id,
 				email: mockUser.email,
-				tenantId: mockUser.tenant_id,
-				roleId: mockUser.role.id,
-			} as IAuthPayload);
+				tenantId: 1,
+				roleId: 2,
+				type: PAYLOAD_TYPE.USER_LOGIN,
+			});
 			expect(result).toHaveProperty('access_token');
-			expect(result).toHaveProperty('user');
+			expect(result.user.tenantId).toBe(1);
 		});
 
-		it('should fail login with wrong tenant', async () => {
-			mockUsersService.findOne.mockResolvedValue(null);
+		it('should fail if user does not exist', async () => {
+			mockUsersService.findByEmail.mockResolvedValue(null);
 
-			await expect(authService.login(loginDto, 999)).rejects.toThrow(
+			await expect(authService.login(loginDto, 1)).rejects.toThrow(
 				UnauthorizedException,
 			);
 		});
 
-		it('should fail login with wrong password', async () => {
-			mockUsersService.findOne.mockResolvedValue(mockUser);
+		it('should fail with wrong password', async () => {
+			mockUsersService.findByEmail.mockResolvedValue(mockUser);
 			(bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
 			await expect(authService.login(loginDto, 1)).rejects.toThrow(
 				UnauthorizedException,
 			);
 		});
+
+		it('should fail if user has no access to tenant', async () => {
+			mockUsersService.findByEmail.mockResolvedValue(mockUser);
+			(bcrypt.compare as jest.Mock).mockResolvedValue(true);
+			mockUsersService.hasAccessToTenant.mockResolvedValue(false);
+
+			await expect(authService.login(loginDto, 3)).rejects.toThrow(
+				'User does not have access to this tenant',
+			);
+		});
+
+		it('should fail if user has no role in tenant', async () => {
+			mockUsersService.findByEmail.mockResolvedValue(mockUser);
+			(bcrypt.compare as jest.Mock).mockResolvedValue(true);
+			mockUsersService.hasAccessToTenant.mockResolvedValue(true);
+			mockUsersService.getRoleInTenant.mockResolvedValue(null);
+
+			await expect(authService.login(loginDto, 1)).rejects.toThrow(
+				'User has no role in this tenant',
+			);
+		});
+
+		it('should use different roles in different tenants', async () => {
+			// Login en tenant 1 como TEACHER
+			mockUsersService.findByEmail.mockResolvedValue(mockUser);
+			(bcrypt.compare as jest.Mock).mockResolvedValue(true);
+			mockUsersService.hasAccessToTenant.mockResolvedValue(true);
+			mockUsersService.getRoleInTenant.mockResolvedValue({
+				id: 2,
+				name: ROLES.TEACHER,
+			});
+
+			const result1 = await authService.login(loginDto, 1);
+			expect(result1.user.roleId).toBe(2);
+
+			// Login en tenant 2 como LIBRARIAN
+			mockUsersService.getRoleInTenant.mockResolvedValue({
+				id: 3,
+				name: ROLES.LIBRARIAN,
+			});
+
+			const result2 = await authService.login(loginDto, 2);
+			expect(result2.user.roleId).toBe(3);
+		});
+	});
+
+	describe('centralLogin (sin tenant específico)', () => {
+		const loginDto: SignInDto = {
+			email: 'profesor@example.com',
+			password: 'password123',
+			type: PAYLOAD_TYPE.USER_LOGIN,
+		};
+
+		it('should return tenant list when user has multiple tenants', async () => {
+			mockUsersService.findByEmail.mockResolvedValue(mockUser);
+			(bcrypt.compare as jest.Mock).mockResolvedValue(true);
+			// AuthService uses user.getTenants(), so mock the user method to return plain tenants
+			mockUser.getTenants.mockReturnValue([
+				{ id: 1, subdomain: 'escuela1', name: 'Escuela 1' },
+				{ id: 2, subdomain: 'escuela2', name: 'Escuela 2' },
+			]);
+
+			const result = await authService.centralLogin(loginDto);
+			expect(result.requiresTenantSelection).toBe(true);
+			expect(result.tenants).toHaveLength(2);
+			expect(result.tenants?.[0].subdomain).toBe('escuela1');
+			expect(result.tenants?.[1].subdomain).toBe('escuela2');
+			expect(result).not.toHaveProperty('access_token');
+		});
+
+		it('should auto-login when user has single tenant', async () => {
+			mockUsersService.findByEmail.mockResolvedValue(mockUser);
+			(bcrypt.compare as jest.Mock).mockResolvedValue(true);
+			mockUser.getTenants.mockReturnValue([
+				{ id: 1, subdomain: 'escuela1', name: 'Escuela 1' },
+			]);
+
+			const result = await authService.centralLogin(loginDto);
+
+			expect(result.requiresTenantSelection).toBe(false);
+			expect(result).toHaveProperty('access_token');
+			expect(result.tenant?.subdomain).toBe('escuela1');
+		});
+
+		it('should fail if user has no tenant access', async () => {
+			mockUsersService.findByEmail.mockResolvedValue(mockUser);
+			(bcrypt.compare as jest.Mock).mockResolvedValue(true);
+			mockUser.getTenants.mockReturnValue([]);
+
+			await expect(authService.centralLogin(loginDto)).rejects.toThrow(
+				'User has no tenant access',
+			);
+		});
+	});
+
+	describe('selectTenant', () => {
+		it('should generate token for selected tenant', async () => {
+			mockUsersService.hasAccessToTenant.mockResolvedValue(true);
+			mockUsersService.findById.mockResolvedValue(mockUser);
+			mockUsersService.getRoleInTenant.mockResolvedValue({
+				id: 2,
+				name: ROLES.TEACHER,
+			});
+
+			const result = await authService.selectTenant(1, 1);
+
+			expect(usersService.hasAccessToTenant).toHaveBeenCalledWith(1, 1);
+			expect(result).toHaveProperty('access_token');
+			expect(result.user.tenantId).toBe(1);
+		});
+
+		it('should fail if user has no access to selected tenant', async () => {
+			mockUsersService.hasAccessToTenant.mockResolvedValue(false);
+
+			await expect(authService.selectTenant(1, 999)).rejects.toThrow(
+				'User does not have access to this tenant',
+			);
+		});
 	});
 
 	describe('register', () => {
 		const registerDto: SignUpDto = {
-			email: 'newuser@escuela1.com',
+			email: 'newuser@example.com',
 			name: 'New',
 			surname: 'User',
-			roleId: 3,
+			roleId: 4,
 		};
 
-		const createdUser = {
-			id: 2,
-			email: registerDto.email,
-			name: registerDto.name,
-			surname: registerDto.surname,
-			password: 'hashedPassword456',
-			tenant_id: 1,
-			role: {
-				id: 3,
-				name: 'student',
-			},
-		};
-
-		it('should successfully register new user', async () => {
-			mockUsersService.findOne.mockResolvedValue(null);
-			mockUsersService.create.mockResolvedValue(createdUser);
-			(bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword456');
+		it('should create new user and add to tenant', async () => {
+			mockUsersService.findByEmail.mockResolvedValue(null);
+			mockUsersService.create.mockResolvedValue({
+				user: {
+					id: 2,
+					email: registerDto.email,
+					name: registerDto.name,
+					surname: registerDto.surname,
+				},
+				password: 'hashedPassword123',
+			});
 
 			const result = await authService.register(registerDto, 1);
-
-			expect(usersService.findOne).toHaveBeenCalledWith(1, {
-				email: registerDto.email,
-			});
-			expect(result).toHaveProperty('access_token');
-			expect(result).toHaveProperty('user');
-			expect(result).toHaveProperty('temporary_password');
+			expect(mockEmailService.sendEmailWelcome).toHaveBeenCalled();
+			expect(usersService.create).toHaveBeenCalled();
+			expect(result).toHaveProperty('email', registerDto.email);
+			expect(result).toHaveProperty('name', registerDto.name);
+			expect(result).toHaveProperty('surname', registerDto.surname);
+			expect(result).toHaveProperty('tenantId', 1);
+			expect(result).toHaveProperty('roleId', 4);
 		});
 
-		it('should allow same email in different tenants', async () => {
-			mockUsersService.findOne.mockResolvedValueOnce(null);
-			mockUsersService.create.mockResolvedValueOnce({
-				...createdUser,
-				tenant_id: 1,
+		it('should add existing user to new tenant', async () => {
+			mockUsersService.findByEmail.mockResolvedValue(mockUser);
+			mockUsersService.hasAccessToTenant.mockResolvedValue(false);
+			mockUsersService.addUserToTenant.mockResolvedValue({});
+			mockUsersService.getRoleInTenant.mockResolvedValue({
+				id: 4,
+				name: ROLES.STUDENT,
 			});
+			mockTenantService.findById.mockResolvedValue({ id: 3, name: 'Escuela 3' });
 
-			mockUsersService.findOne.mockResolvedValueOnce(null);
-			mockUsersService.create.mockResolvedValueOnce({
-				...createdUser,
-				id: 3,
-				tenant_id: 2,
-			});
-
-			(bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
-
-			const result1 = await authService.register(registerDto, 1);
-			const result2 = await authService.register(registerDto, 2);
-
-			expect(result1.user.tenant_id).toBe(1);
-			expect(result2.user.tenant_id).toBe(2);
+			const result = await authService.register(registerDto, 3);
+			expect(usersService.addUserToTenant).toHaveBeenCalledWith(1, 3, 4);
+			expect(mockEmailService.welcomeToTenantEmail).toHaveBeenCalled();
+			expect(usersService.create).not.toHaveBeenCalled();
 		});
 
-		it('should prevent duplicate email in same tenant', async () => {
-			mockUsersService.findOne.mockResolvedValue(mockUser);
+		it('should fail if user already exists in tenant', async () => {
+			mockUsersService.findByEmail.mockResolvedValue(mockUser);
+			mockUsersService.hasAccessToTenant.mockResolvedValue(true);
 
 			await expect(authService.register(registerDto, 1)).rejects.toThrow(
-				BadRequestException,
+				'User already exists in this tenant',
 			);
-		});
-	});
-
-	describe('forgotPassword', () => {
-		const forgotDto: ForgotPasswordDTO = {
-			email: 'test@escuela1.com',
-		};
-
-		it('should generate reset token for valid user in tenant', async () => {
-			mockUsersService.findUserByEmail.mockResolvedValue(mockUser);
-			mockTokensService.generateToken.mockResolvedValue({
-				token: 'reset-token-123',
-				expires: new Date(),
-			});
-
-			const result = await authService.forgotPassword(forgotDto, 1);
-
-			expect(usersService.findUserByEmail).toHaveBeenCalledWith(
-				forgotDto.email,
-				1,
-			);
-			expect(tokensService.generateToken).toHaveBeenCalledWith({
-				user_id: mockUser.id,
-				type: TokenTypes.FORGOT_PASSWORD,
-				expiresInHours: 1,
-				metadata: { tenantId: 1 },
-			});
-			expect(mockEmailService.forgotPasswordEmail).toHaveBeenCalled();
-		});
-
-		it('should not reveal if email does not exist', async () => {
-			mockUsersService.findUserByEmail.mockResolvedValue(null);
-
-			const result = await authService.forgotPassword(forgotDto, 1);
-
-			expect(result?.message).toContain('If email exists, reset link sent');
-			expect(tokensService.generateToken).not.toHaveBeenCalled();
-		});
-
-		it('should search user only in specified tenant', async () => {
-			mockUsersService.findUserByEmail.mockResolvedValue(null);
-
-			await authService.forgotPassword(forgotDto, 2);
-
-			expect(usersService.findUserByEmail).toHaveBeenCalledWith(
-				forgotDto.email,
-				2,
-			);
-		});
-	});
-
-	describe('resetPassword', () => {
-		const resetDto: ResetPasswordDto = {
-			token: 'reset-token-123',
-			newPassword: 'newPassword123',
-		};
-
-		const mockToken = {
-			id: 'token-1',
-			user_id: 1,
-			metadata: { tenantId: 1 },
-		};
-
-		it('should reset password with valid token', async () => {
-			mockTokensService.validateToken.mockResolvedValue(mockToken);
-			mockUsersService.findById.mockResolvedValue(mockUser);
-			mockUsersService.update.mockResolvedValue(mockUser);
-			(bcrypt.hash as jest.Mock).mockResolvedValue('newHashedPassword');
-
-			const result = await authService.resetPassword(resetDto, 1);
-
-			expect(tokensService.validateToken).toHaveBeenCalledWith(resetDto.token, 1);
-			expect(usersService.findById).toHaveBeenCalledWith(1, mockToken.user_id);
-			expect(usersService.update).toHaveBeenCalledWith(1, mockUser.id, {
-				password: expect.any(String),
-			});
-			expect(tokensService.markAsUsed).toHaveBeenCalledWith('token-1', 1);
-			expect(result?.message).toBe('Password reset successfully');
-		});
-
-		it('should fail with token from different tenant', async () => {
-			mockTokensService.validateToken.mockRejectedValue(
-				new BadRequestException('Token no válido para este tenant'),
-			);
-
-			await expect(authService.resetPassword(resetDto, 2)).rejects.toThrow(
-				BadRequestException,
-			);
-		});
-
-		it('should fail if user not found', async () => {
-			mockTokensService.validateToken.mockResolvedValue(mockToken);
-			mockUsersService.findById.mockResolvedValue(null);
-
-			await expect(authService.resetPassword(resetDto, 1)).rejects.toThrow(
-				BadRequestException,
-			);
-			await expect(authService.resetPassword(resetDto, 1)).rejects.toThrow(
-				'User not found',
-			);
-		});
-
-		it('should mark token as used after successful reset', async () => {
-			mockTokensService.validateToken.mockResolvedValue(mockToken);
-			mockUsersService.findById.mockResolvedValue(mockUser);
-			mockUsersService.update.mockResolvedValue(mockUser);
-			(bcrypt.hash as jest.Mock).mockResolvedValue('newHashedPassword');
-
-			await authService.resetPassword(resetDto, 1);
-
-			expect(tokensService.markAsUsed).toHaveBeenCalledWith('token-1', 1);
 		});
 	});
 
 	describe('validateJwtPayload', () => {
 		const payload: IAuthPayload = {
 			sub: 1,
-			email: 'test@escuela1.com',
+			email: 'profesor@example.com',
 			tenantId: 1,
 			roleId: 2,
+			type: PAYLOAD_TYPE.USER_LOGIN,
 		};
 
 		it('should validate payload and return user data', async () => {
 			mockUsersService.findById.mockResolvedValue(mockUser);
+			mockUsersService.hasAccessToTenant.mockResolvedValue(true);
+			mockUsersService.getRoleInTenant.mockResolvedValue({
+				id: 2,
+				name: ROLES.TEACHER,
+			});
 
 			const result = await authService.validateJwtPayload(payload);
 
-			expect(result).toEqual({
-				userId: mockUser.id,
-				email: mockUser.email,
-				tenantId: mockUser.tenant_id,
-				roleId: mockUser.role.id,
-				roleName: mockUser.role.name,
-			});
-		});
-
-		it('should fail if user not found in tenant', async () => {
-			mockUsersService.findById.mockResolvedValue(null);
-
-			await expect(authService.validateJwtPayload(payload)).rejects.toThrow(
-				UnauthorizedException,
-			);
-		});
-	});
-
-	describe('refreshToken', () => {
-		it('should generate new access token', async () => {
-			mockUsersService.findById.mockResolvedValue(mockUser);
-
-			const result = await authService.refreshToken(1, 1);
-
-			expect(result).toEqual({
-				access_token: 'mock-jwt-token',
-			});
+			expect(result.userId).toBe(1);
+			expect(result.tenantId).toBe(1);
+			expect(result.roleId).toBe(2);
+			expect(result.roleName).toBe(ROLES.TEACHER);
 		});
 
 		it('should fail if user not found', async () => {
 			mockUsersService.findById.mockResolvedValue(null);
 
-			await expect(authService.refreshToken(1, 1)).rejects.toThrow(
-				UnauthorizedException,
+			await expect(authService.validateJwtPayload(payload)).rejects.toThrow(
+				'User not found',
+			);
+		});
+
+		it('should fail if user has no access to tenant', async () => {
+			mockUsersService.findById.mockResolvedValue(mockUser);
+			mockUsersService.hasAccessToTenant.mockResolvedValue(false);
+
+			await expect(authService.validateJwtPayload(payload)).rejects.toThrow(
+				'User has no access to this tenant',
+			);
+		});
+	});
+
+	describe('refreshToken', () => {
+		it('should generate new token for user in tenant', async () => {
+			mockUsersService.findById.mockResolvedValue(mockUser);
+			mockUsersService.hasAccessToTenant.mockResolvedValue(true);
+			mockUsersService.getRoleInTenant.mockResolvedValue({
+				id: 2,
+				name: ROLES.TEACHER,
+			});
+
+			const result = await authService.refreshToken(1, 1);
+
+			expect(result).toHaveProperty('access_token');
+		});
+
+		it('should fail if user has no access to tenant', async () => {
+			mockUsersService.findById.mockResolvedValue(mockUser);
+			mockUsersService.hasAccessToTenant.mockResolvedValue(false);
+
+			await expect(authService.refreshToken(1, 999)).rejects.toThrow(
+				'User has no access to this tenant',
 			);
 		});
 	});

@@ -1,66 +1,101 @@
-// src/auth/guards/__tests__/multitenant.guard.spec.ts
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { MultitenantGuard } from './multitenant.guard';
 
 describe('MultitenantGuard', () => {
 	let guard: MultitenantGuard;
 
+	// Mock del ExecutionContext
+	const mockExecutionContext = {
+		switchToHttp: jest.fn().mockReturnThis(),
+		getRequest: jest.fn(),
+	} as unknown as ExecutionContext;
+
 	beforeEach(() => {
 		guard = new MultitenantGuard();
 	});
 
-	const createMockContext = (req: any): ExecutionContext =>
-		({
-			switchToHttp: () => ({
-				getRequest: () => req,
-			}),
-		}) as any;
-
-	it('should allow access when tenant matches', () => {
-		const mockRequest = {
-			user: { userId: 1, tenant_id: 1 },
-			tenant: { id: 1 },
-			tenantId: 1,
-		};
-
-		const context = createMockContext(mockRequest);
-		expect(guard.canActivate(context)).toBe(true);
+	it('should be defined', () => {
+		expect(guard).toBeDefined();
 	});
 
-	it('should throw if user is missing', () => {
-		const mockRequest = {
-			tenant: { id: 1 },
-			tenantId: 1,
-		};
+	describe('canActivate', () => {
+		it('should return true if user has access to the tenant', () => {
+			const mockUser = {
+				id: 'user-id',
+				hasAccessToTenant: jest.fn().mockReturnValue(true),
+			};
+			const mockTenant = {
+				id: 'tenant-id',
+			};
 
-		const context = createMockContext(mockRequest);
-		expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
-		expect(() => guard.canActivate(context)).toThrow(
-			'Missing user or tenant context',
-		);
-	});
+			(
+				mockExecutionContext.switchToHttp().getRequest as jest.Mock
+			).mockReturnValue({
+				user: mockUser,
+				tenant: mockTenant,
+			});
 
-	it('should throw if tenant is missing', () => {
-		const mockRequest = {
-			user: { userId: 1, tenant_id: 1 },
-			tenantId: 1,
-		};
+			const result = guard.canActivate(mockExecutionContext);
 
-		const context = createMockContext(mockRequest);
-		expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
-	});
+			expect(result).toBe(true);
+			expect(mockUser.hasAccessToTenant).toHaveBeenCalledWith(mockTenant.id);
+		});
 
-	it('should throw if tenant mismatch', () => {
-		const mockRequest = {
-			user: { userId: 1, tenant_id: 1 },
-			tenant: { id: 2 },
-			tenant_id: 2,
-		};
+		it('should throw UnauthorizedException if user context is missing', () => {
+			(
+				mockExecutionContext.switchToHttp().getRequest as jest.Mock
+			).mockReturnValue({
+				user: undefined,
+				tenant: { id: 'tenant-id' },
+			});
 
-		const context = createMockContext(mockRequest);
-		expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
-		expect(() => guard.canActivate(context)).toThrow(
-			'Access denied: tenant mismatch',
-		);
+			expect(() => guard.canActivate(mockExecutionContext)).toThrow(
+				UnauthorizedException,
+			);
+			expect(() => guard.canActivate(mockExecutionContext)).toThrow(
+				'Missing user or tenant context',
+			);
+		});
+
+		it('should throw UnauthorizedException if tenant context is missing', () => {
+			(
+				mockExecutionContext.switchToHttp().getRequest as jest.Mock
+			).mockReturnValue({
+				user: { hasAccessToTenant: jest.fn() },
+				tenant: undefined,
+			});
+
+			expect(() => guard.canActivate(mockExecutionContext)).toThrow(
+				UnauthorizedException,
+			);
+			expect(() => guard.canActivate(mockExecutionContext)).toThrow(
+				'Missing user or tenant context',
+			);
+		});
+
+		it('should throw UnauthorizedException if user does not have access to tenant (tenant mismatch)', () => {
+			const mockUser = {
+				id: 'user-id',
+				hasAccessToTenant: jest.fn().mockReturnValue(false),
+			};
+			const mockTenant = {
+				id: 'tenant-id',
+			};
+
+			(
+				mockExecutionContext.switchToHttp().getRequest as jest.Mock
+			).mockReturnValue({
+				user: mockUser,
+				tenant: mockTenant,
+			});
+
+			expect(() => guard.canActivate(mockExecutionContext)).toThrow(
+				UnauthorizedException,
+			);
+			expect(() => guard.canActivate(mockExecutionContext)).toThrow(
+				'Access denied: tenant mismatch',
+			);
+			expect(mockUser.hasAccessToTenant).toHaveBeenCalledWith(mockTenant.id);
+		});
 	});
 });

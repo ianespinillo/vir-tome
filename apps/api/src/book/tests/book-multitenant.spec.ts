@@ -1,11 +1,20 @@
-import { getTestDataSource } from '@/__tests__/setup';
+import { getTestDatabaseConfig } from '@/__tests__/database-test.config';
+import { LoanEntity } from '@/loan/entities/loan.entity';
+import { SuperAdminEntity } from '@/super-admin/entities/super-admin.entity';
+import { TokenEntity } from '@/tokens/entities/tokens.entity';
+import { RoleEntity } from '@/users/entities/role.entity';
+import { UserTenantEntity } from '@/users/entities/user-tenant.entity';
+import { UserEntity } from '@/users/entities/user.entity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-// src/book/__tests__/books-multitenant.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CreateBookDto } from '@repo/common';
+import { CreateBookDto } from '@repo/common'; // Asumo que esto viene de tu monorepo/librería
+import {
+	PostgreSqlContainer,
+	StartedPostgreSqlContainer,
+} from '@testcontainers/postgresql';
+import { Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { testDatabaseConfig } from '../../__tests__/database-test.config';
 import { TenantEntity } from '../../tenants/entities/tenant.entity';
 import { BookEntity } from '../entities/book.entity';
 import { CategoryEntity } from '../entities/category.entity';
@@ -13,22 +22,31 @@ import { PublisherEntity } from '../entities/publisher.entity';
 import { BookService } from '../services/book.service';
 import { CategoryService } from '../services/category.service';
 import { PublisherService } from '../services/publisher.service';
-
-describe('Books Multi-tenant Integration', () => {
+describe('Books Multi-tenant Integration (with Testcontainers)', () => {
+	// Variables de entorno de prueba
+	let container: StartedPostgreSqlContainer;
 	let app: TestingModule;
 	let dataSource: DataSource;
+
+	// Servicios
 	let bookService: BookService;
 	let categoryService: CategoryService;
 	let publisherService: PublisherService;
-	let tenantRepository: any;
 
+	// Datos de prueba (Tenants)
 	let tenant1: TenantEntity;
 	let tenant2: TenantEntity;
 
+	// Aumentamos el timeout a 60s porque levantar el contenedor puede tardar un poco
+	jest.setTimeout(300000);
+
 	beforeAll(async () => {
+		// 1. Iniciar el contenedor de PostgreSQL
+		const dbConfig = await getTestDatabaseConfig();
+		// 2. Crear el módulo de testing con la configuración dinámica del contenedor
 		app = await Test.createTestingModule({
 			imports: [
-				TypeOrmModule.forRoot(testDatabaseConfig),
+				TypeOrmModule.forRoot(dbConfig),
 				TypeOrmModule.forFeature([
 					TenantEntity,
 					BookEntity,
@@ -39,13 +57,15 @@ describe('Books Multi-tenant Integration', () => {
 			providers: [BookService, CategoryService, PublisherService],
 		}).compile();
 
-		dataSource = getTestDataSource();
+		// 3. Inicializar servicios y repositorio
+		dataSource = app.get<DataSource>(DataSource);
 		bookService = app.get<BookService>(BookService);
 		categoryService = app.get<CategoryService>(CategoryService);
 		publisherService = app.get<PublisherService>(PublisherService);
-		tenantRepository = dataSource.getRepository(TenantEntity);
 
-		// Crear tenants de prueba
+		const tenantRepository = dataSource.getRepository(TenantEntity);
+
+		// 4. Crear tenants base (estos se mantienen durante toda la suite)
 		tenant1 = await tenantRepository.save({
 			subdomain: 'library-alpha',
 			name: 'Alpha Library',
@@ -62,16 +82,25 @@ describe('Books Multi-tenant Integration', () => {
 	});
 
 	afterAll(async () => {
-		await dataSource.destroy();
-		await app.close();
+		// Cerrar conexión y apagar contenedor
+		if (app) await app.close();
 	});
 
 	beforeEach(async () => {
-		// Limpiar datos entre tests
-		await dataSource.getRepository(BookEntity).delete({});
-		await dataSource.getRepository(CategoryEntity).delete({});
-		await dataSource.getRepository(PublisherEntity).delete({});
+		// Limpiar datos entre tests PERO mantener los tenants
+		// El orden es importante para evitar errores de Foreign Keys
+		const bookRepo = dataSource.getRepository(BookEntity);
+		const categoryRepo = dataSource.getRepository(CategoryEntity);
+		const publisherRepo = dataSource.getRepository(PublisherEntity);
+
+		await bookRepo.delete({}); // Primero los hijos
+		await categoryRepo.delete({});
+		await publisherRepo.delete({}); // Al final los padres (excepto tenants)
 	});
+
+	// -------------------------------------------------------------------------
+	// A partir de aquí, tus tests son IDÉNTICOS (solo copié tu lógica)
+	// -------------------------------------------------------------------------
 
 	describe('Publisher Isolation', () => {
 		test('should create publishers isolated by tenant', async () => {
@@ -80,7 +109,7 @@ describe('Books Multi-tenant Integration', () => {
 			});
 
 			const publisher2 = await publisherService.create(tenant2.id, {
-				name: 'Santillana', // Mismo nombre, diferente tenant
+				name: 'Santillana',
 			});
 
 			expect(publisher1.name).toBe('Santillana');
@@ -115,7 +144,7 @@ describe('Books Multi-tenant Integration', () => {
 			});
 
 			const category2 = await categoryService.create(tenant2.id, {
-				name: 'Literatura Infantil', // Mismo nombre
+				name: 'Literatura Infantil',
 			});
 
 			expect(category1.tenant_id).toBe(tenant1.id);
@@ -123,11 +152,9 @@ describe('Books Multi-tenant Integration', () => {
 		});
 
 		test('should find categories only from specific tenant', async () => {
-			const cat1 = await categoryService.create(tenant1.id, {
-				name: 'Matemáticas',
-			});
-			const cat2 = await categoryService.create(tenant1.id, { name: 'Ciencias' });
-			const cat3 = await categoryService.create(tenant2.id, { name: 'Historia' });
+			await categoryService.create(tenant1.id, { name: 'Matemáticas' });
+			await categoryService.create(tenant1.id, { name: 'Ciencias' });
+			await categoryService.create(tenant2.id, { name: 'Historia' });
 
 			const tenant1Categories = await categoryService.findAll(tenant1.id);
 			const tenant2Categories = await categoryService.findAll(tenant2.id);
@@ -146,13 +173,12 @@ describe('Books Multi-tenant Integration', () => {
 			const cat2 = await categoryService.create(tenant1.id, { name: 'Cat2' });
 			const cat3 = await categoryService.create(tenant2.id, { name: 'Cat3' });
 
-			// Buscar categorías de tenant1
-			const foundCategories = await categoryService.findAllOfBook(
-				tenant1.id,
-				[cat1.id, cat2.id, cat3.id], // Incluye ID de otro tenant
-			);
+			const foundCategories = await categoryService.findAllOfBook(tenant1.id, [
+				cat1.id,
+				cat2.id,
+				cat3.id,
+			]);
 
-			// Solo debe retornar cat1 y cat2
 			expect(foundCategories).toHaveLength(2);
 			expect(foundCategories.every((c) => c.tenant_id === tenant1.id)).toBe(true);
 			expect(foundCategories.map((c) => c.id).sort()).toEqual(
@@ -168,14 +194,12 @@ describe('Books Multi-tenant Integration', () => {
 		let category2: CategoryEntity;
 
 		beforeEach(async () => {
-			// Setup: Crear publishers y categories para cada tenant
 			publisher1 = await publisherService.create(tenant1.id, {
 				name: 'Publisher T1',
 			});
 			publisher2 = await publisherService.create(tenant2.id, {
 				name: 'Publisher T2',
 			});
-
 			category1 = await categoryService.create(tenant1.id, {
 				name: 'Category T1',
 			});
@@ -194,7 +218,7 @@ describe('Books Multi-tenant Integration', () => {
 			};
 
 			const bookDto2: CreateBookDto = {
-				title: 'Matemática 4to', // Mismo título
+				title: 'Matemática 4to',
 				publicationYear: 2023,
 				availableQuantity: 5,
 				publisherId: publisher2.id,
@@ -222,7 +246,6 @@ describe('Books Multi-tenant Integration', () => {
 				categoryIds: [category1.id],
 			};
 
-			// Intentar crear en tenant1 con publisher de tenant2
 			await expect(bookService.createBook(tenant1.id, bookDto)).rejects.toThrow(
 				NotFoundException,
 			);
@@ -237,7 +260,6 @@ describe('Books Multi-tenant Integration', () => {
 				categoryIds: [category2.id], // Category de tenant2
 			};
 
-			// Intentar crear en tenant1 con category de tenant2
 			await expect(bookService.createBook(tenant1.id, bookDto)).rejects.toThrow(
 				BadRequestException,
 			);
@@ -287,11 +309,9 @@ describe('Books Multi-tenant Integration', () => {
 				categoryIds: [category1.id],
 			});
 
-			// Tenant1 debe poder encontrarlo
 			const foundByOwner = await bookService.findById(tenant1.id, book.id);
 			expect(foundByOwner).toBeTruthy();
 
-			// Tenant2 NO debe poder encontrarlo
 			const foundByOther = await bookService.findById(tenant2.id, book.id);
 			expect(foundByOther).toBeNull();
 		});
@@ -313,39 +333,36 @@ describe('Books Multi-tenant Integration', () => {
 				categoryIds: [category2.id],
 			});
 
-			// Remover stock de book1 en tenant1
 			await bookService.removeStock(tenant1.id, book1.id, 3);
 
-			// Verificar que solo book1 cambió
 			const updatedBook1 = await bookService.findById(tenant1.id, book1.id);
 			const updatedBook2 = await bookService.findById(tenant2.id, book2.id);
 
 			expect(updatedBook1?.availableQuantity).toBe(7);
-			expect(updatedBook2?.availableQuantity).toBe(5); // No cambió
+			expect(updatedBook2?.availableQuantity).toBe(5);
 		});
 
 		test('should paginate books with tenant isolation', async () => {
-			// Crear 10 libros para tenant1
-			for (let i = 1; i <= 10; i++) {
-				await bookService.createBook(tenant1.id, {
-					title: `Book T1 ${i}`,
-					publicationYear: 2023,
-					availableQuantity: i,
-					publisherId: publisher1.id,
-					categoryIds: [category1.id],
-				});
-			}
+			// Setup más rápido usando Promise.all para ahorrar tiempo en integration test
+			const booksT1 = Array.from({ length: 10 }, (_, i) => ({
+				title: `Book T1 ${i + 1}`,
+				publicationYear: 2023,
+				availableQuantity: i + 1,
+				publisherId: publisher1.id,
+				categoryIds: [category1.id],
+			}));
 
-			// Crear 3 libros para tenant2
-			for (let i = 1; i <= 3; i++) {
-				await bookService.createBook(tenant2.id, {
-					title: `Book T2 ${i}`,
-					publicationYear: 2023,
-					availableQuantity: i,
-					publisherId: publisher2.id,
-					categoryIds: [category2.id],
-				});
-			}
+			// Creamos en paralelo (opcional, pero optimiza)
+			await Promise.all(booksT1.map((b) => bookService.createBook(tenant1.id, b)));
+
+			const booksT2 = Array.from({ length: 3 }, (_, i) => ({
+				title: `Book T2 ${i + 1}`,
+				publicationYear: 2023,
+				availableQuantity: i + 1,
+				publisherId: publisher2.id,
+				categoryIds: [category2.id],
+			}));
+			await Promise.all(booksT2.map((b) => bookService.createBook(tenant2.id, b)));
 
 			const tenant1Page1 = await bookService.findAllWithDetailsPaginated(
 				tenant1.id,
@@ -407,7 +424,6 @@ describe('Books Multi-tenant Integration', () => {
 				categoryIds: [category1.id],
 			});
 
-			// Tenant1 puede actualizar
 			const updated = await bookService.updateBook(tenant1.id, book.id, {
 				title: 'Updated Title',
 				publicationYear: 2024,

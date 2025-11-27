@@ -1,6 +1,9 @@
+import { BookEntity } from '@/book/entities/book.entity';
+import { UserTenantEntity } from '@/users/entities/user-tenant.entity';
+import { UserEntity } from '@/users/entities/user.entity';
 import { TenantSettings } from '@repo/common';
 // src/tenants/entities/tenant.entity.ts
-import { Column, Entity, Index, OneToMany } from 'typeorm';
+import { Column, Entity, Index, ManyToMany, OneToMany } from 'typeorm';
 import { GenericEntity } from '../../core/generic.entity';
 
 @Entity({ name: 'tenant' })
@@ -31,12 +34,17 @@ export class TenantEntity extends GenericEntity {
 	@Column({ type: 'timestamp with time zone', nullable: true })
 	subscription_expires_at?: Date;
 
-	// Relaciones que se agregarán en próximas fases
-	// @OneToMany(() => UserEntity, user => user.tenant)
-	// users?: UserEntity[];
+	@OneToMany(
+		() => UserTenantEntity,
+		(userTenant) => userTenant.tenant,
+	)
+	userTenants?: UserTenantEntity[];
 
-	// @OneToMany(() => BookEntity, book => book.tenant)
-	// books?: BookEntity[];
+	@OneToMany(
+		() => BookEntity,
+		(book) => book.tenant,
+	)
+	books?: BookEntity[];
 
 	// Método helper para validar si tenant está activo
 	isActiveAndValid(): boolean {

@@ -1,5 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { CreateTenantDto } from '@repo/common';
 import { TenantsController } from './tenants.controller';
 import { TenantsService } from './tenants.service';
 
@@ -54,7 +55,7 @@ describe('TenantsController', () => {
 			const createdTenant = { id: 1, ...createTenantDto };
 			mockTenantsService.create.mockResolvedValue(createdTenant);
 
-			const result = await controller.create(createTenantDto);
+			const result = await controller.create(createTenantDto as CreateTenantDto);
 
 			expect(result).toEqual({
 				message: 'Tenant created successfully',

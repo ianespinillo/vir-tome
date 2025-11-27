@@ -2,24 +2,24 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ROLES } from '@repo/common';
 import { In, Repository } from 'typeorm';
-import { MultiTenantService } from '../../core/multi-tenant.service';
 import { RoleEntity } from '../entities/role.entity';
 
 @Injectable()
-export class RoleService extends MultiTenantService<RoleEntity> {
+export class RoleService {
 	constructor(
 		@InjectRepository(RoleEntity)
 		private readonly roleRepository: Repository<RoleEntity>,
-	) {
-		super(roleRepository);
-	}
-	async createRole(name: ROLES, tenantId: number): Promise<RoleEntity> {
+	) {}
+	async createRole(name: string, tenantId: number): Promise<RoleEntity> {
 		const exists = await this.findRoleByName(name, tenantId);
 		if (exists) {
 			throw new BadRequestException('Role already exists');
 		}
 		try {
-			return await this.create(tenantId, { name });
+			return await this.roleRepository.save({
+				name: name as ROLES,
+				tenant_id: tenantId,
+			});
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new BadRequestException(error.message);
@@ -31,10 +31,22 @@ export class RoleService extends MultiTenantService<RoleEntity> {
 		name: string,
 		tenantId: number,
 	): Promise<RoleEntity | null> {
-		return this.findOne(tenantId, { name });
+		if (!Object.values(ROLES).includes(name as ROLES)) {
+			throw new BadRequestException('Invalid role name');
+		}
+		return this.roleRepository.findOne({
+			where: {
+				name: name as ROLES,
+				tenant_id: tenantId,
+			},
+		});
 	}
 	async findAllRoles(tenantId: number): Promise<RoleEntity[]> {
-		return this.findAll(tenantId);
+		return this.roleRepository.find({
+			where: {
+				tenant_id: tenantId,
+			},
+		});
 	}
 	async initializeDefaultRoles(tenantId: number): Promise<RoleEntity[]> {
 		const defaultRoles = [
@@ -50,15 +62,23 @@ export class RoleService extends MultiTenantService<RoleEntity> {
 				const role = await this.createRole(roleData.name, tenantId);
 				roles.push(role);
 			} catch (error) {
-				// Si el rol ya existe, buscarlo
-				const existing = await this.findOne(tenantId, { name: roleData.name });
-				if (existing) roles.push(existing);
+				if (error instanceof BadRequestException) {
+					const existing = await this.findRoleByName(roleData.name, tenantId);
+					if (existing) roles.push(existing);
+				}
 			}
 		}
 
 		return roles;
 	}
-
+	async findById(roleId: number, tenantId: number): Promise<RoleEntity | null> {
+		return this.roleRepository.findOne({
+			where: {
+				id: roleId,
+				tenant_id: tenantId,
+			},
+		});
+	}
 	async getDefaultRoles(tenantId: number): Promise<RoleEntity[]> {
 		const defaultRoleNames = [
 			ROLES.ADMIN,
@@ -67,8 +87,11 @@ export class RoleService extends MultiTenantService<RoleEntity> {
 			ROLES.STUDENT,
 		];
 
-		return this.findBy(tenantId, {
-			name: In(defaultRoleNames),
+		return this.roleRepository.find({
+			where: {
+				tenant_id: tenantId,
+				name: In(defaultRoleNames),
+			},
 		});
 	}
 }

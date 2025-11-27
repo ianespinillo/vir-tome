@@ -86,7 +86,7 @@ export class DemoSeeder {
 		await this.bookRepository.delete({ tenant_id: tenantId });
 		await this.categoryRepository.delete({ tenant_id: tenantId });
 		await this.publisherRepository.delete({ tenant_id: tenantId });
-		await this.userRepository.delete({ tenant_id: tenantId });
+		await this.userRepository.delete({ userTenants: { tenant_id: tenantId } });
 		await this.roleRepository.delete({ tenant_id: tenantId });
 
 		console.log('🧹 Demo data reset completed');
@@ -226,7 +226,7 @@ export class DemoSeeder {
 			let user = await this.userRepository.findOne({
 				where: {
 					email: userData.email,
-					tenant_id: tenantId,
+					userTenants: { tenant_id: tenantId },
 					deleted_at: IsNull(),
 				},
 			});
@@ -244,9 +244,14 @@ export class DemoSeeder {
 					surname: userData.surname,
 					email: userData.email,
 					password: defaultPassword,
-					tenant_id: tenantId,
-					role,
+					userTenants: [
+						{
+							tenant_id: tenantId,
+							role_id: role.id,
+						},
+					],
 				});
+
 				await this.userRepository.save(user);
 			}
 			users.push(user);

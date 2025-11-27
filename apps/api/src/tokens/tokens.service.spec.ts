@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import { RoleEntity } from '@/users/entities/role.entity';
 import { BadRequestException } from '@nestjs/common';
@@ -10,6 +11,10 @@ import { UserEntity } from '../users/entities/user.entity';
 import { TokenEntity } from './entities/tokens.entity';
 import { TokensService } from './tokens.service';
 
+// Helper to hash tokens consistently
+const hashToken = (token: string) =>
+	createHash('sha256').update(token).digest('hex');
+
 describe('TokensService', () => {
 	let tokensService: TokensService;
 	let tokenRepository: Repository<TokenEntity>;
@@ -21,44 +26,48 @@ describe('TokensService', () => {
 		createQueryBuilder: jest.fn(),
 	};
 
+	// Mock UserEntity with hasAccessToTenant
 	const mockUser: UserEntity = {
 		id: 1,
-		tenant_id: 1,
 		name: 'Test User',
 		email: 'test@example.com',
 		password: 'hashedpassword',
 		created_at: new Date(),
 		updated_at: new Date(),
 		tokens: [],
-		role: {} as RoleEntity,
 		surname: 'User',
-		tenant: {} as TenantEntity,
-	};
+		hasAccessToTenant: jest.fn(), // Mocked method
+		userTenants: [],
+		getTenantIds: () => [1],
+		getRoleIdInTenant: (tenantId: number) => 1,
+	} as unknown as UserEntity;
 
 	const mockToken: TokenEntity = {
 		id: 'token-uuid-123',
 		user_id: 1,
 		user: mockUser,
 		type: TokenTypes.CHANGE_EMAIL,
-		token_hash: 'hashed-token',
-		expires_at: new Date(Date.now() + 3600000), // 1 hora en el futuro
+		token_hash: hashToken('valid-token'),
+		expires_at: new Date(Date.now() + 3600000), // 1 hour in the future
 		used_at: null,
 		created_at: new Date(),
 		updated_at: new Date(),
 		metadata: undefined,
-		getTenantId: async () => 1, // Mock implementation
+		getTenantId: async () => 1,
 	};
 
 	const expiredToken: TokenEntity = {
 		...mockToken,
-		expires_at: new Date(Date.now() - 3600000), // 1 hora en el pasado
-		getTenantId: async () => 1, // Mock implementation
+		token_hash: hashToken('expired-token'),
+		expires_at: new Date(Date.now() - 3600000), // 1 hour in the past
+		getTenantId: async () => 1,
 	};
 
 	const usedToken: TokenEntity = {
 		...mockToken,
+		token_hash: hashToken('used-token'),
 		used_at: new Date(),
-		getTenantId: async () => 1, // Mock implementation
+		getTenantId: async () => 1,
 	};
 
 	beforeEach(async () => {
@@ -78,6 +87,8 @@ describe('TokensService', () => {
 		);
 
 		jest.clearAllMocks();
+		// Reset mocks before each test
+		(mockUser.hasAccessToTenant as jest.Mock).mockClear();
 	});
 
 	describe('generateToken', () => {
@@ -114,7 +125,9 @@ describe('TokensService', () => {
 				token: 'valid-token',
 				tenantId: 1,
 			};
+			const hashedToken = hashToken(validateParams.token);
 
+			(mockUser.hasAccessToTenant as jest.Mock).mockReturnValue(true);
 			mockTokenRepository.findOne.mockResolvedValue(mockToken);
 
 			const result = await tokensService.validate(validateParams);
@@ -123,10 +136,13 @@ describe('TokensService', () => {
 				where: {
 					user_id: validateParams.user_id,
 					type: validateParams.type,
-					token_hash: expect.any(String),
+					token_hash: hashedToken,
 				},
 				relations: ['user'],
 			});
+			expect(mockUser.hasAccessToTenant).toHaveBeenCalledWith(
+				validateParams.tenantId,
+			);
 			expect(result).toEqual(mockToken);
 		});
 
@@ -141,7 +157,7 @@ describe('TokensService', () => {
 			mockTokenRepository.findOne.mockResolvedValue(null);
 
 			await expect(tokensService.validate(validateParams)).rejects.toThrow(
-				BadRequestException,
+				new BadRequestException('Token no encontrado'),
 			);
 		});
 
@@ -153,10 +169,11 @@ describe('TokensService', () => {
 				tenantId: 1,
 			};
 
+			(mockUser.hasAccessToTenant as jest.Mock).mockReturnValue(true);
 			mockTokenRepository.findOne.mockResolvedValue(expiredToken);
 
 			await expect(tokensService.validate(validateParams)).rejects.toThrow(
-				BadRequestException,
+				new BadRequestException('Token expirado'),
 			);
 		});
 
@@ -168,10 +185,14 @@ describe('TokensService', () => {
 				tenantId: 2, // Different tenant
 			};
 
+			(mockUser.hasAccessToTenant as jest.Mock).mockReturnValue(false);
 			mockTokenRepository.findOne.mockResolvedValue(mockToken);
 
 			await expect(tokensService.validate(validateParams)).rejects.toThrow(
-				BadRequestException,
+				new BadRequestException('Token no válido para este tenant'),
+			);
+			expect(mockUser.hasAccessToTenant).toHaveBeenCalledWith(
+				validateParams.tenantId,
 			);
 		});
 	});
@@ -180,15 +201,18 @@ describe('TokensService', () => {
 		it('should validate token successfully with correct tenant', async () => {
 			const token = 'valid-token';
 			const tenantId = 1;
+			const hashedToken = hashToken(token);
 
+			(mockUser.hasAccessToTenant as jest.Mock).mockReturnValue(true);
 			mockTokenRepository.findOne.mockResolvedValue(mockToken);
 
 			const result = await tokensService.validateToken(token, tenantId);
 
 			expect(tokenRepository.findOne).toHaveBeenCalledWith({
-				where: { token_hash: expect.any(String) },
+				where: { token_hash: hashedToken },
 				relations: ['user'],
 			});
+			expect(mockUser.hasAccessToTenant).toHaveBeenCalledWith(tenantId);
 			expect(result).toEqual(mockToken);
 		});
 
@@ -199,7 +223,7 @@ describe('TokensService', () => {
 			mockTokenRepository.findOne.mockResolvedValue(null);
 
 			await expect(tokensService.validateToken(token, tenantId)).rejects.toThrow(
-				BadRequestException,
+				new BadRequestException('Token no encontrado'),
 			);
 		});
 
@@ -207,10 +231,11 @@ describe('TokensService', () => {
 			const token = 'expired-token';
 			const tenantId = 1;
 
+			(mockUser.hasAccessToTenant as jest.Mock).mockReturnValue(true);
 			mockTokenRepository.findOne.mockResolvedValue(expiredToken);
 
 			await expect(tokensService.validateToken(token, tenantId)).rejects.toThrow(
-				BadRequestException,
+				new BadRequestException('Token expirado'),
 			);
 		});
 
@@ -218,10 +243,11 @@ describe('TokensService', () => {
 			const token = 'used-token';
 			const tenantId = 1;
 
+			(mockUser.hasAccessToTenant as jest.Mock).mockReturnValue(true);
 			mockTokenRepository.findOne.mockResolvedValue(usedToken);
 
 			await expect(tokensService.validateToken(token, tenantId)).rejects.toThrow(
-				BadRequestException,
+				new BadRequestException('Token ya utilizado'),
 			);
 		});
 
@@ -229,10 +255,11 @@ describe('TokensService', () => {
 			const token = 'valid-token';
 			const tenantId = 2; // Different tenant
 
+			(mockUser.hasAccessToTenant as jest.Mock).mockReturnValue(false);
 			mockTokenRepository.findOne.mockResolvedValue(mockToken);
 
 			await expect(tokensService.validateToken(token, tenantId)).rejects.toThrow(
-				BadRequestException,
+				new BadRequestException('Token no válido para este tenant'),
 			);
 		});
 	});
@@ -257,6 +284,7 @@ describe('TokensService', () => {
 			const tenantId = 1;
 			const updateResult = { affected: 1, generatedMaps: [], raw: [] };
 
+			(mockUser.hasAccessToTenant as jest.Mock).mockReturnValue(true);
 			mockTokenRepository.findOne.mockResolvedValue(mockToken);
 			mockTokenRepository.update.mockResolvedValue(updateResult);
 
@@ -266,6 +294,7 @@ describe('TokensService', () => {
 				where: { id: tokenId },
 				relations: ['user'],
 			});
+			expect(mockUser.hasAccessToTenant).toHaveBeenCalledWith(tenantId);
 			expect(tokenRepository.update).toHaveBeenCalledWith(tokenId, {
 				used_at: expect.any(Date),
 			});
@@ -276,11 +305,13 @@ describe('TokensService', () => {
 			const tokenId = 'token-uuid-123';
 			const tenantId = 2; // Different tenant
 
+			(mockUser.hasAccessToTenant as jest.Mock).mockReturnValue(false);
 			mockTokenRepository.findOne.mockResolvedValue(mockToken);
 
 			await expect(tokensService.markAsUsed(tokenId, tenantId)).rejects.toThrow(
-				BadRequestException,
+				new BadRequestException('Token no pertenece a este tenant'),
 			);
+			expect(mockUser.hasAccessToTenant).toHaveBeenCalledWith(tenantId);
 		});
 
 		it('should proceed when token not found but no tenant validation', async () => {
@@ -311,7 +342,9 @@ describe('TokensService', () => {
 				execute: jest.fn().mockResolvedValue(deleteResult),
 			};
 
-			mockTokenRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+			mockTokenRepository.createQueryBuilder.mockReturnValue(
+				mockQueryBuilder as any,
+			);
 
 			const result = await tokensService.cleanupExpiredTokens(tenantId);
 
@@ -344,7 +377,9 @@ describe('TokensService', () => {
 				execute: jest.fn().mockResolvedValue(deleteResult),
 			};
 
-			mockTokenRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+			mockTokenRepository.createQueryBuilder.mockReturnValue(
+				mockQueryBuilder as any,
+			);
 
 			const result = await tokensService.cleanupExpiredTokens(tenantId);
 
@@ -362,7 +397,9 @@ describe('TokensService', () => {
 				getCount: jest.fn().mockResolvedValue(10),
 			};
 
-			mockTokenRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+			mockTokenRepository.createQueryBuilder.mockReturnValue(
+				mockQueryBuilder as any,
+			);
 
 			const result = await tokensService.countTokensByTenant(tenantId);
 
@@ -387,7 +424,9 @@ describe('TokensService', () => {
 				getCount: jest.fn().mockResolvedValue(0),
 			};
 
-			mockTokenRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+			mockTokenRepository.createQueryBuilder.mockReturnValue(
+				mockQueryBuilder as any,
+			);
 
 			const result = await tokensService.countTokensByTenant(tenantId);
 

@@ -56,7 +56,7 @@ describe('TenantsService', () => {
 			subdomain: 'test-school',
 			name: 'Test School',
 			contact_email: 'admin@test-school.com',
-		};
+		} as CreateTenantDto;
 
 		it('should create a tenant successfully', async () => {
 			const savedTenant = {

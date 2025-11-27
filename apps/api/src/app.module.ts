@@ -16,6 +16,8 @@ import { DemoMiddleware } from './demo/middleware/demo.middleware';
 import { EmailModule } from './email/email.module';
 import { LoanEntity } from './loan/entities/loan.entity';
 import { LoanModule } from './loan/loan.module';
+import { SuperAdminEntity } from './super-admin/entities/super-admin.entity';
+import { SuperAdminModule } from './super-admin/super-admin.module';
 import { TenantEntity } from './tenants/entities/tenant.entity';
 import { TenantGuard } from './tenants/guards/tenant.guard';
 import { TenantMiddleware } from './tenants/middlewares/tenant-middleware/tenant.middleware';
@@ -23,6 +25,7 @@ import { TenantsModule } from './tenants/tenants.module';
 import { TokenEntity } from './tokens/entities/tokens.entity';
 import { TokensModule } from './tokens/tokens.module';
 import { RoleEntity } from './users/entities/role.entity';
+import { UserTenantEntity } from './users/entities/user-tenant.entity';
 import { UserEntity } from './users/entities/user.entity';
 import { UsersModule } from './users/users.module';
 
@@ -33,7 +36,7 @@ import { UsersModule } from './users/users.module';
 			useFactory: (config: ConfigService) => ({
 				type: 'postgres',
 				url: config.get('DATABASE_URL'),
-				synchronize: false,
+				synchronize: true,
 				logger: 'simple-console',
 				entities: [
 					UserEntity,
@@ -44,6 +47,8 @@ import { UsersModule } from './users/users.module';
 					CategoryEntity,
 					TokenEntity,
 					TenantEntity,
+					SuperAdminEntity,
+					UserTenantEntity,
 				],
 			}),
 			inject: [ConfigService],
@@ -59,6 +64,7 @@ import { UsersModule } from './users/users.module';
 		TenantsModule,
 		DatabaseModule,
 		DemoModule,
+		SuperAdminModule,
 	],
 	controllers: [AppController],
 	providers: [
