@@ -63,7 +63,7 @@ export class TokensService {
 		if (!existToken) throw new BadRequestException('Token no encontrado');
 
 		// Validación de tenant
-		if (existToken.user.tenant_id !== tenantId) {
+		if (existToken.user.hasAccessToTenant(tenantId) === false) {
 			throw new BadRequestException('Token no válido para este tenant');
 		}
 
@@ -84,7 +84,7 @@ export class TokensService {
 		});
 
 		if (!existToken) throw new BadRequestException('Token no encontrado');
-		if (existToken.user.tenant_id !== tenantId)
+		if (existToken.user.hasAccessToTenant(tenantId) === false)
 			throw new BadRequestException('Token no válido para este tenant');
 		if (existToken.expires_at < new Date())
 			throw new BadRequestException('Token expirado');
@@ -100,7 +100,7 @@ export class TokensService {
 				relations: ['user'],
 			});
 
-			if (token && token.user.tenant_id !== tenantId) {
+			if (token && token.user.hasAccessToTenant(tenantId) === false) {
 				throw new BadRequestException('Token no pertenece a este tenant');
 			}
 		}

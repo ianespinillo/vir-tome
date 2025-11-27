@@ -1,14 +1,15 @@
-// src/__tests__/tenant-isolation.integration.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ROLES } from '@repo/common';
 import { DataSource, MoreThan, Repository } from 'typeorm';
-import { testDatabaseConfig } from '../../__tests__/database-test.config';
-import { getTestDataSource } from '../../__tests__/setup';
+// Asegúrate de importar la función dinámica, no la constante estática
+import { getTestDatabaseConfig } from '../../__tests__/database-test.config';
 import { BookEntity } from '../../book/entities/book.entity';
 import { MultiTenantService } from '../../core/multi-tenant.service';
 import { TenantEntity } from '../../tenants/entities/tenant.entity';
 import { RoleEntity } from '../../users/entities/role.entity';
+// Importamos UserTenantEntity por si es necesario para las relaciones, aunque no esté en el forFeature original
+import { UserTenantEntity } from '../../users/entities/user-tenant.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 // Test service para probar el MultiTenantService
@@ -20,38 +21,47 @@ class TestBookService extends MultiTenantService<BookEntity> {
 	}
 }
 
-describe('Multi-tenant Data Isolation', () => {
+describe('Multi-tenant Data Isolation (Container)', () => {
 	let app: TestingModule;
 	let dataSource: DataSource;
 	let bookService: TestBookService;
 	let tenantRepository: Repository<TenantEntity>;
 	let userRepository: Repository<UserEntity>;
 	let roleRepository: Repository<RoleEntity>;
-
+	let userTenantRepository: Repository<UserTenantEntity>;
 	let tenant1: TenantEntity;
 	let tenant2: TenantEntity;
 	let tenant3: TenantEntity;
 
 	beforeAll(async () => {
+		// 1. Obtener configuración dinámica del contenedor
+		const dbConfig = await getTestDatabaseConfig();
+
 		app = await Test.createTestingModule({
 			imports: [
-				TypeOrmModule.forRoot(testDatabaseConfig),
+				TypeOrmModule.forRoot(dbConfig),
 				TypeOrmModule.forFeature([
 					TenantEntity,
 					BookEntity,
 					UserEntity,
 					RoleEntity,
+					UserTenantEntity,
 				]),
 			],
 			providers: [TestBookService],
 		}).compile();
 
-		dataSource = getTestDataSource();
-		tenantRepository = app.get('TenantEntityRepository');
-		userRepository = app.get('UserEntityRepository');
-		roleRepository = app.get('RoleEntityRepository');
+		// 2. Obtener DataSource del módulo compilado
+		dataSource = app.get<DataSource>(DataSource);
 
-		const bookRepository = app.get('BookEntityRepository');
+		// 3. Obtener repositorios directamente del DataSource (más seguro para tests)
+		tenantRepository = dataSource.getRepository(TenantEntity);
+		userRepository = dataSource.getRepository(UserEntity);
+		roleRepository = dataSource.getRepository(RoleEntity);
+		const bookRepository = dataSource.getRepository(BookEntity);
+		userTenantRepository = dataSource.getRepository(UserTenantEntity);
+
+		// Instanciar el servicio con el repositorio conectado al contenedor
 		bookService = new TestBookService(bookRepository);
 
 		// Crear tenants de prueba
@@ -78,31 +88,31 @@ describe('Multi-tenant Data Isolation', () => {
 			is_active: true,
 			is_demo: false,
 		});
-	});
+	}, 100000); // Timeout extendido para levantar Docker
 
 	afterAll(async () => {
-		await dataSource.destroy();
-		await app.close();
-		// Limpiar TODOS los datos, incluyendo tenants
+		// Solo cerramos la app, el contenedor lo maneja el Manager
+		if (app) await app.close();
 	});
 
 	beforeEach(async () => {
-		// Limpiar datos entre tests
+		// Limpiar datos entre tests usando la conexión del contenedor
 		await dataSource.getRepository(BookEntity).delete({});
 		await dataSource.getRepository(UserEntity).delete({});
 		await dataSource.getRepository(RoleEntity).delete({});
+		// Nota: No borramos tenants para reutilizarlos y ganar velocidad
 	});
 
 	describe('CRUD Operations Isolation', () => {
 		test('CREATE: should isolate book creation by tenant', async () => {
 			// Crear libros para diferentes tenants
-			const book1 = await bookService.create(tenant1.id, {
+			await bookService.create(tenant1.id, {
 				title: 'Mathematics Grade 4',
 				publicationYear: 2023,
 				availableQuantity: 10,
 			});
 
-			const book2 = await bookService.create(tenant2.id, {
+			await bookService.create(tenant2.id, {
 				title: 'Mathematics Grade 4', // Mismo título
 				publicationYear: 2023,
 				availableQuantity: 5,
@@ -504,7 +514,7 @@ describe('Multi-tenant Data Isolation', () => {
 
 	describe('Cross-Entity Isolation', () => {
 		test('should isolate users and roles by tenant', async () => {
-			// Crear roles con el mismo nombre en diferentes tenants
+			// 1. Crear roles
 			const adminRole1 = await roleRepository.save({
 				name: ROLES.ADMIN,
 				tenant_id: tenant1.id,
@@ -515,14 +525,12 @@ describe('Multi-tenant Data Isolation', () => {
 				tenant_id: tenant2.id,
 			});
 
-			// Crear usuarios en diferentes tenants
+			// 2. Crear usuarios (SIN la relación anidada para evitar problemas de cascade)
 			const user1 = await userRepository.save({
 				name: 'John',
 				surname: 'Doe',
 				email: 'john@alpha.edu',
 				password: 'password123',
-				tenant_id: tenant1.id,
-				role: { id: 1 },
 			});
 
 			const user2 = await userRepository.save({
@@ -530,13 +538,24 @@ describe('Multi-tenant Data Isolation', () => {
 				surname: 'Smith',
 				email: 'jane@beta.edu',
 				password: 'password123',
-				tenant_id: tenant2.id,
-				role: {
-					id: 2,
-				},
 			});
 
-			// Verificar aislamiento de roles
+			// 3. Crear relaciones explícitamente (FIX PRINCIPAL)
+			await userTenantRepository.save({
+				user: user1,
+				role: adminRole1,
+				tenant_id: tenant1.id,
+				is_active: true,
+			});
+
+			await userTenantRepository.save({
+				user: user2,
+				role: adminRole2,
+				tenant_id: tenant2.id,
+				is_active: true,
+			});
+
+			// 4. Verificar aislamiento de roles
 			const tenant1Roles = await roleRepository.find({
 				where: { tenant_id: tenant1.id },
 			});
@@ -546,23 +565,24 @@ describe('Multi-tenant Data Isolation', () => {
 
 			expect(tenant1Roles).toHaveLength(1);
 			expect(tenant1Roles[0].id).toBe(adminRole1.id);
-
 			expect(tenant2Roles).toHaveLength(1);
 			expect(tenant2Roles[0].id).toBe(adminRole2.id);
 
-			// Verificar aislamiento de usuarios
-			const tenant1Users = await userRepository.find({
+			// 5. Verificar aislamiento de usuarios a través de la relación
+			const tenant1Users = await userTenantRepository.find({
 				where: { tenant_id: tenant1.id },
+				relations: ['user'],
 			});
-			const tenant2Users = await userRepository.find({
+			const tenant2Users = await userTenantRepository.find({
 				where: { tenant_id: tenant2.id },
+				relations: ['user'],
 			});
 
 			expect(tenant1Users).toHaveLength(1);
-			expect(tenant1Users[0].email).toBe('john@alpha.edu');
+			expect(tenant1Users[0].user.email).toBe('john@alpha.edu');
 
 			expect(tenant2Users).toHaveLength(1);
-			expect(tenant2Users[0].email).toBe('jane@beta.edu');
+			expect(tenant2Users[0].user.email).toBe('jane@beta.edu');
 		});
 	});
 });

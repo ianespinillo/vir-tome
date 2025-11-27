@@ -1,10 +1,11 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
-import { ForgotPasswordEmail } from '@repo/common';
 import {
 	ChangeEmailRequest,
 	ConfirmEmailChange,
 	EmailWelcome,
+	ForgotPasswordEmail,
+	WelcomeToTenantEmail,
 } from '@repo/common';
 
 @Injectable()
@@ -66,6 +67,27 @@ export class EmailService {
 				token,
 				expires: new Date(expires).toLocaleDateString(),
 				actual_year: new Date().getFullYear(),
+			},
+		});
+	}
+	async welcomeToTenantEmail({
+		email,
+		tenantName,
+		userName,
+		isNewUser,
+		loginUrl,
+	}: WelcomeToTenantEmail) {
+		await this.emailService.sendMail({
+			to: email,
+			subject: 'Bienvenido a tu nuevo tenant',
+			template: './welcome-to-tenant',
+			context: {
+				email,
+				tenantName,
+				userName,
+				isNewUser,
+				loginUrl,
+				actualYear: new Date().getFullYear(),
 			},
 		});
 	}

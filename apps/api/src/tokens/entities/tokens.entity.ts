@@ -51,7 +51,7 @@ export class TokenEntity {
 	updated_at: Date;
 
 	async getTenantId(): Promise<number> {
-		if (this.user) return this.user.tenant_id;
+		if (this.user) return this.user.getTenantIds()[0];
 		throw new Error('User not loaded');
 	}
 }

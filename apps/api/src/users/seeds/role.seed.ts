@@ -17,7 +17,7 @@ async function seedRoles() {
 	const roleRepository = connection.getRepository(RoleEntity);
 	for (const rol of Object.keys(ROLES)) {
 		const role = new RoleEntity();
-		role.name = rol;
+		role.name = rol as ROLES;
 		await roleRepository.save(role);
 	}
 }

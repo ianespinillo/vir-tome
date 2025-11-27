@@ -12,8 +12,10 @@ export class LoanEntity extends GenericEntity {
 	@Column()
 	user_id!: number;
 
-	@ManyToOne(() => UserEntity)
-	@JoinColumn({ name: 'user_id' })
+	@ManyToOne(
+		() => UserEntity,
+		(user) => user.loans,
+	)
 	user!: UserEntity;
 
 	@Column()
@@ -44,6 +46,6 @@ export class LoanEntity extends GenericEntity {
 
 	// Getter para compatibilidad con GenericEntity multi-tenant
 	public get tenant_id(): number {
-		return this.user?.tenant_id || this.book?.tenant_id;
+		return this.book?.tenant_id;
 	}
 }

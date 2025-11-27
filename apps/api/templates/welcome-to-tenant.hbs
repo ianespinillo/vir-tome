@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido a {{tenantName}}</title>
+    <style>
+        /* Estilos generales para clientes que soportan CSS en head */
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; background-color: #f4f4f7; }
+        .container { width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .content { padding: 40px 30px; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #007BFF; color: #ffffff !important; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; text-align: center; }
+        .footer { background-color: #f4f4f7; padding: 20px; text-align: center; font-size: 12px; color: #999; }
+        
+        /* Media Queries para móviles */
+        @media only screen and (max-width: 600px) {
+            .content { padding: 20px; }
+            .container { width: 100% !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f7;">
+
+    <div style="display: none; max-height: 0px; overflow: hidden;">
+        Has sido invitado a unirte al espacio de trabajo de {{tenantName}}.
+    </div>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f7; padding: 20px;">
+        <tr>
+            <td align="center">
+                <div class="container" style="background-color: #ffffff; max-width: 600px; border-radius: 8px; text-align: left;">
+                    
+                    <div style="background-color: #007BFF; padding: 20px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">{{tenantName}}</h1>
+                    </div>
+
+                    <div class="content" style="padding: 40px 30px;">
+                        <p style="margin-top: 0;">Hola <strong>{{userName}}</strong>,</p>
+
+                        {{#if isExistingUser}}
+                            <p>Te han dado acceso a un nuevo espacio de trabajo: <strong>{{tenantName}}</strong>.</p>
+                            <p>Como ya tienes una cuenta con nosotros, simplemente inicia sesión. En la pantalla de login o en tu perfil, podrás seleccionar a qué organización deseas ingresar.</p>
+                            
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{loginUrl}}" class="button" style="background-color: #007BFF; color: #ffffff; display: inline-block; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a mis Organizaciones</a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                        {{else}}
+                            <p>Estamos encantados de que te unas a nosotros. Se ha creado tu cuenta para acceder a <strong>{{tenantName}}</strong>.</p>
+                            <p>Para comenzar, por favor accede al sistema ingresando al siguiente enlace:</p>
+                            
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{loginUrl}}" class="button" style="background-color: #007BFF; color: #ffffff; display: inline-block; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Activar Cuenta</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="font-size: 14px; color: #666; margin-top: 20px;">Si no esperabas esta invitación, puedes ignorar este correo.</p>
+                        {{/if}}
+
+                        <p style="margin-top: 30px;">Si tienes alguna pregunta, contacta a soporte en <a href="mailto:{{supportEmail}}" style="color: #007BFF;">{{supportEmail}}</a>.</p>
+                    </div>
+
+                    <div class="footer" style="background-color: #f4f4f7; padding: 20px; text-align: center; color: #999; font-size: 12px;">
+                        <p style="margin: 0;">¡Gracias por elegir nuestra plataforma!</p>
+                        <p style="margin: 5px 0 0;">&copy; {{currentYear}} Vir-tome. Todos los derechos reservados.</p>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

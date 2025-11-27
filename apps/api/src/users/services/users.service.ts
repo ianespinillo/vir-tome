@@ -1,80 +1,363 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { PasswordAdapter } from '@/core/passport-adapter';
+// src/users/services/users.service.ts
+import {
+	BadRequestException,
+	ConflictException,
+	Injectable,
+	NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { SignUpDto } from '@repo/common';
-import { Repository } from 'typeorm';
-import { MultiTenantService } from '../../core/multi-tenant.service';
-import { PasswordAdapter } from '../../core/passport-adapter';
-import { EmailService } from '../../email/email.service';
+import { PASSWORD_SALT_ROUNDS, SignInDto, SignUpDto } from '@repo/common';
+import * as bcrypt from 'bcrypt';
+import { IsNull, Repository } from 'typeorm';
+import { RoleEntity } from '../entities/role.entity';
+import { UserTenantEntity } from '../entities/user-tenant.entity';
 import { UserEntity } from '../entities/user.entity';
 import { RoleService } from './role.service';
 
 @Injectable()
-export class UsersService extends MultiTenantService<UserEntity> {
+export class UsersService {
 	constructor(
 		@InjectRepository(UserEntity)
-		private readonly userRepository: Repository<UserEntity>,
-		private readonly emailService: EmailService,
-		private readonly roleService: RoleService,
-	) {
-		super(userRepository);
-	}
-	async createUser(user: SignUpDto, tenantId: number): Promise<UserEntity> {
-		const exists = await this.findUserByEmail(user.email, tenantId);
-		if (exists) {
-			throw new BadRequestException('User already exists');
-		}
-		const role = await this.roleService.findById(tenantId, user.roleId);
-		if (!role) throw new BadRequestException('Role does not exist');
-		const password = await PasswordAdapter.generateHashedPassword(8);
-		const newUser = this.userRepository.create({
-			name: user.name,
-			email: user.email,
-			surname: user.surname,
-			password: password.hashedPassword,
-			role: {
-				id: user.roleId,
-			},
-			tenant_id: tenantId,
+		private readonly usersRepo: Repository<UserEntity>,
+		@InjectRepository(UserTenantEntity)
+		private readonly userTenantsRepo: Repository<UserTenantEntity>,
+		private readonly rolesService: RoleService,
+	) {}
+
+	// ============================================
+	// BÚSQUEDA DE USUARIOS
+	// ============================================
+
+	/**
+	 * Buscar usuario por email (GLOBAL)
+	 */
+	async findByEmail(email: string): Promise<UserEntity | null> {
+		return this.usersRepo.findOne({
+			where: { email, deleted_at: IsNull() },
+			relations: ['userTenants', 'userTenants.tenant', 'userTenants.role'],
 		});
-		const savedUser = await this.userRepository.save(newUser);
-		await this.emailService.sendEmailWelcome({
-			to: user.email,
-			password: password.password,
-		});
-		return savedUser;
 	}
-	async findUserByEmail(
-		email: string,
+
+	/**
+	 * Buscar usuario por ID (GLOBAL)
+	 */
+	async findById(userId: number): Promise<UserEntity | null> {
+		return this.usersRepo.findOne({
+			where: { id: userId, deleted_at: IsNull() },
+			relations: ['userTenants', 'userTenants.tenant', 'userTenants.role'],
+		});
+	}
+
+	/**
+	 * Verificar si un usuario tiene acceso a un tenant específico
+	 */
+	async hasAccessToTenant(userId: number, tenantId: number): Promise<boolean> {
+		const userTenant = await this.userTenantsRepo.findOne({
+			where: { user_id: userId, tenant_id: tenantId, is_active: true },
+		});
+		return !!userTenant;
+	}
+
+	/**
+	 * Obtener rol del usuario en un tenant específico
+	 */
+	async getRoleInTenant(
+		userId: number,
 		tenantId: number,
-	): Promise<UserEntity | null> {
-		return this.userRepository.findOne({
-			where: { email, tenant_id: tenantId },
+	): Promise<RoleEntity | null> {
+		const userTenant = await this.userTenantsRepo.findOne({
+			where: { user_id: userId, tenant_id: tenantId, is_active: true },
+			relations: ['role'],
+		});
+		return userTenant?.role || null;
+	}
+
+	/**
+	 * Obtener todos los tenants de un usuario
+	 */
+	async getUserTenants(userId: number): Promise<UserTenantEntity[]> {
+		return this.userTenantsRepo.find({
+			where: { user_id: userId, is_active: true },
+			relations: ['tenant', 'role'],
+			order: { created_at: 'ASC' },
 		});
 	}
-	async findActiveUsers(tenantId: number): Promise<UserEntity[]> {
-		return this.userRepository.find({ where: { tenant_id: tenantId } });
+
+	/**
+	 * Listar todos los usuarios de un tenant específico
+	 */
+	/**
+	 * Listar todos los usuarios de un tenant específico
+	 */
+	async findAllByTenant(tenantId: number): Promise<UserEntity[]> {
+		const userTenants = await this.userTenantsRepo.find({
+			where: { tenant_id: tenantId, is_active: true },
+			relations: ['user', 'role'],
+		});
+
+		return userTenants.map((ut) => {
+			const user = ut.user;
+			// Agregar el rol actual como propiedad temporal
+			(user as any).currentRole = ut.role;
+			(user as any).currentRoleId = ut.role_id;
+			(user as any).tenant_id = ut.tenant_id;
+			return user;
+		});
 	}
 
-	async getUserStats(tenantId: number): Promise<{
-		total: number;
-		active: number;
-		withTokens: number;
-	}> {
-		const stats = await this.getStats(tenantId);
+	// ============================================
+	// CREAR USUARIOS
+	// ============================================
 
-		// Contar usuarios con tokens activos
-		const withTokens = await this.repository
-			.createQueryBuilder('user')
-			.innerJoin('user.tokens', 'token')
-			.where('user.tenant_id = :tenantId', { tenantId })
-			.andWhere('user.deleted_at IS NULL')
-			.andWhere('token.expires_at > :now', { now: new Date() })
-			.getCount();
+	/**
+	 * Crear usuario y asignarlo a un tenant con un rol
+	 */
+	async create(
+		tenantId: number,
+		data: SignUpDto,
+	): Promise<{
+		user: UserEntity;
+		password: string;
+	}> {
+		const roleExists = await this.rolesService.findById(data.roleId, tenantId);
+		if (!roleExists) {
+			throw new BadRequestException('Invalid role ID');
+		}
+		// 1. Verificar si email ya existe
+		const existing = await this.usersRepo.findOne({
+			where: { email: data.email },
+		});
+
+		if (existing) {
+			if (existing.hasAccessToTenant(tenantId)) {
+				throw new ConflictException('User already exists in this tenant');
+			}
+			throw new BadRequestException('User already exists globally');
+		}
+		// Crear nuevo usuario
+		const { hashedPassword, password } =
+			await PasswordAdapter.generateHashedPassword(PASSWORD_SALT_ROUNDS);
+		const user = await this.usersRepo.save({
+			email: data.email,
+			name: data.name,
+			surname: data.surname,
+			password: hashedPassword,
+		});
+		await this.addUserToTenant(user.id, tenantId, data.roleId);
+		return { user, password };
+	}
+
+	/**
+	 * Crear usuario global (sin tenant)
+	 * Para SUPER_ADMIN por ejemplo
+	 */
+	async createGlobalUser(data: SignUpDto): Promise<{
+		user: UserEntity;
+		password: string;
+	}> {
+		const existing = await this.findByEmail(data.email);
+		if (existing) {
+			throw new ConflictException('Email already exists');
+		}
+		const { hashedPassword, password } =
+			await PasswordAdapter.generateHashedPassword(PASSWORD_SALT_ROUNDS);
+
+		await this.usersRepo.save({
+			email: data.email,
+			name: data.name,
+			surname: data.surname,
+			password: hashedPassword,
+		});
 
 		return {
-			total: stats.total,
-			active: stats.active,
-			withTokens,
+			user: (await this.findByEmail(data.email)) as UserEntity,
+			password,
 		};
+	}
+
+	// ============================================
+	// GESTIÓN DE TENANTS DE UN USUARIO
+	// ============================================
+
+	/**
+	 * Agregar usuario a un tenant
+	 */
+	async addUserToTenant(
+		userId: number,
+		tenantId: number,
+		roleId: number,
+	): Promise<UserTenantEntity> {
+		// Verificar si ya existe
+		const existing = await this.userTenantsRepo.findOne({
+			where: { user_id: userId, tenant_id: tenantId },
+		});
+
+		if (existing) {
+			if (existing.is_active) {
+				throw new ConflictException('User already in this tenant');
+			}
+			// Reactivar si estaba inactivo
+			existing.is_active = true;
+			existing.role_id = roleId;
+			return this.userTenantsRepo.save(existing);
+		}
+
+		// Crear nueva relación
+		return this.userTenantsRepo.save({
+			user_id: userId,
+			tenant_id: tenantId,
+			role_id: roleId,
+			is_active: true,
+		});
+	}
+
+	/**
+	 * Remover usuario de un tenant (soft delete)
+	 */
+	async removeUserFromTenant(userId: number, tenantId: number): Promise<void> {
+		const userTenant = await this.userTenantsRepo.findOne({
+			where: { user_id: userId, tenant_id: tenantId },
+		});
+
+		if (!userTenant) {
+			throw new NotFoundException('User not found in this tenant');
+		}
+
+		userTenant.is_active = false;
+		await this.userTenantsRepo.save(userTenant);
+	}
+
+	/**
+	 * Cambiar rol de usuario en un tenant
+	 */
+	async changeRoleInTenant(
+		userId: number,
+		tenantId: number,
+		newRoleId: number,
+	): Promise<UserTenantEntity> {
+		const userTenant = await this.userTenantsRepo.findOne({
+			where: { user_id: userId, tenant_id: tenantId, is_active: true },
+		});
+
+		if (!userTenant) {
+			throw new NotFoundException('User not found in this tenant');
+		}
+
+		userTenant.role_id = newRoleId;
+		return this.userTenantsRepo.save(userTenant);
+	}
+
+	// ============================================
+	// ACTUALIZAR / ELIMINAR
+	// ============================================
+
+	/**
+	 * Actualizar datos del usuario (global)
+	 */
+	async update(
+		userId: number,
+		data: Partial<Pick<UserEntity, 'name' | 'surname' | 'email'>>,
+	): Promise<UserEntity> {
+		const user = await this.findById(userId);
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
+
+		// Si cambia email, verificar que no exista
+		if (data.email && data.email !== user.email) {
+			const existing = await this.findByEmail(data.email);
+			if (existing) {
+				throw new ConflictException('Email already exists');
+			}
+		}
+
+		await this.usersRepo.update(userId, data);
+		return this.findById(userId) as Promise<UserEntity>;
+	}
+
+	/**
+	 * Actualizar password
+	 */
+	async updatePassword(userId: number, newPassword: string): Promise<void> {
+		const hashedPassword = await bcrypt.hash(newPassword, 10);
+		await this.usersRepo.update(userId, { password: hashedPassword });
+	}
+
+	/**
+	 * Soft delete de usuario (global)
+	 * También desactiva todas sus relaciones con tenants
+	 */
+	async delete(userId: number): Promise<void> {
+		const user = await this.findById(userId);
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
+
+		// Desactivar en todos los tenants
+		await this.userTenantsRepo.update({ user_id: userId }, { is_active: false });
+
+		// Soft delete del usuario
+		await this.usersRepo.softDelete(userId);
+	}
+
+	// ============================================
+	// HELPERS
+	// ============================================
+
+	/**
+	 * Verificar si un email existe
+	 */
+	async emailExists(email: string): Promise<boolean> {
+		const count = await this.usersRepo.count({ where: { email } });
+		return count > 0;
+	}
+
+	/**
+	 * Buscar usuarios por nombre (para admin panel)
+	 */
+	async search(query: string, limit = 10): Promise<UserEntity[]> {
+		return this.usersRepo
+			.createQueryBuilder('user')
+			.where(
+				'user.name ILIKE :query OR user.surname ILIKE :query OR user.email ILIKE :query',
+				{
+					query: `%${query}%`,
+				},
+			)
+			.andWhere('user.deleted_at IS NULL')
+			.take(limit)
+			.getMany();
+	}
+
+	/**
+	 * Contar usuarios por tenant
+	 */
+	async countByTenant(tenantId: number): Promise<number> {
+		return this.userTenantsRepo.count({
+			where: { tenant_id: tenantId, is_active: true },
+		});
+	}
+
+	/**
+	 * Obtener estadísticas de usuarios por tenant
+	 */
+	async getTenantUserStats(tenantId: number) {
+		const userTenants = await this.userTenantsRepo.find({
+			where: { tenant_id: tenantId, is_active: true },
+			relations: ['role'],
+		});
+
+		const stats = {
+			total: userTenants.length,
+			by_role: {} as Record<string, number>,
+		};
+
+		userTenants.forEach((ut) => {
+			const roleName = ut.role.name;
+			stats.by_role[roleName] = (stats.by_role[roleName] || 0) + 1;
+		});
+
+		return stats;
 	}
 }

@@ -22,3 +22,11 @@ export interface ForgotPasswordEmail {
 	token: string;
 	expires: Date;
 }
+
+export interface WelcomeToTenantEmail {
+	email: string;
+	userName: string;
+	tenantName: string;
+	isNewUser: boolean;
+	loginUrl: string;
+}

@@ -15,47 +15,62 @@ export class TenantMiddleware implements NestMiddleware {
 	async use(req: Request, res: Response, next: () => void) {
 		let tenant: TenantEntity | null = null;
 
-		// 1. Prioridad al header (para desarrollo/testing)
+		tenant =
+			(await this.getTenantFromHeader(req)) ??
+			(await this.getTenantFromSubdomain(req, next));
+
+		if (tenant) {
+			this.validateAndAssignTenant(req, tenant);
+		}
+
+		next();
+	}
+
+	private async getTenantFromHeader(req: Request): Promise<TenantEntity | null> {
 		const header = req.headers['x-tenant-id'] as string;
 		if (header) {
 			const tenantId = Number.parseInt(header);
 			if (!Number.isNaN(tenantId)) {
-				tenant = await this.tenantService.findById(tenantId);
+				const tenant = await this.tenantService.findById(tenantId);
 				if (!tenant) {
 					throw new NotFoundException(`Tenant with ID ${header} not found`);
 				}
+				return tenant;
 			}
 		}
+		return null;
+	}
 
-		// 2. Extraer del subdomain si no hay header válido
-		if (!tenant) {
-			const host = req.get('host') || '';
-			const subdomain = this.extractSubdomain(host);
+	private async getTenantFromSubdomain(
+		req: Request,
+		next: () => void,
+	): Promise<TenantEntity | null> {
+		const host = req.get('host') || '';
+		const subdomain = this.extractSubdomain(host);
 
-			if (this.isSpecialCase(subdomain, host)) {
-				return next();
-			}
-
-			if (subdomain) {
-				tenant = await this.tenantService.findBySubdomain(subdomain);
-				if (!tenant) {
-					throw new NotFoundException(
-						`Tenant with subdomain "${subdomain}" not found`,
-					);
-				}
-			}
+		if (this.isSpecialCase(subdomain, host)) {
+			next();
+			return null;
 		}
 
-		// 3. Asignar tenant al request
-		if (tenant) {
-			if (!tenant.is_active) {
-				throw new BadRequestException(`Tenant "${tenant.name}" is inactive`);
+		if (subdomain) {
+			const tenant = await this.tenantService.findBySubdomain(subdomain);
+			if (!tenant) {
+				throw new NotFoundException(
+					`Tenant with subdomain "${subdomain}" not found`,
+				);
 			}
-			req.tenant = tenant;
-			req.tenantId = tenant.id;
+			return tenant;
 		}
+		return null;
+	}
 
-		next();
+	private validateAndAssignTenant(req: Request, tenant: TenantEntity): void {
+		if (!tenant.is_active) {
+			throw new BadRequestException(`Tenant "${tenant.name}" is inactive`);
+		}
+		req.tenant = tenant;
+		req.tenantId = tenant.id;
 	}
 
 	private extractSubdomain(host: string): string {

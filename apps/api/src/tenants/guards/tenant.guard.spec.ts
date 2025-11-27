@@ -27,7 +27,8 @@ const mockTenant = {
 const mockUser = {
 	id: 1,
 	email: 'user@test.com',
-	tenant_id: 1,
+	getTenants: jest.fn().mockReturnValue([{ id: 1 }]),
+	hasAccessToTenant: jest.fn(),
 };
 
 describe('TenantGuard', () => {
@@ -102,11 +103,12 @@ describe('TenantGuard', () => {
 				path: '/api/products',
 				method: 'GET',
 			};
+			mockUser.hasAccessToTenant.mockReturnValueOnce(true);
 
 			const result = await guard.canActivate(createMockContext(mockRequest));
 
 			expect(result).toBe(true);
-			expect(mockUsersService.findById).toHaveBeenCalledWith(1, 1); // tenantId, userId
+			expect(mockUsersService.findById).toHaveBeenCalledWith(1); // tenantId, userId
 		});
 	});
 

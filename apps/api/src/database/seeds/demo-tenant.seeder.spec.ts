@@ -164,7 +164,9 @@ describe('DemoSeeder', () => {
 			expect(bookRepo.delete).toHaveBeenCalledWith({ tenant_id: 1 });
 			expect(categoryRepo.delete).toHaveBeenCalledWith({ tenant_id: 1 });
 			expect(publisherRepo.delete).toHaveBeenCalledWith({ tenant_id: 1 });
-			expect(userRepo.delete).toHaveBeenCalledWith({ tenant_id: 1 });
+			expect(userRepo.delete).toHaveBeenCalledWith({
+				userTenants: { tenant_id: 1 },
+			});
 			expect(roleRepo.delete).toHaveBeenCalledWith({ tenant_id: 1 });
 			expect(seedSpy).toHaveBeenCalled();
 		});

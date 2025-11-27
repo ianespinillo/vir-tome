@@ -1,15 +1,19 @@
 // @repo/common/src/auth/auth.types.ts
 
+import { PAYLOAD_TYPE } from '../enum/payload-type.enum';
 import { ROLES } from '../enum/roles.enum';
-
 /**
  * JWT Payload - Lo que va dentro del token
  */
-export interface IAuthPayload {
-	sub: number; // user_id
-	email: string;
+export interface IAuthPayload extends BasePayload {
 	tenantId: number;
 	roleId: number; // Un solo rol por usuario en cada tenant
+	type: PAYLOAD_TYPE.USER_LOGIN;
+}
+interface BasePayload {
+	sub: number; // user_id
+	email: string;
+	type: PAYLOAD_TYPE;
 }
 
 /**
@@ -43,4 +47,8 @@ export interface IRequestUser {
 	tenantId: number;
 	roleId: number;
 	roleName: ROLES; // Para usar en guards/decoradores
+}
+
+export interface ISuperAdminLoginPayload extends BasePayload {
+	type: PAYLOAD_TYPE.SUPER_ADMIN_LOGIN;
 }

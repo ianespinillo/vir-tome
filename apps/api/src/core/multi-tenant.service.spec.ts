@@ -152,12 +152,15 @@ describe('MultiTenantService', () => {
 		);
 	});
 
-	it('hardDelete should call repository.delete', async () => {
+	it('hardDelete should call repository.delete with tenantId', async () => {
 		const entity = { id: 1, tenant_id: tenantId } as TestEntity;
 		jest.spyOn(service, 'findByIdOrFail').mockResolvedValue(entity);
 
 		await service.hardDelete(tenantId, 1);
-		expect(repo.delete).toHaveBeenCalledWith(1);
+		expect(repo.delete).toHaveBeenCalledWith({
+			id: 1,
+			tenant_id: tenantId,
+		});
 	});
 
 	// ===========================

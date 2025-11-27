@@ -1,4 +1,5 @@
 import { EmailModule } from '@/email/email.module';
+import { SuperAdminModule } from '@/super-admin/super-admin.module';
 import { TenantsModule } from '@/tenants/tenants.module';
 import { TokensModule } from '@/tokens/tokens.module';
 import { UsersModule } from '@/users/users.module';
@@ -24,6 +25,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 		EmailModule,
 		TokensModule,
 		TenantsModule,
+		SuperAdminModule,
 	],
 })
 export class AuthModule {}

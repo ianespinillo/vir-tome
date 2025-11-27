@@ -2,7 +2,7 @@ import { PasswordAdapter } from '@/core/passport-adapter';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 // src/auth/__tests__/auth.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
-import { SignInDto, SignUpDto } from '@repo/common';
+import { PAYLOAD_TYPE, SignInDto, SignUpDto } from '@repo/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
@@ -55,6 +55,7 @@ describe('AuthController', () => {
 		const loginDto: SignInDto = {
 			email: 'test@escuela1.com',
 			password: 'password123',
+			type: PAYLOAD_TYPE.USER_LOGIN,
 		};
 
 		it('should login user', async () => {
@@ -148,20 +149,6 @@ describe('AuthController', () => {
 			await expect(
 				authController.register(registerDto, mockRequest),
 			).rejects.toThrow(BadRequestException);
-		});
-
-		it('should return temporary password object', async () => {
-			// Arrange
-			mockAuthService.register.mockResolvedValue(expectedRegisterResult);
-
-			// Act
-			const result = await authController.register(registerDto, mockRequest);
-
-			// Assert
-			expect(result.temporary_password).toBeDefined();
-			expect(typeof result.temporary_password).toBe('object');
-			expect(result.temporary_password).toHaveProperty('plainPassword');
-			expect(result.temporary_password).toHaveProperty('hashedPassword');
 		});
 	});
 

@@ -144,7 +144,11 @@ export abstract class MultiTenantService<T extends MultiTenantEntity> {
 		// Verificar que la entidad existe y pertenece al tenant
 		await this.findByIdOrFail(tenantId, id);
 
-		await this.repository.delete(id);
+		// Usar un delete con where para asegurar el tenant_id en la operación
+		await this.repository.delete({
+			id,
+			tenant_id: tenantId,
+		} as FindOptionsWhere<T>);
 	}
 
 	// =================================================================

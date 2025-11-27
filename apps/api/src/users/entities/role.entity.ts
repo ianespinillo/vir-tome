@@ -1,19 +1,41 @@
-import { Column, Entity, Index, OneToMany } from 'typeorm';
-
 import { ROLES } from '@repo/common';
-import { MultiTenantEntity } from '../../core/multi-tenant.entity';
-import { UserEntity } from './user.entity';
+// src/users/entities/role.entity.ts
+import { Column, Entity, Index } from 'typeorm';
+import { GenericEntity } from '../../core/generic.entity';
 
-@Entity({
-	name: 'role',
-})
+@Entity('roles')
 @Index(['name', 'tenant_id'], { unique: true })
-export class RoleEntity extends MultiTenantEntity {
-	@Column({ type: 'enum', enum: ROLES })
-	name!: string;
-	@OneToMany(
-		() => UserEntity,
-		(user) => user.role,
-	)
-	users!: UserEntity[];
+export class RoleEntity extends GenericEntity {
+	@Column({
+		type: 'enum',
+		enum: ROLES,
+	})
+	name!: ROLES;
+
+	@Column({ nullable: true })
+	tenant_id?: number;
+
+	@Column({ nullable: true })
+	description?: string;
+
+	// Helper methods
+	isSuperAdmin(): boolean {
+		return this.name === ROLES.SUPER_ADMIN;
+	}
+
+	isAdmin(): boolean {
+		return this.name === ROLES.ADMIN;
+	}
+
+	canManageBooks(): boolean {
+		return [ROLES.ADMIN, ROLES.LIBRARIAN, ROLES.TEACHER].includes(this.name);
+	}
+
+	canManageLoans(): boolean {
+		return [ROLES.ADMIN, ROLES.LIBRARIAN].includes(this.name);
+	}
+
+	canViewAllLoans(): boolean {
+		return [ROLES.ADMIN, ROLES.LIBRARIAN, ROLES.TEACHER].includes(this.name);
+	}
 }
