@@ -15,20 +15,6 @@ services:
     volumes:
       - virtome_pg_data:/var/lib/pg
   # otra db de test
-  virtome_test:
-    image: postgres:14-alpine
-    container_name: vir-tome-test
-    restart: always
-    environment:
-      POSTGRES_ROOT_PASSWORD: test
-      POSTGRES_DB: virtome_test_db
-      POSTGRES_USER: test
-      POSTGRES_PASSWORD: test
-    ports:
-      - "5439:5432"
-    volumes:
-      - virtome_pg_test_data:/var/lib/pg
 
 volumes:
   virtome_pg_data:
-  virtome_pg_test_data:

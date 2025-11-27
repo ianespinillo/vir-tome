@@ -10,23 +10,6 @@ jobs:
   pre-deploy:
     runs-on: ubuntu-latest
     
-    services:
-      postgres:
-        image: postgres:14-alpine
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: virtome_test_db
-          POSTGRES_ROOT_PASSWORD: test
-          CI: true
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432  # En CI usa 5432 directamente
-
     steps:
       - uses: actions/checkout@v3
 
@@ -52,9 +35,4 @@ jobs:
 
       - name: Check tests
         run: pnpm run test
-        env:
-          DB_HOST: localhost
-          DB_PORT: 5432  # ← Cambiado de 5439 a 5432
-          DB_USERNAME: test
-          DB_PASSWORD: test
-          DB_NAME: virtome_test_db
+        

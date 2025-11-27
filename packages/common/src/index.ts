@@ -12,6 +12,7 @@ export * from './dto/tenants/create-tenant.dto';
 export * from './dto/tenants/update-tenant.dto';
 export * from './enum/roles.enum';
 export * from './enum/tokens-type.enum';
+export * from './enum/payload-type.enum';
 export * from './constants/index';
 export * from './constants/demo-seed.constants';
 export type * from './types/auth.types';
