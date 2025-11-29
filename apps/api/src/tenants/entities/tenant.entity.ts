@@ -1,10 +1,8 @@
-import { BookEntity } from '@/book/entities/book.entity';
-import { UserTenantEntity } from '@/users/entities/user-tenant.entity';
-import { UserEntity } from '@/users/entities/user.entity';
 import { TenantSettings } from '@repo/common';
-// src/tenants/entities/tenant.entity.ts
-import { Column, Entity, Index, ManyToMany, OneToMany } from 'typeorm';
+import { Column, Entity, Index, OneToMany } from 'typeorm';
+import { BookEntity } from '../../book/entities/book.entity';
 import { GenericEntity } from '../../core/generic.entity';
+import { UserTenantEntity } from '../../users/entities/user-tenant.entity';
 
 @Entity({ name: 'tenant' })
 @Index(['subdomain'], { unique: true })

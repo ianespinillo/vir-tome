@@ -1,6 +1,6 @@
-import { GenericEntity } from '@/core/generic.entity';
 import { ROLES } from '@repo/common';
 import { Column, Entity } from 'typeorm';
+import { GenericEntity } from '../../core/generic.entity';
 
 @Entity({ name: 'super-admin' })
 export class SuperAdminEntity extends GenericEntity {
