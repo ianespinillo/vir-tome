@@ -26,7 +26,8 @@
 		"demo:reset": "curl -X POST http://localhost:3000/demo/reset",
 		"demo:seed": "curl -X POST http://localhost:3000/demo/seed",
 		"demo:status": "curl -X GET http://localhost:3000/demo/status",
-		"db:seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed-demo.ts"
+		"db:demo-seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed-demo.ts",
+		"db:seed": "ts-node scripts/seed.ts"
 	},
 	"dependencies": {
 		"@nestjs-modules/mailer": "^2.0.2",
@@ -56,6 +57,7 @@
 	"devDependencies": {
 		"@eslint/eslintrc": "^3.2.0",
 		"@eslint/js": "^9.18.0",
+		"@faker-js/faker": "^10.1.0",
 		"@nestjs/cli": "^11.0.0",
 		"@nestjs/schematics": "^11.0.0",
 		"@nestjs/swagger": "^11.1.0",

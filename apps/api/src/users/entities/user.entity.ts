@@ -1,8 +1,8 @@
-import { GenericEntity } from '@/core/generic.entity';
-import { TenantEntity } from '@/tenants/entities/tenant.entity';
 // src/users/entities/user.entity.ts
 import { Column, Entity, Index, OneToMany } from 'typeorm';
+import { GenericEntity } from '../../core/generic.entity';
 import { LoanEntity } from '../../loan/entities/loan.entity';
+import { TenantEntity } from '../../tenants/entities/tenant.entity';
 import { TokenEntity } from '../../tokens/entities/tokens.entity';
 import { RoleEntity } from './role.entity';
 import { UserTenantEntity } from './user-tenant.entity';
