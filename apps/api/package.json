@@ -27,7 +27,7 @@
 		"demo:seed": "curl -X POST http://localhost:3000/demo/seed",
 		"demo:status": "curl -X GET http://localhost:3000/demo/status",
 		"db:demo-seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed-demo.ts",
-		"db:seed": "ts-node scripts/seed.ts"
+		"db:seed": "ts-node -r reflect-metadata scripts/seed.ts"
 	},
 	"dependencies": {
 		"@nestjs-modules/mailer": "^2.0.2",

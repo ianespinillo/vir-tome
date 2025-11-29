@@ -5,13 +5,16 @@ import { DataSource } from 'typeorm';
 import { BookEntity } from '../src/book/entities/book.entity';
 import { CategoryEntity } from '../src/book/entities/category.entity';
 import { PublisherEntity } from '../src/book/entities/publisher.entity';
+import { PasswordAdapter } from '../src/core/passport-adapter';
 import { LoanEntity } from '../src/loan/entities/loan.entity';
+import { SuperAdminEntity } from '../src/super-admin/entities/super-admin.entity';
 import { TenantEntity } from '../src/tenants/entities/tenant.entity';
 import { TokenEntity } from '../src/tokens/entities/tokens.entity';
 import { RoleEntity } from '../src/users/entities/role.entity';
 import { UserTenantEntity } from '../src/users/entities/user-tenant.entity';
 // IMPORTA TUS ENTIDADES AQUI
 import { UserEntity } from '../src/users/entities/user.entity';
+import 'reflect-metadata';
 config();
 
 // Configura esto igual que tu app.module.ts
@@ -28,6 +31,7 @@ const AppDataSource = new DataSource({
 		PublisherEntity,
 		LoanEntity,
 		TokenEntity,
+		SuperAdminEntity,
 	],
 	synchronize: true, // ¡Cuidado! Solo para dev
 });
@@ -49,7 +53,7 @@ async function seed() {
 	await AppDataSource.query(`TRUNCATE TABLE "roles" CASCADE`);
 	await AppDataSource.query(`TRUNCATE TABLE "tenant" CASCADE`);
 	await AppDataSource.query(`TRUNCATE TABLE "users" CASCADE`);
-
+	await AppDataSource.query(`TRUNCATE TABLE "super-admin" CASCADE`);
 	// 2. SETTINGS
 	faker.seed(123); // ¡Importante! Hace que los datos sean siempre iguales
 
@@ -167,7 +171,20 @@ async function seed() {
 		role: adminRoleVecina,
 		is_active: true,
 	});
-
+	// ==========================================
+	// CREAR SUPER ADMIN (TÚ)
+	// ==========================================
+	console.log('👑 Creando Super Admin...');
+	const superAdminRepo = AppDataSource.getRepository(SuperAdminEntity);
+	const { password, hashedPassword } =
+		await PasswordAdapter.generateHashedPassword(8);
+	console.log(`Super admin password: ${password}`);
+	const superAdmin = await superAdminRepo.save({
+		email: 'espinilloian@hotmail.com',
+		name: 'Ian',
+		password: hashedPassword,
+		isActive: true,
+	});
 	// ==========================================
 	// CREAR DATOS DEL DOMINIO (Solo para Demo Tenant)
 	// ==========================================
