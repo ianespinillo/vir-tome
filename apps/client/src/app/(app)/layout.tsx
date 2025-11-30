@@ -1,4 +1,5 @@
 'use client';
+import 'reflect-metadata';
 import { TanstackProvider } from '@repo/hooks';
 import React from 'react';
 

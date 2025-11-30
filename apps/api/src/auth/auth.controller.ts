@@ -1,5 +1,13 @@
 // src/auth/auth.controller.ts
-import { Body, Controller, Get, Post, Request } from '@nestjs/common';
+import {
+	BadRequestException,
+	Body,
+	Controller,
+	Get,
+	Post,
+	Request,
+	Res,
+} from '@nestjs/common';
 import {
 	ApiBadRequestResponse,
 	ApiBearerAuth,
@@ -14,6 +22,7 @@ import {
 	SignInDto,
 	SignUpDto,
 } from '@repo/common';
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { AuthBearer } from './decorators/auth-bearer.decorators';
 
@@ -34,8 +43,22 @@ export class AuthController {
 	})
 	@ApiUnauthorizedResponse({ description: 'Invalid credentials' })
 	@ApiBadRequestResponse({ description: 'Tenant not found or inactive' })
-	async login(@Body() loginDto: SignInDto, @Request() req) {
-		return this.authService.login(loginDto, req.tenantId);
+	async login(
+		@Body() loginDto: SignInDto,
+		@Res({ passthrough: true }) res: Response,
+	) {
+		if (!loginDto.tenantId) throw new BadRequestException('No tenant id found');
+		const { access_token, user } = await this.authService.login(
+			loginDto,
+			loginDto.tenantId,
+		);
+		res.cookie('access_token', access_token, {
+			httpOnly: true,
+			secure: false,
+		});
+		// Returning the user allows Nest to handle sending the response while
+		// we still set the cookie using the response object passed with passthrough.
+		return user;
 	}
 
 	@Post('general-login')
@@ -53,7 +76,6 @@ export class AuthController {
 		return this.authService.centralLogin(loginDto);
 	}
 
-	@Post('admin-login')
 	@ApiOperation({
 		summary: 'Login as Super Admin',
 		description: 'Authenticate as a Super Admin user.',
@@ -63,10 +85,21 @@ export class AuthController {
 		description: 'Login successful. Returns access token and user info.',
 	})
 	@ApiUnauthorizedResponse({ description: 'Invalid credentials' })
-	async adminLogin(@Body() loginDto: SignInDto) {
-		return this.authService.adminLogin(loginDto);
+	@Post('admin-login')
+	async adminLogin(
+		@Body() loginDto: SignInDto,
+		@Res({ passthrough: true }) res: Response,
+	) {
+		const { access_token, user } = await this.authService.adminLogin(loginDto);
+		res.cookie('access_token', access_token, {
+			httpOnly: true,
+			secure: false,
+			sameSite: 'lax',
+		});
+
+		// Let Nest send the final response (return body) while cookie is set via passthrough.
+		return user;
 	}
-	@Post('register')
 	@ApiOperation({
 		summary: 'Register new user',
 		description:
@@ -78,6 +111,7 @@ export class AuthController {
 			'User registered successfully. Returns access token and temporary password.',
 	})
 	@ApiBadRequestResponse({ description: 'Email already exists in tenant' })
+	@Post('register')
 	async register(@Body() registerDto: SignUpDto, @Request() req) {
 		return this.authService.register(registerDto, req.tenantId);
 	}

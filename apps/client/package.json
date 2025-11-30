@@ -9,13 +9,14 @@
 		"lint": "next lint"
 	},
 	"dependencies": {
+		"@repo/common": "workspace:*",
 		"@repo/hooks": "workspace:*",
 		"@repo/ui": "workspace:*",
-		"@repo/common": "workspace:*",
 		"next": "14.2.11",
 		"next-auth": "^4.24.11",
 		"react": "^18",
-		"react-dom": "^18"
+		"react-dom": "^18",
+		"reflect-metadata": "^0.2.2"
 	},
 	"devDependencies": {
 		"@types/node": "^20",

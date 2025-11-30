@@ -1,5 +1,6 @@
 import {
 	IAuthResponse,
+	PAYLOAD_TYPE,
 	UpdatePasswordDto,
 	UpdatePersonalDataDto,
 } from '@repo/common';
@@ -25,8 +26,35 @@ export const useAuth = () => {
 			return response.json() as Promise<IAuthResponse>;
 		},
 	});
+	const superAdminLogin = useMutation({
+		mutationFn: async (data: {
+			email: string;
+			password: string;
+			type: PAYLOAD_TYPE;
+		}) => {
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/auth/admin-login`,
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					credentials: 'include',
+					body: JSON.stringify(data),
+				},
+			);
+			if (!response.ok) {
+				throw new Error('Failed to sign in as super admin');
+			}
+			return response.json();
+		},
+	});
 	const signIn = useMutation({
-		mutationFn: async (data: { email: string; password: string }) => {
+		mutationFn: async (data: {
+			email: string;
+			password: string;
+			type: PAYLOAD_TYPE;
+		}) => {
 			const response = await fetch(
 				`${process.env.NEXT_PUBLIC_API_URL}/auth/sign-in`,
 				{
@@ -122,5 +150,13 @@ export const useAuth = () => {
 			return response.json();
 		},
 	});
-	return { session, signIn, signOut, updateUser, updatePassword, confirmEmail };
+	return {
+		session,
+		signIn,
+		signOut,
+		updateUser,
+		updatePassword,
+		confirmEmail,
+		superAdminLogin,
+	};
 };

@@ -69,15 +69,15 @@ import { UsersModule } from './users/users.module';
 	controllers: [AppController],
 	providers: [
 		AppService,
-		{
+		/*{
 			provide: APP_GUARD,
 			useClass: TenantGuard,
-		},
+		},*/
 	],
 })
 export class AppModule implements NestModule {
 	configure(consumer: MiddlewareConsumer) {
-		consumer.apply(TenantMiddleware).forRoutes('*');
+		consumer.apply(TenantMiddleware).exclude('auth/*').forRoutes('*');
 		consumer.apply(DemoMiddleware).forRoutes('*');
 	}
 }

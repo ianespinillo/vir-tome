@@ -19,7 +19,7 @@ export class SignInDto {
 	password!: string;
 
 	@IsEnum(PAYLOAD_TYPE, { message: 'Tipo de login inválido' })
-	type!: PAYLOAD_TYPE.USER_LOGIN;
+	type!: PAYLOAD_TYPE;
 
 	@IsOptional()
 	tenantId?: number; // solo requerido si type === TENANT

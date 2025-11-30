@@ -24,6 +24,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
 				? exception.getResponse()
 				: 'Internal server error';
 
+		// If headers are already sent, don't try to write again — this avoids
+		// "Cannot set headers after they are sent to the client" when the
+		// controller already sent a response and an error occurs afterwards.
+		if (response.headersSent) {
+			// let the Node/Express runtime handle any already-started response
+			return;
+		}
+
 		response.status(status).json({
 			statusCode: status,
 			timestamp: new Date().toISOString(),
