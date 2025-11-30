@@ -3,6 +3,7 @@ import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 // src/auth/__tests__/auth.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { PAYLOAD_TYPE, SignInDto, SignUpDto } from '@repo/common';
+import { Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
@@ -26,6 +27,10 @@ describe('AuthController', () => {
 		tenantId: 1,
 		user: { userId: 1, tenantId: 1 },
 	};
+
+	const mockResponse = {
+		cookie: jest.fn(),
+	} as unknown as Response;
 
 	const mockTemporaryPassword = {
 		hashedPassword:
@@ -56,6 +61,7 @@ describe('AuthController', () => {
 			email: 'test@escuela1.com',
 			password: 'password123',
 			type: PAYLOAD_TYPE.USER_LOGIN,
+			tenantId: mockRequest.tenantId,
 		};
 
 		it('should login user', async () => {
@@ -74,23 +80,24 @@ describe('AuthController', () => {
 			mockAuthService.login.mockResolvedValue(expectedResult);
 
 			// Act
-			const result = await authController.login(loginDto, mockRequest);
+			const result = await authController.login(loginDto, mockResponse);
 
 			// Assert
 			expect(authService.login).toHaveBeenCalledWith(
 				loginDto,
 				mockRequest.tenantId,
 			);
-			expect(result).toBe(expectedResult);
+			expect(result).toBe(expectedResult.user);
 		});
 
 		it('should pass correct tenantId to service', async () => {
 			// Arrange
-			const requestWithDifferentTenant = { ...mockRequest, tenantId: 2 };
+			const differentDto = loginDto;
+			differentDto.tenantId = 2;
 			mockAuthService.login.mockResolvedValue({});
 
 			// Act
-			await authController.login(loginDto, requestWithDifferentTenant);
+			await authController.login(differentDto, mockResponse);
 
 			// Assert
 			expect(authService.login).toHaveBeenCalledWith(loginDto, 2);

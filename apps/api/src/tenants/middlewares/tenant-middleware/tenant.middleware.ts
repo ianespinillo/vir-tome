@@ -14,7 +14,6 @@ export class TenantMiddleware implements NestMiddleware {
 
 	async use(req: Request, res: Response, next: () => void) {
 		let tenant: TenantEntity | null = null;
-
 		tenant =
 			(await this.getTenantFromHeader(req)) ??
 			(await this.getTenantFromSubdomain(req, next));
@@ -23,7 +22,7 @@ export class TenantMiddleware implements NestMiddleware {
 			this.validateAndAssignTenant(req, tenant);
 		}
 
-		next();
+		return next();
 	}
 
 	private async getTenantFromHeader(req: Request): Promise<TenantEntity | null> {

@@ -1,4 +1,5 @@
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
+import { PAYLOAD_TYPE } from '@repo/common';
 import { useAuth } from '@repo/hooks';
 import { Lock, Mail } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
@@ -24,8 +25,13 @@ export function LoginForm({ onSuccess }: Readonly<Props>) {
 		formState: { errors, isSubmitting, isValid },
 	} = useForm({
 		resolver: classValidatorResolver(SignInDto),
+		defaultValues: {
+			email: '',
+			password: '',
+			type: PAYLOAD_TYPE.SUPER_ADMIN_LOGIN,
+		},
 	});
-	const { signIn } = useAuth();
+	const { signIn, superAdminLogin } = useAuth();
 	useEffect(() => {
 		if (error) {
 			const timer = setTimeout(() => {
@@ -35,6 +41,16 @@ export function LoginForm({ onSuccess }: Readonly<Props>) {
 		}
 	}, [error]);
 	const onSubmit = handleSubmit((data) => {
+		if (document.location.pathname.includes('super-admin')) {
+			return superAdminLogin.mutate(data as SignInDto, {
+				onSuccess: () => {
+					onSuccess();
+				},
+				onError: (err: any) => {
+					setError(err.message || 'Failed to sign in as super admin');
+				},
+			});
+		}
 		signIn.mutateAsync(data as SignInDto, {
 			onSuccess: (data) => {
 				if (data) {

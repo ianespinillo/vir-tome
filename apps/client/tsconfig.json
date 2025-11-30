@@ -8,6 +8,7 @@
 		"esModuleInterop": true,
 		"module": "esnext",
 		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
 		"moduleResolution": "bundler",
 		"resolveJsonModule": true,
 		"isolatedModules": true,
