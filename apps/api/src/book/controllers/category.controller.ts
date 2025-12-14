@@ -9,6 +9,7 @@ import {
 	Controller,
 	Delete,
 	Get,
+	HttpStatus,
 	Param,
 	ParseBoolPipe,
 	ParseIntPipe,
@@ -32,7 +33,13 @@ import {
 	ApiTags,
 	ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { CreateCategoryDto, ROLES, UpdateCategoryDto } from '@repo/common';
+import {
+	CreateCategoryDto,
+	IApiResponse,
+	IPaginatedResponse,
+	ROLES,
+	UpdateCategoryDto,
+} from '@repo/common';
 import { CategoryEntity } from '../entities/category.entity';
 import { CategoryService } from '../services/category.service';
 
@@ -69,8 +76,14 @@ export class CategoryController {
 	async create(
 		@CurrentTenant() tenant: TenantEntity,
 		@Body() createDto: CreateCategoryDto,
-	): Promise<CategoryEntity> {
-		return this.categoryService.create(tenant.id, createDto);
+	): Promise<IApiResponse<CategoryEntity>> {
+		const data = await this.categoryService.create(tenant.id, createDto);
+		return {
+			message: 'Categoría creada exitosamente',
+			data,
+			status: HttpStatus.CREATED,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Get()
@@ -100,11 +113,34 @@ export class CategoryController {
 		@CurrentTenant() tenant: TenantEntity,
 		@Query('page', new ParseIntPipe({ optional: true })) page = 1,
 		@Query('full', new ParseBoolPipe({ optional: true })) full = false,
-	) {
+	): Promise<
+		| IApiResponse<CategoryEntity[]>
+		| IApiResponse<IPaginatedResponse<CategoryEntity>>
+	> {
 		if (full) {
-			return this.categoryService.findAll(tenant.id);
+			const data = await this.categoryService.findAll(tenant.id);
+			return {
+				message: 'Categorías obtenidas exitosamente',
+				data,
+				status: HttpStatus.OK,
+				timestamp: new Date().toISOString(),
+			};
 		}
-		return this.categoryService.findByPage(tenant.id, page);
+		const data = await this.categoryService.findByPage(tenant.id, page);
+		return {
+			message: 'Categorías obtenidas exitosamente',
+			data: {
+				items: data.data,
+				meta: {
+					total: data.total,
+					current_page: data.current_page,
+					last_page: data.last_page,
+					per_page: 10,
+				},
+			},
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Get(':id')
@@ -126,8 +162,14 @@ export class CategoryController {
 	async findOne(
 		@CurrentTenant() tenant: TenantEntity,
 		@Param('id', ParseIntPipe) id: number,
-	): Promise<CategoryEntity | null> {
-		return this.categoryService.findById(tenant.id, id);
+	): Promise<IApiResponse<CategoryEntity | null>> {
+		const data = await this.categoryService.findById(tenant.id, id);
+		return {
+			message: 'Categoría obtenida exitosamente',
+			data,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Patch(':id')
@@ -154,8 +196,14 @@ export class CategoryController {
 		@CurrentTenant() tenant: TenantEntity,
 		@Param('id') id: number,
 		@Body() updateDto: UpdateCategoryDto,
-	): Promise<void> {
+	): Promise<IApiResponse<void>> {
 		await this.categoryService.update(tenant.id, id, updateDto);
+		return {
+			message: 'Categoría actualizada exitosamente',
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+			data: null,
+		};
 	}
 
 	@Delete(':id')
@@ -180,7 +228,13 @@ export class CategoryController {
 	async remove(
 		@CurrentTenant() tenant: TenantEntity,
 		@Param('id') id: number,
-	): Promise<void> {
+	): Promise<IApiResponse<void>> {
 		await this.categoryService.delete(tenant.id, id);
+		return {
+			message: 'Categoría eliminada exitosamente',
+			data: null,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 }

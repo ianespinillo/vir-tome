@@ -211,4 +211,7 @@ export class BookService extends MultiTenantService<BookEntity> {
 			last_page: Math.ceil(total / 6),
 		};
 	}
+	async globalBooksCount() {
+		return this.bookRepository.count();
+	}
 }

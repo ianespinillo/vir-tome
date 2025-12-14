@@ -3,6 +3,7 @@ import {
 	Controller,
 	Delete,
 	Get,
+	HttpStatus,
 	Param,
 	ParseBoolPipe,
 	ParseIntPipe,
@@ -28,7 +29,9 @@ import {
 } from '@nestjs/swagger';
 import {
 	CreateBookDto,
+	IApiResponse,
 	IBooKForm,
+	IPaginatedResponse,
 	ROLES,
 	UpdateBookDto,
 	UpdateStockDto,
@@ -85,8 +88,14 @@ export class BookController {
 	async create(
 		@CurrentTenant() tenant: TenantEntity,
 		@Body() createBookDto: CreateBookDto,
-	): Promise<BookEntity> {
-		return await this.bookService.createBook(tenant.id, createBookDto);
+	): Promise<IApiResponse<BookEntity>> {
+		const data = await this.bookService.createBook(tenant.id, createBookDto);
+		return {
+			message: 'Book created succesfully',
+			data,
+			timestamp: new Date().toISOString(),
+			status: HttpStatus.CREATED,
+		};
 	}
 
 	@Put('stock/:id')
@@ -117,8 +126,14 @@ export class BookController {
 		@CurrentTenant() tenant: TenantEntity,
 		@Param('id', ParseIntPipe) id: number,
 		@Body() data: UpdateStockDto,
-	) {
-		return this.bookService.updateStock(tenant.id, id, data.quantity);
+	): Promise<IApiResponse<void>> {
+		await this.bookService.updateStock(tenant.id, id, data.quantity);
+		return {
+			message: 'Stock updated succesfully',
+			data: null,
+			timestamp: new Date().toISOString(),
+			status: HttpStatus.OK,
+		};
 	}
 
 	@Put(':id')
@@ -150,8 +165,14 @@ export class BookController {
 		@CurrentTenant() tenant: TenantEntity,
 		@Param('id', ParseIntPipe) id: number,
 		@Body() data: UpdateBookDto,
-	) {
-		return this.bookService.updateBook(tenant.id, id, data);
+	): Promise<IApiResponse<BookEntity>> {
+		const res = await this.bookService.updateBook(tenant.id, id, data);
+		return {
+			message: 'Book updated succesfully',
+			data: res,
+			timestamp: new Date().toISOString(),
+			status: HttpStatus.OK,
+		};
 	}
 
 	@Get()
@@ -188,14 +209,53 @@ export class BookController {
 		@Query('page', new ParseIntPipe({ optional: true })) page = 1,
 		@Query('full', new ParseBoolPipe({ optional: true })) full = false,
 		@Query('search') search?: string,
-	) {
+	): Promise<
+		IApiResponse<BookEntity[]> | IApiResponse<IPaginatedResponse<BookEntity>>
+	> {
 		if (full) {
-			return this.bookService.findAll(tenant.id);
+			const data = await this.bookService.findAll(tenant.id);
+			return {
+				message: 'Books retrieved successfully',
+				data,
+				status: HttpStatus.OK,
+				timestamp: new Date().toISOString(),
+			};
 		}
 		if (search) {
-			return this.bookService.findBookByName(tenant.id, search);
+			const data = await this.bookService.findBookByName(tenant.id, search);
+			return {
+				message: 'Books retrieved successfully',
+				data: {
+					items: data.data,
+					meta: {
+						total: data.total,
+						current_page: data.current_page,
+						last_page: data.last_page,
+						per_page: data.data.length,
+					},
+				},
+				status: HttpStatus.OK,
+				timestamp: new Date().toISOString(),
+			};
 		}
-		return this.bookService.findAllWithDetailsPaginated(tenant.id, page);
+		const data = await this.bookService.findAllWithDetailsPaginated(
+			tenant.id,
+			page,
+		);
+		return {
+			message: 'Books retrieved successfully',
+			data: {
+				items: data.data as unknown as BookEntity[],
+				meta: {
+					total: data.total,
+					current_page: data.current_page,
+					last_page: data.last_page,
+					per_page: 10,
+				},
+			},
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Get(':id')
@@ -220,8 +280,14 @@ export class BookController {
 	async findById(
 		@CurrentTenant() tenant: TenantEntity,
 		@Param('id', ParseIntPipe) id: number,
-	): Promise<IBooKForm> {
-		return await this.bookService.findOneBook(tenant.id, id);
+	): Promise<IApiResponse<IBooKForm>> {
+		const data = await this.bookService.findOneBook(tenant.id, id);
+		return {
+			message: 'Book founded succsesfully',
+			data,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Delete(':id')
@@ -245,7 +311,13 @@ export class BookController {
 	async remove(
 		@CurrentTenant() tenant: TenantEntity,
 		@Param('id', ParseIntPipe) id: number,
-	): Promise<void> {
-		return await this.bookService.delete(tenant.id, id);
+	): Promise<IApiResponse<void>> {
+		await this.bookService.delete(tenant.id, id);
+		return {
+			message: 'Book deleted successfully',
+			data: null,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 }

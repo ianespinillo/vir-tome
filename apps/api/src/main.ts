@@ -9,22 +9,19 @@ import { AuthModule } from './auth/auth.module';
 import { BookModule } from './book/book.module';
 import { AllExceptionsFilter } from './core/http-exception.filter';
 import { LoanModule } from './loan/loan.module';
+import { SuperAdminModule } from './super-admin/super-admin.module';
 import { TenantsModule } from './tenants/tenants.module';
 import { UsersModule } from './users/users.module';
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
-	app.useGlobalPipes(
-		new ValidationPipe({
-			transform: true,
-		}),
-	);
+	app.useGlobalPipes(new ValidationPipe());
 	app.setGlobalPrefix('api');
 	app.use(cookieParser());
 	app.useGlobalFilters(new AllExceptionsFilter());
 	app.enableCors({
 		origin: 'http://localhost:3000',
 		credentials: true,
-		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
 		allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Tenant-ID'],
 	});
 
@@ -42,6 +39,8 @@ async function bootstrap() {
 			BookModule,
 			AnalyticsModule,
 			TenantsModule,
+			SuperAdminModule,
+			UsersModule,
 		],
 	});
 	SwaggerModule.setup('api/docs', app, document);

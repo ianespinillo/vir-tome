@@ -10,6 +10,7 @@ import {
 	Body,
 	Controller,
 	Get,
+	HttpStatus,
 	Param,
 	ParseIntPipe,
 	Post,
@@ -33,7 +34,12 @@ import {
 	ApiTags,
 	ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { CreateLoanDto, ROLES } from '@repo/common';
+import {
+	CreateLoanDto,
+	IApiResponse,
+	IPaginatedResponse,
+	ROLES,
+} from '@repo/common';
 import { UpdateResult } from 'typeorm';
 import { LoanEntity } from './entities/loan.entity';
 import { LoanService } from './loan.service';
@@ -80,8 +86,14 @@ export class LoanController {
 		@Body() data: CreateLoanDto,
 		@CurrentTenant() tenant: TenantEntity,
 		@CurrentUserId() userId: number,
-	): Promise<LoanEntity | LoanEntity[]> {
-		return await this.loanService.createLoan(tenant.id, data, userId);
+	): Promise<IApiResponse<LoanEntity>> {
+		const res = await this.loanService.createLoan(tenant.id, data, userId);
+		return {
+			message: 'Préstamo registrado exitosamente',
+			data: res,
+			status: HttpStatus.CREATED,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Put('return/:id')
@@ -110,8 +122,14 @@ export class LoanController {
 	async returnBook(
 		@CurrentTenant() tenant: TenantEntity,
 		@Param('id', ParseIntPipe) loanId: number,
-	): Promise<UpdateResult> {
-		return await this.loanService.returnBook(tenant.id, loanId);
+	): Promise<IApiResponse<UpdateResult>> {
+		const res = await this.loanService.returnBook(tenant.id, loanId);
+		return {
+			message: 'Devolución registrada exitosamente',
+			data: res,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Get()
@@ -132,8 +150,25 @@ export class LoanController {
 	@ApiOkResponse({
 		description: 'Listado de préstamos',
 	})
-	async findAll(@CurrentTenant() tenant: TenantEntity, @Query('page') page = 1) {
-		return await this.loanService.paginatedLoans(page, tenant.id);
+	async findAll(
+		@CurrentTenant() tenant: TenantEntity,
+		@Query('page') page = 1,
+	): Promise<IApiResponse<IPaginatedResponse<{ book: string } & LoanEntity>>> {
+		const res = await this.loanService.paginatedLoans(page, tenant.id);
+		return {
+			message: 'Préstamos obtenidos exitosamente',
+			data: {
+				items: res.data,
+				meta: {
+					total: res.total,
+					current_page: res.current_page,
+					last_page: res.last_page,
+					per_page: 10,
+				},
+			} as IPaginatedResponse<{ book: string } & LoanEntity>,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Get('my')
@@ -150,9 +185,14 @@ export class LoanController {
 	async getMyLoans(
 		@CurrentTenant() tenant: TenantEntity,
 		@CurrentUserId() userId: number,
-	) {
-		// TODO: Implementar método en LoanService
-		return await this.loanService.findByUser(tenant.id, userId);
+	): Promise<IApiResponse<LoanEntity[]>> {
+		const res = await this.loanService.findByUser(tenant.id, userId);
+		return {
+			message: 'Préstamos obtenidos exitosamente',
+			data: res,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Get(':id')
@@ -175,7 +215,15 @@ export class LoanController {
 	@ApiNotFoundResponse({
 		description: 'Préstamo no encontrado',
 	})
-	async findById(@Param('id', ParseIntPipe) id: number): Promise<LoanEntity> {
-		return await this.loanService.findById(id);
+	async findById(
+		@Param('id', ParseIntPipe) id: number,
+	): Promise<IApiResponse<LoanEntity>> {
+		const res: LoanEntity = await this.loanService.findById(id);
+		return {
+			message: 'Préstamo obtenido exitosamente',
+			data: res,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 }

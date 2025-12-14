@@ -1,3 +1,4 @@
+'use client';
 import { Button } from '@/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/popover';
 import { useLoans } from '@repo/hooks';

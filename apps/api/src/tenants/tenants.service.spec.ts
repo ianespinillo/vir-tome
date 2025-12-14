@@ -1,7 +1,13 @@
+import { EmailService } from '@/email/email.service';
+import { RoleEntity } from '@/users/entities/role.entity';
+import { UserTenantEntity } from '@/users/entities/user-tenant.entity';
+import { UserEntity } from '@/users/entities/user.entity';
+import { RoleService } from '@/users/services/role.service';
+import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { CreateTenantDto } from '@repo/common';
+import { CreateTenantDto, ROLES, SignUpDto } from '@repo/common';
 import { Repository } from 'typeorm';
 import { TenantEntity } from './entities/tenant.entity';
 import { TenantsService } from './tenants.service';
@@ -25,7 +31,17 @@ describe('TenantsService', () => {
 			IsNull: jest.fn().mockReturnValue({ _type: 'isNull' }),
 		};
 	});
-
+	const mockUserService = {
+		find: jest.fn(),
+		create: jest.fn(),
+	};
+	const mockEmailService = {
+		sendEmailWelcome: jest.fn(),
+	};
+	const mockRoleService = {
+		initializeDefaultRoles: jest.fn(),
+		findRoleByName: jest.fn(),
+	};
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
 			providers: [
@@ -33,6 +49,19 @@ describe('TenantsService', () => {
 				{
 					provide: getRepositoryToken(TenantEntity),
 					useValue: mockRepository,
+				},
+
+				{
+					provide: RoleService,
+					useValue: mockRoleService,
+				},
+				{
+					provide: EmailService,
+					useValue: mockEmailService,
+				},
+				{
+					provide: UsersService,
+					useValue: mockUserService,
 				},
 			],
 		}).compile();
@@ -57,6 +86,16 @@ describe('TenantsService', () => {
 			name: 'Test School',
 			contact_email: 'admin@test-school.com',
 		} as CreateTenantDto;
+		const mockAdmin: Partial<UserEntity> = {
+			email: 'admin@email.com',
+			name: 'admin',
+			surname: 'doe',
+			userTenants: [
+				{
+					role: { id: 1, name: ROLES.ADMIN } as unknown as RoleEntity,
+				} as unknown as UserTenantEntity,
+			],
+		};
 
 		it('should create a tenant successfully', async () => {
 			const savedTenant = {
@@ -82,10 +121,15 @@ describe('TenantsService', () => {
 				.mockResolvedValueOnce(null); // No existing email
 			mockRepository.create.mockReturnValue(savedTenant);
 			mockRepository.save.mockResolvedValue(savedTenant);
-
+			mockRoleService.findRoleByName.mockResolvedValue(ROLES.ADMIN);
+			mockUserService.create.mockResolvedValue({
+				user: mockAdmin,
+			});
 			const result = await service.create(createTenantDto);
 
 			expect(result).toEqual(savedTenant);
+			expect(mockEmailService.sendEmailWelcome).toHaveBeenCalled();
+			expect(mockRoleService.initializeDefaultRoles).toHaveBeenCalled();
 			expect(mockRepository.findOne).toHaveBeenCalledTimes(2);
 			expect(mockRepository.save).toHaveBeenCalledWith(savedTenant);
 		});

@@ -1,11 +1,16 @@
+import { IAuthUser } from '@/core/core.types';
 import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import { Test, TestingModule } from '@nestjs/testing';
+import { ROLES } from '@repo/common';
 import { AnalyticsController } from './analytics.controller';
 import { AnalyticsService } from './analytics.service';
 
 describe('AnalyticsController', () => {
 	let controller: AnalyticsController;
-
+	const mockUser: Partial<IAuthUser> = {
+		roleName: ROLES.ADMIN,
+		tenantId: 1,
+	};
 	const mockAnalyticsService = {
 		getMostLoanedBooks: jest.fn().mockResolvedValue([
 			{ id: 1, title: 'Book A', count: 12 },
@@ -42,37 +47,37 @@ describe('AnalyticsController', () => {
 
 	describe('getMostLoanedBooks', () => {
 		it('should pass default limit=5 and tenant id to service', async () => {
-			const tenant = { id: 1 } as any;
-
-			const result = await controller.getMostLoanedBooks(tenant);
+			const result = await controller.getMostLoanedBooks(mockUser as IAuthUser);
 
 			expect(mockAnalyticsService.getMostLoanedBooks).toHaveBeenCalledTimes(1);
-			expect(mockAnalyticsService.getMostLoanedBooks).toHaveBeenCalledWith(5, 1);
-			expect(result).toEqual([
+			expect(mockAnalyticsService.getMostLoanedBooks).toHaveBeenCalledWith(
+				5,
+				mockUser,
+			);
+			expect(result.data).toEqual([
 				{ id: 1, title: 'Book A', count: 12 },
 				{ id: 2, title: 'Book B', count: 9 },
 			]);
 		});
 
 		it('should honor provided limit and pass tenant id', async () => {
-			const tenant = { id: 2 } as any;
-
-			await controller.getMostLoanedBooks(tenant, 3);
+			await controller.getMostLoanedBooks(mockUser as IAuthUser, 3);
 
 			expect(mockAnalyticsService.getMostLoanedBooks).toHaveBeenCalledTimes(1);
-			expect(mockAnalyticsService.getMostLoanedBooks).toHaveBeenCalledWith(3, 2);
+			expect(mockAnalyticsService.getMostLoanedBooks).toHaveBeenCalledWith(
+				3,
+				mockUser,
+			);
 		});
 	});
 
 	describe('getLastLoans', () => {
 		it('should call service with tenant id', async () => {
-			const tenant = { id: 10 } as any;
-
-			const result = await controller.getLastLoans(tenant);
+			const result = await controller.getLastLoans(mockUser as IAuthUser);
 
 			expect(mockAnalyticsService.getLastLoans).toHaveBeenCalledTimes(1);
-			expect(mockAnalyticsService.getLastLoans).toHaveBeenCalledWith(10);
-			expect(result).toEqual([
+			expect(mockAnalyticsService.getLastLoans).toHaveBeenCalledWith(mockUser);
+			expect(result.data).toEqual([
 				{ id: 101, bookId: 1, userId: 5, date: '2023-10-01' },
 			]);
 		});
@@ -80,35 +85,31 @@ describe('AnalyticsController', () => {
 
 	describe('countBooks', () => {
 		it('should call service without params and return its result', async () => {
-			const result = await controller.countBooks({ id: 1 } as TenantEntity);
+			const result = await controller.countBooks(mockUser as IAuthUser);
 
 			expect(mockAnalyticsService.countBooks).toHaveBeenCalledTimes(1);
-			expect(mockAnalyticsService.countBooks).toHaveBeenCalledWith(1);
-			expect(result).toEqual({ count: 42 });
+			expect(mockAnalyticsService.countBooks).toHaveBeenCalledWith(mockUser);
+			expect(result.data).toEqual({ count: 42 });
 		});
 	});
 
 	describe('countLoans', () => {
 		it('should call service with tenant id', async () => {
-			const tenant = { id: 3 } as any;
-
-			const result = await controller.countLoans(tenant);
+			const result = await controller.countLoans(mockUser as IAuthUser);
 
 			expect(mockAnalyticsService.countLoans).toHaveBeenCalledTimes(1);
-			expect(mockAnalyticsService.countLoans).toHaveBeenCalledWith(3);
-			expect(result).toEqual({ count: 7 });
+			expect(mockAnalyticsService.countLoans).toHaveBeenCalledWith(mockUser);
+			expect(result.data).toEqual(7);
 		});
 	});
 
 	describe('getLastReturns', () => {
 		it('should call service with tenant id', async () => {
-			const tenant = { id: 5 } as any;
-
-			const result = await controller.getLastReturns(tenant);
+			const result = await controller.getLastReturns(mockUser as IAuthUser);
 
 			expect(mockAnalyticsService.getLastReturns).toHaveBeenCalledTimes(1);
-			expect(mockAnalyticsService.getLastReturns).toHaveBeenCalledWith(5);
-			expect(result).toEqual([
+			expect(mockAnalyticsService.getLastReturns).toHaveBeenCalledWith(mockUser);
+			expect(result.data).toEqual([
 				{ id: 201, bookId: 1, userId: 5, returnDate: '2023-10-05' },
 			]);
 		});
@@ -124,36 +125,39 @@ describe('AnalyticsController', () => {
 		});
 
 		it('getLastLoans should propagate service errors', async () => {
-			const tenant = { id: 2 } as any;
 			(
 				mockAnalyticsService.getLastLoans as unknown as jest.Mock
 			).mockRejectedValueOnce(new Error('boom'));
-			await expect(controller.getLastLoans(tenant)).rejects.toThrow('boom');
+			await expect(controller.getLastLoans(mockUser as IAuthUser)).rejects.toThrow(
+				'boom',
+			);
 		});
 
 		it('countBooks should propagate service errors', async () => {
 			(
 				mockAnalyticsService.countBooks as unknown as jest.Mock
 			).mockRejectedValueOnce(new Error('boom'));
-			await expect(
-				controller.countBooks({ id: 1 } as TenantEntity),
-			).rejects.toThrow('boom');
+			await expect(controller.countBooks(mockUser as IAuthUser)).rejects.toThrow(
+				'boom',
+			);
 		});
 
 		it('countLoans should propagate service errors', async () => {
-			const tenant = { id: 3 } as any;
 			(
 				mockAnalyticsService.countLoans as unknown as jest.Mock
 			).mockRejectedValueOnce(new Error('boom'));
-			await expect(controller.countLoans(tenant)).rejects.toThrow('boom');
+			await expect(controller.countLoans(mockUser as IAuthUser)).rejects.toThrow(
+				'boom',
+			);
 		});
 
 		it('getLastReturns should propagate service errors', async () => {
-			const tenant = { id: 4 } as any;
 			(
 				mockAnalyticsService.getLastReturns as unknown as jest.Mock
 			).mockRejectedValueOnce(new Error('boom'));
-			await expect(controller.getLastReturns(tenant)).rejects.toThrow('boom');
+			await expect(
+				controller.getLastReturns(mockUser as IAuthUser),
+			).rejects.toThrow('boom');
 		});
 	});
 });

@@ -1,11 +1,11 @@
-import { ROLES } from '@repo/common';
+import { IRole, ROLES } from '@repo/common';
 // src/users/entities/role.entity.ts
 import { Column, Entity, Index } from 'typeorm';
 import { GenericEntity } from '../../core/generic.entity';
 
 @Entity('roles')
 @Index(['name', 'tenant_id'], { unique: true })
-export class RoleEntity extends GenericEntity {
+export class RoleEntity extends GenericEntity implements IRole {
 	@Column({
 		type: 'enum',
 		enum: ROLES,
@@ -13,10 +13,10 @@ export class RoleEntity extends GenericEntity {
 	name!: ROLES;
 
 	@Column({ nullable: true })
-	tenant_id?: number;
+	tenant_id: number;
 
 	@Column({ nullable: true })
-	description?: string;
+	description: string;
 
 	// Helper methods
 	isSuperAdmin(): boolean {

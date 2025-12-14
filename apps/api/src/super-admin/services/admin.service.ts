@@ -12,6 +12,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import {
 	CreateTenantDto,
+	IDashboardResponse,
+	ILoansByMonth,
 	LoanStatus,
 	ROLES,
 	TenantMetricsDto,
@@ -39,7 +41,7 @@ export class AdminService {
 	// ============================================
 	// DASHBOARD
 	// ============================================
-	async getDashboardMetrics() {
+	async getDashboardMetrics(): Promise<IDashboardResponse> {
 		const [
 			total_tenants,
 			active_tenants,
@@ -57,7 +59,7 @@ export class AdminService {
 		const recent_tenants = await this.tenantsRepo.find({
 			order: { created_at: 'DESC' },
 			take: 5,
-			select: ['id', 'name', 'subdomain', 'created_at', 'plan'],
+			select: ['id', 'name', 'subdomain', 'created_at', 'plan', 'is_active'],
 		});
 
 		return {
@@ -66,7 +68,14 @@ export class AdminService {
 			total_users,
 			total_books,
 			active_loans,
-			recent_tenants,
+			recent_tenants: recent_tenants.map((t) => ({
+				id: t.id,
+				name: t.name,
+				subdomain: t.subdomain,
+				created_at: t.created_at,
+				plan: t.plan || 'free',
+				status: t.is_active,
+			})),
 		};
 	}
 
@@ -91,23 +100,6 @@ export class AdminService {
 			is_active: true,
 			settings: this.getDefaultSettings(dto.plan),
 		});
-
-		// 3. Crear admin del tenant
-		const adminRole = await this.rolesRepo.findOne({
-			where: { name: ROLES.ADMIN },
-		});
-
-		const randomPassword = this.generateRandomPassword();
-		await this.usersRepo.save({
-			email: dto.admin_email,
-			name: dto.admin_name,
-			surname: dto.admin_surname,
-			password: await bcrypt.hash(randomPassword, 10),
-			tenant_id: tenant.id,
-			role_id: adminRole?.id,
-		});
-
-		// TODO: Enviar email con credenciales al admin
 
 		return tenant;
 	}
@@ -137,16 +129,7 @@ export class AdminService {
 			.getManyAndCount();
 
 		return {
-			data: data.map((t) => ({
-				id: t.id,
-				name: t.name,
-				subdomain: t.subdomain,
-				plan: t.plan,
-				is_active: t.is_active,
-				created_at: t.created_at,
-				users_count: t.userTenants?.length || 0,
-				books_count: t.books?.length || 0,
-			})),
+			data: data,
 			meta: {
 				total,
 				page,
@@ -348,6 +331,37 @@ export class AdminService {
 		};
 	}
 
+	async getLoansByMonth(): Promise<ILoansByMonth[]> {
+		const data = await this.loansRepo
+			.createQueryBuilder('loan')
+			.select("DATE_TRUNC('month', loan.loan_date)", 'month')
+			.addSelect('COUNT(*)', 'count')
+			.groupBy('month')
+			.orderBy('month', 'ASC')
+			.getRawMany();
+		return data.map((item) => ({
+			name: this.monthHelper(item.month),
+			total: Number.parseInt(item.count),
+		}));
+	}
+	private monthHelper(monthStamp: string): string {
+		const month = new Date(monthStamp).getMonth();
+		const monthNames = [
+			'January',
+			'February',
+			'March',
+			'April',
+			'May',
+			'June',
+			'July',
+			'August',
+			'September',
+			'October',
+			'November',
+			'December',
+		];
+		return monthNames[month];
+	}
 	private generateRandomPassword(): string {
 		return Math.random().toString(36).slice(-8);
 	}

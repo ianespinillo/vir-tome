@@ -1,3 +1,4 @@
+import { IUserTenant } from '@repo/common';
 // src/users/entities/user-tenant.entity.ts
 import {
 	Column,
@@ -14,7 +15,7 @@ import { UserEntity } from './user.entity';
 
 @Entity('user_tenants')
 @Index(['user_id', 'tenant_id'], { unique: true })
-export class UserTenantEntity {
+export class UserTenantEntity implements IUserTenant {
 	@PrimaryGeneratedColumn()
 	id!: number;
 

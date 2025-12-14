@@ -1,10 +1,10 @@
+'use client';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
-import { PAYLOAD_TYPE } from '@repo/common';
+import { PAYLOAD_TYPE, SignInDto } from '@repo/common';
 import { useAuth } from '@repo/hooks';
 import { Lock, Mail } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { SignInDto } from '../../../../common/src/dto/auth/sign-in.dto';
 import { Button } from '../../ui/button';
 import {
 	Card,

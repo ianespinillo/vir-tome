@@ -1,5 +1,5 @@
 'use client';
-import { AddBook, BookFilter, BookProvider, BooksTable } from '@repo/ui';
+import { AddBook, BooksTable, InputFilter } from '@repo/ui';
 import React, { useEffect, useState } from 'react';
 
 export default function BooksPage() {
@@ -9,21 +9,19 @@ export default function BooksPage() {
 	}, []);
 
 	return isClient ? (
-		<BookProvider>
-			<div>
-				<div className="px-8 pt-3">
-					<h1 className="text-5xl font-bold text-primary">Libros</h1>
-					<span className="text-muted-foreground text-xl">
-						Estos son los libros disponibles
-					</span>
-				</div>
-
-				<div className="px-5 flex justify-end gap-x-4">
-					<BookFilter />
-					<AddBook />
-				</div>
-				<BooksTable />
+		<div>
+			<div className="px-8 pt-3">
+				<h1 className="text-5xl font-bold text-primary">Libros</h1>
+				<span className="text-muted-foreground text-xl">
+					Estos son los libros disponibles
+				</span>
 			</div>
-		</BookProvider>
+
+			<div className="px-5 flex justify-end gap-x-4">
+				<InputFilter text="Buscar libro..." />
+				<AddBook />
+			</div>
+			{/* <BooksTable /> */}
+		</div>
 	) : null;
 }

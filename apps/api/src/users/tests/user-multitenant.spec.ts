@@ -66,7 +66,7 @@ describe('Users Multi-tenant Integration (Container)', () => {
 
 		// Crear roles por defecto para ambos tenants
 		defaultRole1 = await roleService.createRole(ROLES.STUDENT, tenant1.id);
-		defaultRole2 = await roleService.createRole(ROLES.STUDENT, tenant2.id);
+		defaultRole2 = await roleService.createRole(ROLES.TEACHER, tenant2.id);
 	}, 100000);
 
 	afterAll(async () => {
@@ -87,7 +87,7 @@ describe('Users Multi-tenant Integration (Container)', () => {
 
 		// Recrear roles por defecto
 		defaultRole1 = await roleService.createRole(ROLES.STUDENT, tenant1.id);
-		defaultRole2 = await roleService.createRole(ROLES.STUDENT, tenant2.id);
+		defaultRole2 = await roleService.createRole(ROLES.TEACHER, tenant2.id);
 
 		jest.clearAllMocks();
 	});
@@ -98,14 +98,14 @@ describe('Users Multi-tenant Integration (Container)', () => {
 				name: 'John',
 				surname: 'Doe',
 				email: 'john.doe@test.com',
-				roleId: defaultRole1.id,
+				role: defaultRole1.name,
 			};
 
 			const userData2: SignUpDto = {
 				name: 'Jane',
 				surname: 'Smith',
 				email: 'jane.smith@test.com',
-				roleId: defaultRole2.id,
+				role: defaultRole2.name,
 			};
 
 			const user1 = await usersService.create(tenant1.id, userData);
@@ -125,7 +125,7 @@ describe('Users Multi-tenant Integration (Container)', () => {
 				name: 'John',
 				surname: 'Doe',
 				email: 'duplicate@test.com',
-				roleId: defaultRole1.id,
+				role: defaultRole1.name,
 			};
 
 			await usersService.create(tenant1.id, userData);
@@ -143,7 +143,7 @@ describe('Users Multi-tenant Integration (Container)', () => {
 				name: 'Hacker',
 				surname: 'User',
 				email: 'hacker@test.com',
-				roleId: defaultRole2.id,
+				role: defaultRole2.name,
 			};
 
 			await expect(usersService.create(tenant1.id, userData)).rejects.toThrow(
@@ -156,19 +156,19 @@ describe('Users Multi-tenant Integration (Container)', () => {
 				name: 'Alpha User 1',
 				surname: 'One',
 				email: 'user1@alpha.com',
-				roleId: defaultRole1.id,
+				role: defaultRole1.name,
 			});
 			await usersService.create(tenant1.id, {
 				name: 'Alpha User 2',
 				surname: 'One',
 				email: 'user2@alpha.com',
-				roleId: defaultRole1.id,
+				role: defaultRole1.name,
 			});
 			await usersService.create(tenant2.id, {
 				name: 'Beta User 1',
 				surname: 'One',
 				email: 'user1@beta.com',
-				roleId: defaultRole2.id,
+				role: defaultRole2.name,
 			});
 
 			const tenant1Users = await usersService.findAllByTenant(tenant1.id);
@@ -191,7 +191,7 @@ describe('Users Multi-tenant Integration (Container)', () => {
 				name: 'User in Tenant 1',
 				surname: 'One',
 				email,
-				roleId: defaultRole1.id,
+				role: defaultRole1.name,
 			});
 
 			// Intentar crear otro usuario con el mismo email en tenant2 debería fallar
@@ -200,7 +200,7 @@ describe('Users Multi-tenant Integration (Container)', () => {
 					name: 'User in Tenant 2',
 					surname: 'Two',
 					email,
-					roleId: defaultRole2.id,
+					role: defaultRole2.name,
 				}),
 			).rejects.toThrow();
 
@@ -328,7 +328,7 @@ describe('Users Multi-tenant Integration (Container)', () => {
 			const createdUser = await usersService.create(tenant1.id, {
 				name: 'Admin User',
 				email: 'admin@tenant1.com',
-				roleId: adminRole.id,
+				role: adminRole.name,
 				surname: 'User',
 			});
 

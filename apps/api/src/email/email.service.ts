@@ -88,6 +88,7 @@ export class EmailService {
 				isNewUser,
 				loginUrl,
 				actualYear: new Date().getFullYear(),
+				supportEmail: 'espinilloian@hotmail.com',
 			},
 		});
 	}

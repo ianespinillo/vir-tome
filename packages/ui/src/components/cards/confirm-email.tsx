@@ -1,3 +1,4 @@
+'use client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card';
 import { useAuth } from '@repo/hooks';
 import { CheckCircle, Loader2, XCircle } from 'lucide-react';

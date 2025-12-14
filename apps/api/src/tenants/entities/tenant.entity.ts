@@ -1,4 +1,4 @@
-import { TenantSettings } from '@repo/common';
+import { ITenant, TenantSettings } from '@repo/common';
 import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { BookEntity } from '../../book/entities/book.entity';
 import { GenericEntity } from '../../core/generic.entity';
@@ -7,7 +7,7 @@ import { UserTenantEntity } from '../../users/entities/user-tenant.entity';
 @Entity({ name: 'tenant' })
 @Index(['subdomain'], { unique: true })
 @Index(['contact_email'])
-export class TenantEntity extends GenericEntity {
+export class TenantEntity extends GenericEntity implements ITenant {
 	@Column({ type: 'varchar', length: 50, unique: true })
 	subdomain!: string;
 

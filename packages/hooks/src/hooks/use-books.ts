@@ -1,5 +1,5 @@
 // Hook useBooks actualizado para recibir searchTerm
-import { CreateBookDto, IBook, UpdateBookDto } from '@repo/common';
+import { CreateBookDto, IBooKForm, UpdateBookDto } from '@repo/common';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
@@ -49,7 +49,7 @@ export const useBooks = (searchTerm?: string) => {
 				body: JSON.stringify(data),
 			});
 			if (!response.ok) throw new Error(response.statusText);
-			return response.json() as Promise<IBook>;
+			return response.json() as Promise<IBooKForm>;
 		},
 		onSuccess: () => {
 			client.refetchQueries({ queryKey: ['books'] });
@@ -83,7 +83,7 @@ export const useBooks = (searchTerm?: string) => {
 				},
 			);
 			if (!response.ok) throw new Error(response.statusText);
-			return response.json() as Promise<IBook>;
+			return response.json() as Promise<IBooKForm>;
 		},
 		onSuccess: () => {
 			client.refetchQueries({ queryKey: ['books'] });

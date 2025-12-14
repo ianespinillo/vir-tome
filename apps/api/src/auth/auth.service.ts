@@ -4,10 +4,12 @@ import { EmailService } from '@/email/email.service';
 import { SuperAdminService } from '@/super-admin/services/super-admin.service';
 import { TenantsService } from '@/tenants/tenants.service';
 import { TokensService } from '@/tokens/tokens.service';
+import { RoleService } from '@/users/services/role.service';
 import {
 	BadRequestException,
 	Injectable,
 	InternalServerErrorException,
+	NotFoundException,
 	UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -33,6 +35,7 @@ export class AuthService {
 		private readonly emailService: EmailService,
 		private readonly superAdminService: SuperAdminService,
 		private readonly tenantService: TenantsService,
+		private readonly roleService: RoleService,
 	) {}
 
 	// ============================================
@@ -236,13 +239,13 @@ export class AuthService {
 			if (hasAccess) {
 				throw new BadRequestException('User already exists in this tenant');
 			}
-
-			// Usuario existe pero no en este tenant, agregarlo
-			await this.usersService.addUserToTenant(
-				user.id,
+			const role = await this.roleService.findRoleByName(
+				registerDto.role,
 				tenantId,
-				registerDto.roleId,
 			);
+			if (!role) throw new NotFoundException('Role not founded in tenant');
+			// Usuario existe pero no en este tenant, agregarlo
+			await this.usersService.addUserToTenant(user.id, tenantId, role.id);
 			await this.emailService.welcomeToTenantEmail({
 				email: user.email,
 				isNewUser: false,
@@ -256,7 +259,7 @@ export class AuthService {
 				name: user.name,
 				surname: user.surname,
 				tenantId: tenantId,
-				roleId: registerDto.roleId,
+				roleId: role.id,
 			};
 		}
 		const result = await this.usersService.create(tenantId, registerDto);
@@ -270,7 +273,7 @@ export class AuthService {
 			name: result.user.name,
 			surname: result.user.surname,
 			tenantId: tenantId,
-			roleId: registerDto.roleId,
+			roleId: result.user.getRoleIdInTenant(tenantId),
 		};
 	}
 

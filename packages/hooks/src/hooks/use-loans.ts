@@ -14,16 +14,6 @@ export const useLoans = () => {
 		staleTime: 5000,
 		refetchOnWindowFocus: false,
 	});
-	const fetchNextPage = async () => {
-		if (loans.data && loans.data.current_page < loans.data.last_page) {
-			setPage((prev) => prev + 1);
-		}
-	};
-	const fetchPreviousPage = async () => {
-		if (loans.data && loans.data.current_page > 1) {
-			setPage((prev) => Math.max(prev - 1, 1));
-		}
-	};
 	const createLoan = useMutation({
 		mutationFn: async (data: CreateLoanDto) => {
 			const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/loan`, {
@@ -75,8 +65,6 @@ export const useLoans = () => {
 	});
 	return {
 		loans,
-		fetchNextPage,
-		fetchPreviousPage,
 		createLoan,
 		finishLoan,
 		findLoan,

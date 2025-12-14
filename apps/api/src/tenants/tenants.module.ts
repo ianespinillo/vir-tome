@@ -1,3 +1,4 @@
+import { EmailModule } from '@/email/email.module';
 // src/tenants/tenants.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -8,7 +9,7 @@ import { TenantsController } from './tenants.controller';
 import { TenantsService } from './tenants.service';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([TenantEntity]), UsersModule],
+	imports: [TypeOrmModule.forFeature([TenantEntity]), UsersModule, EmailModule],
 	controllers: [TenantsController],
 	providers: [TenantsService, TenantGuard],
 	exports: [TenantsService, TypeOrmModule, TenantGuard], // Exportar para usar en otros módulos

@@ -1,6 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AppController } from './app.controller';
@@ -54,6 +55,14 @@ import { UsersModule } from './users/users.module';
 			inject: [ConfigService],
 			imports: [ConfigModule],
 		}),
+		JwtModule.registerAsync({
+			inject: [ConfigService],
+			imports: [ConfigModule],
+			useFactory: (configService: ConfigService) => ({
+				secret: configService.get<string>('JWT_SECRET'),
+				signOptions: { expiresIn: '4h' },
+			}),
+		}),
 		UsersModule,
 		LoanModule,
 		BookModule,
@@ -77,7 +86,7 @@ import { UsersModule } from './users/users.module';
 })
 export class AppModule implements NestModule {
 	configure(consumer: MiddlewareConsumer) {
-		consumer.apply(TenantMiddleware).exclude('auth/*').forRoutes('*');
+		consumer.apply(TenantMiddleware).exclude('/auth/*', '/demo/*').forRoutes('*');
 		consumer.apply(DemoMiddleware).forRoutes('*');
 	}
 }

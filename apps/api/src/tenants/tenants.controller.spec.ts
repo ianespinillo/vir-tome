@@ -1,6 +1,9 @@
+import { EmailService } from '@/email/email.service';
+import { RoleService } from '@/users/services/role.service';
+import { UsersService } from '@/users/services/users.service';
 import { HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateTenantDto } from '@repo/common';
+import { CreateTenantDto, IApiResponse } from '@repo/common';
 import { TenantsController } from './tenants.controller';
 import { TenantsService } from './tenants.service';
 
@@ -61,6 +64,7 @@ describe('TenantsController', () => {
 				message: 'Tenant created successfully',
 				data: createdTenant,
 				status: HttpStatus.CREATED,
+				timestamp: expect.any(String),
 			});
 			expect(service.create).toHaveBeenCalledWith(createTenantDto);
 		});
@@ -77,6 +81,7 @@ describe('TenantsController', () => {
 				message: 'Tenant retrieved successfully',
 				data: tenant,
 				status: HttpStatus.OK,
+				timestamp: expect.any(String),
 			});
 			expect(service.findBySubdomain).toHaveBeenCalledWith('test-school');
 		});
@@ -93,6 +98,7 @@ describe('TenantsController', () => {
 				message: 'Tenant statistics retrieved successfully',
 				data: stats,
 				status: HttpStatus.OK,
+				timestamp: expect.any(String),
 			});
 			expect(service.getStats).toHaveBeenCalled();
 		});

@@ -1,4 +1,4 @@
-import { LoanStatus } from '@repo/common';
+import { IBook, ILoan, IUser, LoanStatus } from '@repo/common';
 // src/loan/entities/loan.entity.ts
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BookEntity } from '../../book/entities/book.entity';
@@ -8,7 +8,7 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Entity({
 	name: 'loan',
 })
-export class LoanEntity extends GenericEntity {
+export class LoanEntity extends GenericEntity implements ILoan {
 	@Column()
 	user_id!: number;
 
@@ -45,7 +45,13 @@ export class LoanEntity extends GenericEntity {
 	status!: LoanStatus;
 
 	// Getter para compatibilidad con GenericEntity multi-tenant
-	public get tenant_id(): number {
-		return this.book?.tenant_id;
+	public getBook(): IBook {
+		return this.book;
+	}
+	public getUser(): IUser {
+		return this.user;
+	}
+	public isOverdue(): boolean {
+		return this.return_date > new Date();
 	}
 }

@@ -53,7 +53,7 @@ describe('MultitenantGuard', () => {
 				UnauthorizedException,
 			);
 			expect(() => guard.canActivate(mockExecutionContext)).toThrow(
-				'Missing user or tenant context',
+				'Missing user',
 			);
 		});
 
@@ -69,7 +69,7 @@ describe('MultitenantGuard', () => {
 				UnauthorizedException,
 			);
 			expect(() => guard.canActivate(mockExecutionContext)).toThrow(
-				'Missing user or tenant context',
+				'Missing tenant',
 			);
 		});
 

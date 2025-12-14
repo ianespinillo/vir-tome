@@ -53,7 +53,7 @@ async function seed() {
 	await AppDataSource.query(`TRUNCATE TABLE "roles" CASCADE`);
 	await AppDataSource.query(`TRUNCATE TABLE "tenant" CASCADE`);
 	await AppDataSource.query(`TRUNCATE TABLE "users" CASCADE`);
-	await AppDataSource.query(`TRUNCATE TABLE "super-admin" CASCADE`);
+	// await AppDataSource.query(`TRUNCATE TABLE "super-admin" CASCADE`);
 	// 2. SETTINGS
 	faker.seed(123); // ¡Importante! Hace que los datos sean siempre iguales
 
@@ -174,17 +174,17 @@ async function seed() {
 	// ==========================================
 	// CREAR SUPER ADMIN (TÚ)
 	// ==========================================
-	console.log('👑 Creando Super Admin...');
-	const superAdminRepo = AppDataSource.getRepository(SuperAdminEntity);
-	const { password, hashedPassword } =
-		await PasswordAdapter.generateHashedPassword(8);
-	console.log(`Super admin password: ${password}`);
-	const superAdmin = await superAdminRepo.save({
-		email: 'espinilloian@hotmail.com',
-		name: 'Ian',
-		password: hashedPassword,
-		isActive: true,
-	});
+	// console.log('👑 Creando Super Admin...');
+	// const superAdminRepo = AppDataSource.getRepository(SuperAdminEntity);
+	// const { password, hashedPassword } =
+	// 	await PasswordAdapter.generateHashedPassword(8);
+	// console.log(`Super admin password: ${password}`);
+	// const superAdmin = await superAdminRepo.save({
+	// 	email: 'espinilloian@hotmail.com',
+	// 	name: 'Ian',
+	// 	password: hashedPassword,
+	// 	isActive: true,
+	// });
 	// ==========================================
 	// CREAR DATOS DEL DOMINIO (Solo para Demo Tenant)
 	// ==========================================
@@ -255,6 +255,20 @@ async function seed() {
 		return_date: faker.date.past(), // Fecha devolución vieja
 		status: LoanStatus.OVERDUE,
 	});
+	const users = [uAdmin, uStudent, uTraveler]; // Define the users array with existing user entities
+	for (let i = 0; i < 20; i++) {
+		const user = faker.helpers.arrayElement(users);
+		const book = faker.helpers.arrayElement(books);
+
+		await loanRepo.save({
+			user,
+			user_id: user.id,
+			book,
+			quantity: faker.number.int({ min: 1, max: 3 }),
+			loan_date: faker.date.recent(),
+			status: faker.helpers.arrayElement([LoanStatus.ACTIVE, LoanStatus.OVERDUE]),
+		});
+	}
 
 	console.log('✅ Seeding Completado Exitosamente');
 	process.exit(0);

@@ -1,21 +1,29 @@
-import { LastLoans } from '@repo/common';
+import { ILoan } from '@repo/common';
 import { ColumnDef } from '@tanstack/react-table';
 
-export const LastLoansColumns: ColumnDef<LastLoans>[] = [
+export const LastLoansColumns: ColumnDef<ILoan>[] = [
 	{
 		accessorKey: 'id',
 		header: 'ID',
 	},
 	{
+		accessorFn: (row) => row.book,
 		accessorKey: 'title',
 		header: 'Libro',
+		cell: ({ row }) => row.original.book.title,
 	},
 	{
-		accessorKey: 'returnDate',
+		accessorFn: (row) => row.user,
+		accessorKey: 'email',
+		header: 'Email de usuario',
+		cell: ({ row }) => `${row.original.user.name} ${row.original.user.surname}`,
+	},
+	{
+		accessorKey: 'return_date',
 		header: 'Estado',
 		cell: ({ row }) => {
-			const { returnDate } = row.original;
-			const date = new Date(returnDate);
+			const { return_date } = row.original;
+			const date = new Date(return_date);
 			const today = new Date();
 			const isOverdue = date < today;
 			return (

@@ -48,6 +48,7 @@ const createMockRepository = (): MockRepository => {
 };
 const mockRoleService = {
 	findById: jest.fn(),
+	findRoleByName: jest.fn(),
 };
 
 describe('UsersService', () => {
@@ -228,7 +229,7 @@ describe('UsersService', () => {
 			surname: 'User',
 			password: 'password123',
 			tenantId: 1,
-			roleId: 1,
+			role: ROLES.ADMIN,
 		};
 
 		// Mock para el findById que se llama al final
@@ -254,7 +255,7 @@ describe('UsersService', () => {
 			userTenantsRepo.findOne?.mockResolvedValue(null);
 			// 4. addUserToTenant (save)
 			userTenantsRepo.save?.mockResolvedValue(mockUserTenant);
-
+			mockRoleService.findRoleByName.mockResolvedValue(mockRole);
 			const result = await service.create(createData.tenantId, createData);
 
 			expect(usersRepo.findOne).toHaveBeenCalledWith({
@@ -322,7 +323,7 @@ describe('UsersService', () => {
 			name: 'Global',
 			surname: 'Admin',
 			password: 'password123',
-			roleId: 99,
+			role: ROLES.SUPER_ADMIN,
 		};
 
 		it('should create a new global user', async () => {

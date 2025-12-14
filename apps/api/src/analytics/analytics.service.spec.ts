@@ -1,10 +1,16 @@
 import { BookService } from '@/book/services/book.service';
+import { IAuthUser } from '@/core/core.types';
 import { LoanService } from '@/loan/loan.service';
 import { Test, TestingModule } from '@nestjs/testing';
+import { ROLES } from '@repo/common';
 import { AnalyticsService } from './analytics.service';
 
 describe('AnalyticsService', () => {
 	let service: AnalyticsService;
+	const mockUser: Partial<IAuthUser> = {
+		roleName: ROLES.ADMIN,
+		tenantId: 1,
+	};
 
 	const mockBookService = {
 		count: jest.fn().mockResolvedValue(42),
@@ -12,8 +18,8 @@ describe('AnalyticsService', () => {
 
 	const mockLoanService = {
 		mostLoanedBooks: jest.fn().mockResolvedValue([
-			{ id: 1, title: 'Book A', count: '5' }, // string count from DB
-			{ id: 2, title: 'Book B', count: '3' },
+			{ id: 1, title: 'Book A', count: 5 }, // string count from DB
+			{ id: 2, title: 'Book B', count: 3 },
 		]),
 		lastsLoans: jest
 			.fn()
@@ -49,7 +55,10 @@ describe('AnalyticsService', () => {
 			const limit = 3;
 			const tenantId = 1;
 
-			const result = await service.getMostLoanedBooks(limit, tenantId);
+			const result = await service.getMostLoanedBooks(
+				limit,
+				mockUser as IAuthUser,
+			);
 
 			expect(
 				mockLoanService.mostLoanedBooks as unknown as jest.Mock,
@@ -68,13 +77,17 @@ describe('AnalyticsService', () => {
 			(
 				mockLoanService.mostLoanedBooks as unknown as jest.Mock
 			).mockRejectedValueOnce(new Error('boom'));
-			await expect(service.getMostLoanedBooks(2, 9)).rejects.toThrow('boom');
+			mockUser.tenantId = 9;
+			await expect(
+				service.getMostLoanedBooks(2, mockUser as IAuthUser),
+			).rejects.toThrow('boom');
 		});
 	});
 
 	describe('getLastLoans', () => {
 		it('should call loanService with tenant id and return data', async () => {
-			const res = await service.getLastLoans(10);
+			mockUser.tenantId = 10;
+			const res = await service.getLastLoans(mockUser as IAuthUser);
 			expect(
 				mockLoanService.lastsLoans as unknown as jest.Mock,
 			).toHaveBeenCalledWith(10);
@@ -86,7 +99,7 @@ describe('AnalyticsService', () => {
 
 	describe('countBooks', () => {
 		it('should return { count } to match controller docs', async () => {
-			const res = await service.countBooks(1);
+			const res = await service.countBooks(mockUser as IAuthUser);
 			expect(mockBookService.count as unknown as jest.Mock).toHaveBeenCalledTimes(
 				1,
 			);
@@ -96,20 +109,22 @@ describe('AnalyticsService', () => {
 
 	describe('countLoans', () => {
 		it('should call loanService with tenant id and return its result', async () => {
-			const res = await service.countLoans(3);
+			const res = await service.countLoans(mockUser as IAuthUser);
 			expect(
 				mockLoanService.countLoans as unknown as jest.Mock,
-			).toHaveBeenCalledWith(3);
+			).toHaveBeenCalledWith(mockUser.tenantId);
 			expect(res).toEqual({ count: 7 });
 		});
 	});
 
 	describe('getLastReturns', () => {
 		it('should call loanService with tenant id and return its result', async () => {
-			const res = await service.getLastReturns(5);
+			mockUser.roleName = ROLES.SUPER_ADMIN;
+			const res = await service.getLastReturns(mockUser as IAuthUser);
 			expect(
 				mockLoanService.getLastReturnedLoans as unknown as jest.Mock,
-			).toHaveBeenCalledWith(5);
+			).toHaveBeenCalled();
+
 			expect(res).toEqual([
 				{
 					id: 201,

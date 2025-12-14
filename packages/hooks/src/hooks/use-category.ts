@@ -19,29 +19,10 @@ export const useCategory = () => {
 				(res) => res.json() as Promise<ICategory[]>,
 			),
 	});
-	const fetchNextPage = async () => {
-		if (
-			categories.data &&
-			categories.data.current_page < categories.data.last_page
-		) {
-			setPageIndex((prev) => prev + 1);
-		}
-	};
 
-	const fetchPreviousPage = async () => {
-		if (categories.data && categories.data.current_page > 1) {
-			setPageIndex((prev) => prev - 1);
-		}
-	};
 	return {
 		categories: {
 			...categories,
-			fetchNextPage,
-			fetchPreviousPage,
-			hasNextPage:
-				categories.data &&
-				categories.data?.current_page < categories.data?.last_page,
-			hasPreviousPage: categories.data && categories.data?.current_page > 1,
 			pageIndex,
 		},
 		allCategories,
