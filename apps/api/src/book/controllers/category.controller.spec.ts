@@ -2,7 +2,12 @@ import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 // src/categories/controllers/category.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateCategoryDto, UpdateCategoryDto } from '@repo/common';
+import {
+	CreateCategoryDto,
+	IApiResponse,
+	IPaginatedResponse,
+	UpdateCategoryDto,
+} from '@repo/common';
 import { CategoryEntity } from '../entities/category.entity';
 import { CategoryService } from '../services/category.service';
 import { CategoryController } from './category.controller';
@@ -35,6 +40,12 @@ describe('CategoryController', () => {
 		books: [],
 		tenant: mockTenant,
 	};
+	const controllerResponse: IApiResponse<any> = {
+		message: expect.any(String),
+		data: null,
+		timestamp: expect.any(String),
+		status: expect.any(Number),
+	};
 
 	const mockCategoryService = {
 		create: jest.fn(),
@@ -55,7 +66,7 @@ describe('CategoryController', () => {
 				},
 			],
 		}).compile();
-
+		controllerResponse.data = null;
 		controller = module.get<CategoryController>(CategoryController);
 		categoryService = module.get<CategoryService>(CategoryService);
 		jest.clearAllMocks();
@@ -70,9 +81,9 @@ describe('CategoryController', () => {
 			mockCategoryService.create.mockResolvedValue(mockCategory);
 
 			const result = await controller.create(mockTenant, createCategoryDto);
-
+			controllerResponse.data = mockCategory;
 			expect(categoryService.create).toHaveBeenCalledWith(1, createCategoryDto);
-			expect(result).toEqual(mockCategory);
+			expect(result).toEqual(controllerResponse);
 		});
 
 		it('should throw BadRequestException for invalid data', async () => {
@@ -90,17 +101,25 @@ describe('CategoryController', () => {
 
 	describe('findAll', () => {
 		it('should return paginated categories by default', async () => {
-			const paginatedResult = {
-				data: [mockCategory],
-				meta: { total: 1, page: 1, lastPage: 1, perPage: 10 },
+			const paginatedResult: IPaginatedResponse<any> = {
+				items: [mockCategory],
+				meta: { total: 1, current_page: 1, last_page: 1, per_page: 10 },
 			};
+			const serviceResult = {
+				data: [mockCategory],
+				total: 1,
+				current_page: 1,
+				last_page: 1,
+				per_page: 1,
+				skip: 0,
+				to: 1,
+			};
+			mockCategoryService.findByPage.mockResolvedValue(serviceResult);
 
-			mockCategoryService.findByPage.mockResolvedValue(paginatedResult);
-
+			controllerResponse.data = paginatedResult;
 			const result = await controller.findAll(mockTenant, 1, false);
-
 			expect(categoryService.findByPage).toHaveBeenCalledWith(1, 1);
-			expect(result).toEqual(paginatedResult);
+			expect(result.data).toEqual(controllerResponse.data);
 		});
 
 		it('should return all categories when full=true', async () => {
@@ -109,9 +128,9 @@ describe('CategoryController', () => {
 			mockCategoryService.findAll.mockResolvedValue(allCategories);
 
 			const result = await controller.findAll(mockTenant, 1, true);
-
+			controllerResponse.data = allCategories;
 			expect(categoryService.findAll).toHaveBeenCalledWith(1);
-			expect(result).toEqual(allCategories);
+			expect(result).toEqual(controllerResponse);
 		});
 	});
 
@@ -120,9 +139,9 @@ describe('CategoryController', () => {
 			mockCategoryService.findById.mockResolvedValue(mockCategory);
 
 			const result = await controller.findOne(mockTenant, 1);
-
+			controllerResponse.data = mockCategory;
 			expect(categoryService.findById).toHaveBeenCalledWith(1, 1);
-			expect(result).toEqual(mockCategory);
+			expect(result).toEqual(controllerResponse);
 		});
 
 		it('should throw NotFoundException for non-existent category', async () => {

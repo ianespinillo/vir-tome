@@ -1,6 +1,7 @@
+import 'reflect-metadata';
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
-
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import '@repo/ui/globals.css';
 
 const geistSans = localFont({
@@ -27,7 +28,7 @@ export default function RootLayout({
 	return (
 		<html lang="en" style={{ height: '100vh' }}>
 			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-				{children}
+				<NuqsAdapter>{children}</NuqsAdapter>
 			</body>
 		</html>
 	);

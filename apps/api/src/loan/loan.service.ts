@@ -6,7 +6,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { LoanEntity } from './entities/loan.entity';
 
-import { CreateLoanDto, LoanStatus } from '@repo/common';
+import { BookEntity } from '@/book/entities/book.entity';
+import { CreateLoanDto, LoanStatus, MostLoanedBooks } from '@repo/common';
 import { IsNull, Repository, UpdateResult } from 'typeorm';
 import { BookService } from '../book/services/book.service';
 import { GenericService } from '../core/generic.service';
@@ -68,12 +69,14 @@ export class LoanService extends GenericService {
 		return await this.update(loanId, loan);
 	}
 	//contar prestamos por tenant
-	async countLoans(tenantId: number): Promise<{ count: number }> {
+	async countLoans(tenantId?: number) {
 		const count = await this.loanRepository.count({
-			where: { book: { tenant_id: tenantId } },
+			where: tenantId ? { book: { tenant_id: tenantId } } : {},
 		});
+
 		return { count };
 	}
+
 	async paginatedLoans(page: number, tenantId: number) {
 		const [data, total] = await this.loanRepository.findAndCount({
 			relations: ['book'],
@@ -95,7 +98,9 @@ export class LoanService extends GenericService {
 	async findByUser(tenantId: number, userId: number) {
 		return this.loanRepository.find({
 			where: {
-				tenant_id: tenantId,
+				book: {
+					tenant_id: tenantId,
+				},
 				user_id: userId,
 				deleted_at: IsNull(),
 			},
@@ -105,44 +110,60 @@ export class LoanService extends GenericService {
 			},
 		});
 	}
-	async mostLoanedBooks(limit: number, tenantId: number) {
-		return this.loanRepository
+	async mostLoanedBooks(
+		limit: number,
+		tenantId?: number,
+	): Promise<MostLoanedBooks[]> {
+		const query = this.loanRepository
 			.createQueryBuilder('loan')
-			.select('book.id', 'id')
-			.addSelect('book.title', 'title')
-			.addSelect('COUNT(*)', 'count')
-			.innerJoin('loan.book', 'book') // Relación definida en tu entidad.
-			.where('book.tenant_id = :tenantId', { tenantId: tenantId }) // Filtrar por tenant_id
+			.select([
+				'book.id AS id',
+				'book.title AS title',
+				'book.tenant_id AS tenant_id',
+				'COUNT(*)::int AS count', // tipado correcto en PG
+			])
+			.innerJoin('loan.book', 'book')
 			.groupBy('book.id')
+			.addGroupBy('book.tenant_id')
 			.orderBy('count', 'DESC')
-			.limit(limit)
-			.getRawMany();
+			.limit(limit);
+
+		if (tenantId) {
+			query.andWhere('book.tenant_id = :tenantId', { tenantId });
+		}
+
+		return query.getRawMany();
 	}
-	async lastsLoans(tenantId: number) {
-		return this.loanRepository
-			.createQueryBuilder('loan')
-			.select('book.id', 'id')
-			.addSelect('book.title', 'title')
-			.addSelect('loan.loanDate', 'loanDate')
-			.addSelect('loan.returnDate', 'returnDate')
-			.innerJoin('loan.book', 'book') // Relación definida en tu entidad.
-			.where('book.tenant_id = :tenantId', { tenantId: tenantId }) // Filtrar por tenant_id
-			.orderBy('loan.loanDate', 'DESC')
-			.limit(3)
-			.getRawMany();
+
+	async lastsLoans(tenantId?: number): Promise<LoanEntity[]> {
+		return this.loanRepository.find({
+			where: tenantId ? { book: { tenant_id: tenantId } } : {},
+			relations: ['book', 'user'],
+			order: { loan_date: 'desc' },
+			take: 3,
+		});
 	}
-	async getLastReturnedLoans(tenantId: number) {
-		return this.loanRepository
+	async getLastReturnedLoans(tenantId?: number) {
+		return this.loanRepository.find({
+			where: tenantId
+				? { book: { tenant_id: tenantId }, status: LoanStatus.RETURNED }
+				: { status: LoanStatus.RETURNED },
+			relations: ['book'],
+			order: { loan_date: 'desc' },
+			take: 3,
+		});
+	}
+	async getLoansByMonth(tenantId?: number) {
+		const qb = this.loanRepository
 			.createQueryBuilder('loan')
-			.select('book.id', 'id')
-			.addSelect('book.title', 'title')
-			.addSelect('loan.loanDate', 'loanDate')
-			.addSelect('loan.returnDate', 'returnDate')
-			.innerJoin('loan.book', 'book') // Relación definida en tu entidad.
-			.where('book.tenant_id = :tenantId', { tenantId: tenantId }) // Filtrar por tenant_id
-			.where('loan.status = :status', { status: LoanStatus.RETURNED })
-			.orderBy('loan.returnDate', 'DESC')
-			.limit(3)
-			.getRawMany();
+			.select("TO_CHAR(loan.loan_date, 'YYYY-MM')", 'month')
+			.addSelect('COUNT(*)', 'count')
+			.innerJoin('loan.book', 'book')
+			.groupBy('month')
+			.orderBy('month', 'ASC');
+
+		if (tenantId)
+			qb.andWhere('book.tenant_id = :tenantId', { tenantId: tenantId });
+		return qb.getRawMany();
 	}
 }

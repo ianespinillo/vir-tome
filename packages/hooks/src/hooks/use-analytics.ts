@@ -1,46 +1,33 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { IApiResponse, ILoan, MostLoanedBooks } from '@repo/common';
+import { useQuery } from '@tanstack/react-query';
+import { AnalyticsService } from '../services/analytics.service';
 
-export const useAnalytics = () => {
-	const mostLoanedBooks = useMutation({
-		mutationKey: ['most-loaned-books'],
-		mutationFn: () =>
-			fetch(`${process.env.NEXT_PUBLIC_API_URL}/analytics/most-loaned-books`).then(
-				(res) => res.json(),
-			),
+export const useAnalytics = (limit = 5) => {
+	const mostLoanedBooks = useQuery<
+		IApiResponse<MostLoanedBooks[]>,
+		IApiResponse<Error>
+	>({
+		queryKey: ['most-loaned-books', limit],
+		queryFn: async () => (await AnalyticsService.getMostLoanedBooks(limit)).data,
 	});
-	const lastLoans = useQuery({
+	const lastLoans = useQuery<IApiResponse<ILoan[]>, IApiResponse<Error>>({
 		queryKey: ['last-loans'],
-		queryFn: () =>
-			fetch(`${process.env.NEXT_PUBLIC_API_URL}/analytics/last-loans`).then(
-				(res) => res.json(),
-			),
+		queryFn: async () => (await AnalyticsService.getLastLoans()).data,
 		refetchOnWindowFocus: false,
 	});
-	const lastReturns = useQuery({
+	const lastReturns = useQuery<IApiResponse<ILoan[]>, IApiResponse<Error>>({
 		queryKey: ['last-returns'],
-		queryFn: () => {
-			return fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/analytics/last-returns`,
-			).then((res) => res.json());
-		},
+		queryFn: async () => (await AnalyticsService.getLastReturns()).data,
 		refetchOnWindowFocus: false,
 	});
 
-	const countBooks = useMutation({
-		mutationKey: ['count-books'],
-		mutationFn: () => {
-			return fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/analytics/count-books`,
-			).then((res) => res.json());
-		},
+	const countBooks = useQuery<IApiResponse<number>, IApiResponse<Error>>({
+		queryKey: ['count-books'],
+		queryFn: async () => (await AnalyticsService.countBooks()).data,
 	});
-	const countLoans = useMutation({
-		mutationKey: ['count-loans'],
-		mutationFn: () => {
-			return fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/analytics/count-loans`,
-			).then((res) => res.json());
-		},
+	const countLoans = useQuery<IApiResponse<number>, IApiResponse<Error>>({
+		queryKey: ['count-loans'],
+		queryFn: async () => (await AnalyticsService.countLoans()).data,
 	});
 	return { mostLoanedBooks, lastLoans, lastReturns, countBooks, countLoans };
 };

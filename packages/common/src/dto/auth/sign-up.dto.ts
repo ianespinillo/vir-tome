@@ -1,4 +1,13 @@
-import { IsNotEmpty, IsNumber, IsString, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+	IsIn,
+	IsNotEmpty,
+	IsNumber,
+	IsOptional,
+	IsString,
+	MaxLength,
+} from 'class-validator';
+import { ROLES } from '../../enum/roles.enum';
 
 export class SignUpDto {
 	@IsNotEmpty()
@@ -17,6 +26,10 @@ export class SignUpDto {
 	surname!: string;
 
 	@IsNotEmpty()
-	@IsNumber()
-	roleId!: number;
+	@IsIn(Object.values(ROLES))
+	role!: ROLES;
+
+	@IsOptional()
+	@IsNotEmpty()
+	tenantId?: number;
 }

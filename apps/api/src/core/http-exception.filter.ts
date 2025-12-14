@@ -1,4 +1,3 @@
-// src/common/filters/http-exception.filter.ts
 import {
 	ArgumentsHost,
 	Catch,
@@ -6,10 +5,11 @@ import {
 	HttpException,
 	HttpStatus,
 } from '@nestjs/common';
+import { IApiResponse } from '@repo/common';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-	catch(exception: unknown, host: ArgumentsHost) {
+	catch(exception: unknown, host: ArgumentsHost): void {
 		const ctx = host.switchToHttp();
 		const response = ctx.getResponse();
 		const request = ctx.getRequest();
@@ -24,19 +24,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
 				? exception.getResponse()
 				: 'Internal server error';
 
-		// If headers are already sent, don't try to write again — this avoids
-		// "Cannot set headers after they are sent to the client" when the
-		// controller already sent a response and an error occurs afterwards.
+		// Evitar escribir en la respuesta si los headers ya fueron enviados
 		if (response.headersSent) {
-			// let the Node/Express runtime handle any already-started response
 			return;
 		}
-
-		response.status(status).json({
-			statusCode: status,
+		console.log(exception);
+		const apiResponse: IApiResponse<any> = {
+			status,
+			message:
+				typeof message === 'object' ? (message as any).message || 'Error' : message,
 			timestamp: new Date().toISOString(),
-			path: request.url,
-			...(typeof message === 'object' ? message : { message }),
-		});
+			data: {
+				path: request.url,
+			},
+		};
+
+		response.status(status).json(apiResponse);
 	}
 }

@@ -50,7 +50,7 @@ describe('LoanService', () => {
 		categories: [],
 		publisher: {} as PublisherEntity,
 		loans: [],
-	};
+	} as unknown as BookEntity;
 
 	const mockLoan: LoanEntity = {
 		id: 1,
@@ -64,10 +64,7 @@ describe('LoanService', () => {
 		status: LoanStatus.ACTIVE,
 		created_at: new Date(),
 		updated_at: new Date(),
-		get tenant_id(): number {
-			return this.book.tenant_id;
-		},
-	};
+	} as unknown as LoanEntity;
 
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -377,6 +374,8 @@ describe('LoanService', () => {
 				innerJoin: jest.fn().mockReturnThis(),
 				where: jest.fn().mockReturnThis(),
 				groupBy: jest.fn().mockReturnThis(),
+				addGroupBy: jest.fn().mockReturnThis(),
+				andWhere: jest.fn().mockReturnThis(),
 				orderBy: jest.fn().mockReturnThis(),
 				limit: jest.fn().mockReturnThis(),
 				getRawMany: jest.fn().mockResolvedValue([
@@ -390,18 +389,19 @@ describe('LoanService', () => {
 			const result = await loanService.mostLoanedBooks(5, tenantId);
 
 			expect(mockLoanRepository.createQueryBuilder).toHaveBeenCalledWith('loan');
-			expect(mockQueryBuilder.select).toHaveBeenCalledWith('book.id', 'id');
-			expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith(
-				'book.title',
-				'title',
-			);
-			expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith('COUNT(*)', 'count');
+			expect(mockQueryBuilder.select).toHaveBeenCalledWith([
+				'book.id AS id',
+				'book.title AS title',
+				'book.tenant_id AS tenant_id',
+				'COUNT(*)::int AS count', // tipado correcto en PG
+			]);
 			expect(mockQueryBuilder.innerJoin).toHaveBeenCalledWith('loan.book', 'book');
-			expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+			expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
 				'book.tenant_id = :tenantId',
 				{ tenantId },
 			);
 			expect(mockQueryBuilder.groupBy).toHaveBeenCalledWith('book.id');
+			expect(mockQueryBuilder.addGroupBy).toHaveBeenCalledWith('book.tenant_id');
 			expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('count', 'DESC');
 			expect(mockQueryBuilder.limit).toHaveBeenCalledWith(5);
 			expect(result).toHaveLength(2);
@@ -410,98 +410,17 @@ describe('LoanService', () => {
 
 	describe('lastsLoans', () => {
 		it('should return last loans', async () => {
-			const mockQueryBuilder = {
-				select: jest.fn().mockReturnThis(),
-				addSelect: jest.fn().mockReturnThis(),
-				innerJoin: jest.fn().mockReturnThis(),
-				where: jest.fn().mockReturnThis(),
-				orderBy: jest.fn().mockReturnThis(),
-				limit: jest.fn().mockReturnThis(),
-				getRawMany: jest
-					.fn()
-					.mockResolvedValue([{ id: 1, title: 'Book 1', loanDate: new Date() }]),
-			};
-
-			mockLoanRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
-
+			mockLoanRepository.find.mockReturnValue([mockLoan]);
 			const result = await loanService.lastsLoans(tenantId);
-
-			expect(mockLoanRepository.createQueryBuilder).toHaveBeenCalledWith('loan');
-			expect(mockQueryBuilder.select).toHaveBeenCalledWith('book.id', 'id');
-			expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith(
-				'book.title',
-				'title',
-			);
-			expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith(
-				'loan.loanDate',
-				'loanDate',
-			);
-			expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith(
-				'loan.returnDate',
-				'returnDate',
-			);
-			expect(mockQueryBuilder.innerJoin).toHaveBeenCalledWith('loan.book', 'book');
-			expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-				'book.tenant_id = :tenantId',
-				{ tenantId },
-			);
-			expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
-				'loan.loanDate',
-				'DESC',
-			);
-			expect(mockQueryBuilder.limit).toHaveBeenCalledWith(3);
-			expect(result).toBeDefined();
+			expect(result).toEqual([mockLoan]);
 		});
 	});
 
 	describe('getLastReturnedLoans', () => {
 		it('should return last returned loans', async () => {
-			const mockQueryBuilder = {
-				select: jest.fn().mockReturnThis(),
-				addSelect: jest.fn().mockReturnThis(),
-				innerJoin: jest.fn().mockReturnThis(),
-				where: jest.fn().mockReturnThis().mockReturnThis(),
-				andWhere: jest.fn().mockReturnThis(),
-				orderBy: jest.fn().mockReturnThis(),
-				limit: jest.fn().mockReturnThis(),
-				getRawMany: jest
-					.fn()
-					.mockResolvedValue([{ id: 1, title: 'Book 1', returnDate: new Date() }]),
-			};
-
-			mockLoanRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
-
+			mockLoanRepository.find.mockReturnValue([mockLoan]);
 			const result = await loanService.getLastReturnedLoans(tenantId);
-
-			expect(mockLoanRepository.createQueryBuilder).toHaveBeenCalledWith('loan');
-			expect(mockQueryBuilder.select).toHaveBeenCalledWith('book.id', 'id');
-			expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith(
-				'book.title',
-				'title',
-			);
-			expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith(
-				'loan.loanDate',
-				'loanDate',
-			);
-			expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith(
-				'loan.returnDate',
-				'returnDate',
-			);
-			expect(mockQueryBuilder.innerJoin).toHaveBeenCalledWith('loan.book', 'book');
-			expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-				'book.tenant_id = :tenantId',
-				{ tenantId },
-			);
-			expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-				'loan.status = :status',
-				{ status: LoanStatus.RETURNED },
-			);
-			expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
-				'loan.returnDate',
-				'DESC',
-			);
-			expect(mockQueryBuilder.limit).toHaveBeenCalledWith(3);
-			expect(result).toBeDefined();
+			expect(result).toEqual([mockLoan]);
 		});
 	});
 });

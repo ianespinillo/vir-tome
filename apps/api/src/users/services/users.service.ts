@@ -1,3 +1,4 @@
+import { IAuthUser } from '@/core/core.types';
 import { PasswordAdapter } from '@/core/passport-adapter';
 // src/users/services/users.service.ts
 import {
@@ -7,7 +8,15 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PASSWORD_SALT_ROUNDS, SignInDto, SignUpDto } from '@repo/common';
+import {
+	IPaginatedResponse,
+	IUser,
+	PASSWORD_SALT_ROUNDS,
+	ROLES,
+	Roles,
+	SignInDto,
+	SignUpDto,
+} from '@repo/common';
 import * as bcrypt from 'bcrypt';
 import { IsNull, Repository } from 'typeorm';
 import { RoleEntity } from '../entities/role.entity';
@@ -48,7 +57,25 @@ export class UsersService {
 			relations: ['userTenants', 'userTenants.tenant', 'userTenants.role'],
 		});
 	}
-
+	/**
+	 * Buscar usuario por ID (en tenant)
+	 */
+	async findByIdInTenant(
+		id: number,
+		tenantId: number,
+	): Promise<UserEntity | null> {
+		const user = await this.usersRepo.findOne({
+			where: {
+				deleted_at: IsNull(),
+				id,
+				userTenants: {
+					tenant_id: tenantId,
+				},
+			},
+			relations: ['userTenants.tenant', 'loan'],
+		});
+		return user;
+	}
 	/**
 	 * Verificar si un usuario tiene acceso a un tenant específico
 	 */
@@ -120,7 +147,10 @@ export class UsersService {
 		user: UserEntity;
 		password: string;
 	}> {
-		const roleExists = await this.rolesService.findById(data.roleId, tenantId);
+		const roleExists = await this.rolesService.findRoleByName(
+			data.role,
+			tenantId,
+		);
 		if (!roleExists) {
 			throw new BadRequestException('Invalid role ID');
 		}
@@ -144,11 +174,11 @@ export class UsersService {
 			surname: data.surname,
 			password: hashedPassword,
 		});
-		await this.addUserToTenant(user.id, tenantId, data.roleId);
+		await this.addUserToTenant(user.id, tenantId, roleExists.id);
 		return { user, password };
 	}
-
 	/**
+	 *
 	 * Crear usuario global (sin tenant)
 	 * Para SUPER_ADMIN por ejemplo
 	 */
@@ -359,5 +389,73 @@ export class UsersService {
 		});
 
 		return stats;
+	}
+	async filterInTenantByRole(
+		role: Roles,
+		page: number,
+		user: IAuthUser,
+		q?: string,
+	): Promise<IPaginatedResponse<IUser>> {
+		const take = 6;
+		const skip = (page - 1) * take;
+		const qb = this.usersRepo
+			.createQueryBuilder('user')
+			.leftJoinAndSelect('user.userTenants', 'ut')
+			.leftJoinAndSelect('ut.role', 'role')
+			.leftJoinAndSelect('ut.tenant', 'tenant')
+			.where('user.deleted_at IS NULL')
+			.andWhere('role.name = :role', { role });
+
+		if (user.roleName === ROLES.ADMIN) {
+			qb.andWhere('ut.tenant_id = :tenantId', { tenantId: user.tenantId });
+		}
+		if (q) {
+			qb.andWhere('(user.name ILIKE :q OR user.email ILIKE :q)', {
+				q: `%${q}%`,
+			});
+		}
+
+		qb.take(take).skip(skip);
+
+		const [rows, count] = await qb.getManyAndCount();
+
+		return {
+			items: rows.map((u) => {
+				const { password, ...rest } = u;
+				return rest as unknown as IUser;
+			}),
+			meta: {
+				current_page: page,
+				last_page: Math.ceil(count / take),
+				per_page: take,
+				total: count,
+			},
+		};
+	}
+	async findLastsRegistered(user: IAuthUser): Promise<UserEntity[]> {
+		if (user.roleName === ROLES.ADMIN) {
+			return this.usersRepo.find({
+				where: {
+					deleted_at: IsNull(),
+				},
+				order: {
+					created_at: 'DESC',
+				},
+				take: 5,
+			});
+		}
+		return this.usersRepo.find({
+			where: {
+				deleted_at: IsNull(),
+				userTenants: {
+					tenant_id: user.tenantId,
+				},
+			},
+			relations: ['userTenants'],
+			order: {
+				created_at: 'DESC',
+			},
+			take: 5,
+		});
 	}
 }

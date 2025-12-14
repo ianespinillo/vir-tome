@@ -118,6 +118,7 @@ export class CreateTenantDto {
 
 	@IsOptional()
 	subscription_expires_at?: Date;
+
 	@IsEmail()
 	admin_email!: string;
 

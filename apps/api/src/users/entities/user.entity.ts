@@ -1,3 +1,4 @@
+import { IUser } from '@repo/common';
 // src/users/entities/user.entity.ts
 import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { GenericEntity } from '../../core/generic.entity';
@@ -9,7 +10,7 @@ import { UserTenantEntity } from './user-tenant.entity';
 
 @Entity({ name: 'users' })
 @Index(['email'], { unique: true }) // Email único GLOBAL
-export class UserEntity extends GenericEntity {
+export class UserEntity extends GenericEntity implements IUser {
 	@Column({ unique: true })
 	email!: string;
 

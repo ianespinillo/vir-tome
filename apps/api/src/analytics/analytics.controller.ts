@@ -1,6 +1,16 @@
+import { Roles as RolesDecorator } from '@/auth/decorators/roles.decorator';
+import { User } from '@/auth/decorators/user.decorator';
+import { IAuthUser } from '@/core/core.types';
+import { LoanEntity } from '@/loan/entities/loan.entity';
 import { CurrentTenant } from '@/tenants/decorators/current-tenant.decorator';
 import { TenantEntity } from '@/tenants/entities/tenant.entity';
-import { Controller, Get, ParseIntPipe, Query } from '@nestjs/common';
+import {
+	Controller,
+	Get,
+	HttpStatus,
+	ParseIntPipe,
+	Query,
+} from '@nestjs/common';
 import {
 	ApiOkResponse,
 	ApiOperation,
@@ -8,9 +18,11 @@ import {
 	ApiResponse,
 	ApiTags,
 } from '@nestjs/swagger';
+import { IApiResponse, MostLoanedBooks, ROLES } from '@repo/common';
 import { AnalyticsService } from './analytics.service';
 
 @ApiTags('Analytics') // Agrupa los endpoints en Swagger UI.
+@RolesDecorator(ROLES.ADMIN, ROLES.SUPER_ADMIN)
 @Controller('analytics')
 export class AnalyticsController {
 	constructor(private readonly analyticsService: AnalyticsService) {}
@@ -32,11 +44,17 @@ export class AnalyticsController {
 			],
 		},
 	})
-	getMostLoanedBooks(
-		@CurrentTenant() tenant: TenantEntity,
+	async getMostLoanedBooks(
+		@User() user: IAuthUser,
 		@Query('limit', new ParseIntPipe({ optional: true })) limit = 5,
-	) {
-		return this.analyticsService.getMostLoanedBooks(limit, tenant.id);
+	): Promise<IApiResponse<MostLoanedBooks[]>> {
+		const data = await this.analyticsService.getMostLoanedBooks(limit, user);
+		return {
+			data,
+			message: 'Most loaned books retrieved succesfully',
+			timestamp: new Date().toISOString(),
+			status: HttpStatus.OK,
+		};
 	}
 
 	@Get('last-loans')
@@ -50,8 +68,16 @@ export class AnalyticsController {
 			],
 		},
 	})
-	getLastLoans(@CurrentTenant() tenant: TenantEntity) {
-		return this.analyticsService.getLastLoans(tenant.id);
+	async getLastLoans(
+		@User() user: IAuthUser,
+	): Promise<IApiResponse<LoanEntity[]>> {
+		const data = await this.analyticsService.getLastLoans(user);
+		return {
+			message: 'Last loans retrieved succesfully',
+			data,
+			timestamp: new Date().toISOString(),
+			status: HttpStatus.OK,
+		};
 	}
 
 	@Get('count-books')
@@ -62,8 +88,14 @@ export class AnalyticsController {
 			example: { count: 42 },
 		},
 	})
-	async countBooks(@CurrentTenant() tenant: TenantEntity) {
-		return this.analyticsService.countBooks(tenant.id);
+	async countBooks(@User() user: IAuthUser): Promise<IApiResponse<number>> {
+		const data = await this.analyticsService.countBooks(user);
+		return {
+			message: 'Total books retrieved succesfully',
+			data,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Get('count-loans')
@@ -74,8 +106,14 @@ export class AnalyticsController {
 			example: { count: 150 },
 		},
 	})
-	async countLoans(@CurrentTenant() tenant: TenantEntity) {
-		return this.analyticsService.countLoans(tenant.id);
+	async countLoans(@User() user: IAuthUser): Promise<IApiResponse<number>> {
+		const data = await this.analyticsService.countLoans(user);
+		return {
+			message: 'Total of loans retrieved succesfully',
+			data: data.count,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Get('last-returns')
@@ -89,7 +127,15 @@ export class AnalyticsController {
 			],
 		},
 	})
-	async getLastReturns(@CurrentTenant() tenant: TenantEntity) {
-		return this.analyticsService.getLastReturns(tenant.id);
+	async getLastReturns(
+		@User() user: IAuthUser,
+	): Promise<IApiResponse<LoanEntity[]>> {
+		const data = await this.analyticsService.getLastReturns(user);
+		return {
+			message: 'Last returns retrieved succesfully',
+			data,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 }

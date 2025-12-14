@@ -1,9 +1,11 @@
+import { IAuthUser } from '@/core/core.types';
 // src/auth/auth.controller.ts
 import {
 	BadRequestException,
 	Body,
 	Controller,
 	Get,
+	HttpStatus,
 	Post,
 	Request,
 	Res,
@@ -18,13 +20,20 @@ import {
 } from '@nestjs/swagger';
 import {
 	ForgotPasswordDTO,
+	IApiResponse,
+	IGeneralLoginResponse,
+	ILoginResponse,
+	IMessageResponse,
+	IRequestUser,
+	ISignUpResponse,
 	ResetPasswordDto,
 	SignInDto,
 	SignUpDto,
 } from '@repo/common';
-import type { Response } from 'express';
+import type { Request as IRequest, Response } from 'express';
 import { AuthService } from './auth.service';
 import { AuthBearer } from './decorators/auth-bearer.decorators';
+import { User } from './decorators/user.decorator';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -46,7 +55,7 @@ export class AuthController {
 	async login(
 		@Body() loginDto: SignInDto,
 		@Res({ passthrough: true }) res: Response,
-	) {
+	): Promise<IApiResponse<ILoginResponse>> {
 		if (!loginDto.tenantId) throw new BadRequestException('No tenant id found');
 		const { access_token, user } = await this.authService.login(
 			loginDto,
@@ -58,7 +67,15 @@ export class AuthController {
 		});
 		// Returning the user allows Nest to handle sending the response while
 		// we still set the cookie using the response object passed with passthrough.
-		return user;
+		return {
+			message: 'Login successful',
+			data: {
+				access_token,
+				user,
+			},
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Post('general-login')
@@ -72,8 +89,24 @@ export class AuthController {
 		description: 'Login successful. Returns access token and user info.',
 	})
 	@ApiUnauthorizedResponse({ description: 'Invalid credentials' })
-	async generalLogin(@Body() loginDto: SignInDto) {
-		return this.authService.centralLogin(loginDto);
+	async generalLogin(
+		@Body() loginDto: SignInDto,
+		@Res({ passthrough: true }) res: Response,
+	): Promise<IApiResponse<IGeneralLoginResponse>> {
+		const result = await this.authService.centralLogin(loginDto);
+		if (!result.requiresTenantSelection) {
+			res.cookie('access_token', result.access_token, {
+				httpOnly: true,
+				secure: false,
+				sameSite: 'lax',
+			});
+		}
+		return {
+			message: 'Login successful',
+			data: result as IGeneralLoginResponse,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@ApiOperation({
@@ -89,7 +122,7 @@ export class AuthController {
 	async adminLogin(
 		@Body() loginDto: SignInDto,
 		@Res({ passthrough: true }) res: Response,
-	) {
+	): Promise<IApiResponse<ILoginResponse>> {
 		const { access_token, user } = await this.authService.adminLogin(loginDto);
 		res.cookie('access_token', access_token, {
 			httpOnly: true,
@@ -98,7 +131,15 @@ export class AuthController {
 		});
 
 		// Let Nest send the final response (return body) while cookie is set via passthrough.
-		return user;
+		return {
+			message: 'Login successful',
+			data: {
+				access_token,
+				user,
+			},
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 	@ApiOperation({
 		summary: 'Register new user',
@@ -112,8 +153,20 @@ export class AuthController {
 	})
 	@ApiBadRequestResponse({ description: 'Email already exists in tenant' })
 	@Post('register')
-	async register(@Body() registerDto: SignUpDto, @Request() req) {
-		return this.authService.register(registerDto, req.tenantId);
+	async register(
+		@Body() registerDto: SignUpDto,
+		@User() user: IAuthUser,
+	): Promise<IApiResponse<ISignUpResponse>> {
+		const res = await this.authService.register(
+			registerDto,
+			registerDto.tenantId || user.tenantId,
+		);
+		return {
+			message: 'User registered successfully',
+			data: res,
+			status: HttpStatus.CREATED,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Post('forgot-password')
@@ -126,8 +179,17 @@ export class AuthController {
 		status: 201,
 		description: 'Reset link sent if email exists',
 	})
-	async forgotPassword(@Body() dto: ForgotPasswordDTO, @Request() req) {
-		return this.authService.forgotPassword(dto, req.tenantId);
+	async forgotPassword(
+		@Body() dto: ForgotPasswordDTO,
+		@Request() req,
+	): Promise<IApiResponse<IMessageResponse>> {
+		const data = await this.authService.forgotPassword(dto, req.tenantId);
+		return {
+			message: 'Reset link sent if email exists',
+			data,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Post('reset-password')
@@ -140,12 +202,19 @@ export class AuthController {
 		description: 'Password reset successful',
 	})
 	@ApiBadRequestResponse({ description: 'Invalid or expired token' })
-	async resetPassword(@Body() dto: ResetPasswordDto, @Request() req) {
-		return this.authService.resetPassword(dto, req.tenantId);
+	async resetPassword(
+		@Body() dto: ResetPasswordDto,
+		@Request() req,
+	): Promise<IApiResponse<IMessageResponse>> {
+		const data = await this.authService.resetPassword(dto, req.tenantId);
+		return {
+			message: 'Password reseted successfully',
+			data,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
-	@Get('profile')
-	@AuthBearer()
 	@ApiBearerAuth()
 	@ApiOperation({
 		summary: 'Get current user profile',
@@ -156,10 +225,15 @@ export class AuthController {
 		description: 'User profile retrieved successfully',
 	})
 	@ApiUnauthorizedResponse({ description: 'Not authenticated' })
-	getProfile(@Request() req) {
+	@AuthBearer()
+	@Get('user')
+	getProfile(@Request() req: IRequest): IApiResponse<IRequestUser> {
+		if (!req.user) throw new BadRequestException('Not authenticated');
 		return {
-			user: req.user,
-			tenant: req.tenant,
+			message: 'User profile retrieved successfully',
+			data: req.user,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
 		};
 	}
 
@@ -175,8 +249,27 @@ export class AuthController {
 		description: 'New access token generated',
 	})
 	@ApiUnauthorizedResponse({ description: 'Invalid token' })
-	async refresh(@Request() req) {
-		return this.authService.refreshToken(req.user.userId, req.user.tenantId);
+	async refresh(
+		@Request() req,
+		@Res({ passthrough: true }) res: Response,
+	): Promise<IApiResponse<{ access_token: string }>> {
+		const { access_token } = await this.authService.refreshToken(
+			req.user.userId,
+			req.user.tenantId,
+		);
+		res.cookie('access_token', access_token, {
+			httpOnly: true,
+			secure: false,
+			sameSite: 'lax',
+		});
+		return {
+			message: 'New access token generated',
+			data: {
+				access_token,
+			},
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Post('logout')

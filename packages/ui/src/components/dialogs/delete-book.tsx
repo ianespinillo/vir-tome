@@ -1,4 +1,3 @@
-import { booksContext } from '@/contexts/book.context';
 import { Button } from '@/ui/button';
 import {
 	Dialog,
@@ -8,7 +7,7 @@ import {
 } from '@/ui/dialog';
 import { DialogTitle } from '@radix-ui/react-dialog';
 import { Trash } from 'lucide-react';
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 
 interface Props {
 	id: number;
@@ -16,17 +15,9 @@ interface Props {
 }
 
 export const DeleteBook = ({ id, title }: Readonly<Props>) => {
-	const { deleteBook, data, setPage } = useContext(booksContext);
 	const [isOpen, setIsOpen] = useState(false);
 	const handleDelete = () => {
-		deleteBook.mutate(id, {
-			onSuccess: () => {
-				setIsOpen(false);
-				if (data.data.length === 1 && data.current_page > 1) {
-					setPage(data.current_page - 1);
-				}
-			},
-		});
+		console.log(id);
 	};
 
 	return (

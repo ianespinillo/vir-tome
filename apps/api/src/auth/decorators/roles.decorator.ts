@@ -1,9 +1,13 @@
 import {
 	ExecutionContext,
 	SetMetadata,
+	UseGuards,
+	applyDecorators,
 	createParamDecorator,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { ROLES } from '@repo/common';
+import { RolesGuard } from '../guard/role.guard';
 
 // Extrae el roleId
 export const CurrentRoleId = createParamDecorator(
@@ -21,4 +25,8 @@ export const CurrentRole = createParamDecorator(
 	},
 );
 
-export const Roles = (...roles: ROLES[]) => SetMetadata('roles', roles);
+export const Roles = (...roles: ROLES[]) =>
+	applyDecorators(
+		SetMetadata('roles', roles),
+		UseGuards(AuthGuard('jwt'), RolesGuard),
+	);

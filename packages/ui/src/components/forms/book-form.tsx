@@ -1,6 +1,5 @@
 'use client';
 
-import { booksContext } from '@/contexts/book.context';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/ui/badge';
 import { Button } from '@/ui/button';
@@ -41,7 +40,7 @@ import {
 } from '@/ui/select';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { CreateBookDto } from '@repo/common';
-import { useCategory, usePublishers } from '@repo/hooks';
+import { useBooks, useCategory, usePublishers } from '@repo/hooks';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, Check, ChevronsUpDown } from 'lucide-react';
 import React, { useContext, useEffect, useState } from 'react';
@@ -58,7 +57,7 @@ export function BookForm({ onSuccess, id }: Readonly<BookFormProps>) {
 	const [open, setOpen] = useState(false);
 	const { publishers } = usePublishers();
 	const { allCategories } = useCategory();
-	const { createBook, findBook, refetch, updateBook } = useContext(booksContext);
+	const { createBook, findBook, updateBook } = useBooks();
 	// Definir el formulario con valores por defecto
 	const form = useForm<CreateBookDto>({
 		resolver: classValidatorResolver(CreateBookDto),
@@ -101,7 +100,6 @@ export function BookForm({ onSuccess, id }: Readonly<BookFormProps>) {
 					onSuccess: () => {
 						toast.success('Libro actualizado con exito');
 						form.reset();
-						refetch();
 						onSuccess();
 					},
 					onError: (error) => {
@@ -116,7 +114,6 @@ export function BookForm({ onSuccess, id }: Readonly<BookFormProps>) {
 				onSuccess: () => {
 					toast.success('Libro creado con exito');
 					form.reset();
-					refetch();
 					onSuccess();
 				},
 				onError: (error) => {

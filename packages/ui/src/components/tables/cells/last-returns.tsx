@@ -1,21 +1,23 @@
-import { LastReturns } from '@repo/common';
+import { ILoan, LastReturns } from '@repo/common';
 import { ColumnDef } from '@tanstack/react-table';
 
-export const LastReturnsColumns: ColumnDef<LastReturns>[] = [
+export const LastReturnsColumns: ColumnDef<ILoan>[] = [
 	{
 		accessorKey: 'id',
 		header: 'ID',
 	},
 	{
-		accessorKey: 'title',
+		accessorFn: (row) => row.book,
+		accessorKey: 'book',
 		header: 'Libro',
+		cell: ({ row }) => row.original.book.title,
 	},
 	{
-		accessorKey: 'returnDate',
+		accessorKey: 'return_date',
 		header: 'Fecha devolución',
 		cell: ({ row }) => {
-			const { returnDate } = row.original;
-			const date = new Date(returnDate);
+			const { return_date } = row.original;
+			const date = new Date(return_date);
 			return (
 				<span className="text-sm font-medium text-gray-900">
 					{date.toLocaleDateString()}

@@ -1,3 +1,4 @@
+'use client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card';
 import {
 	ChartConfig,
@@ -21,7 +22,7 @@ export const MostLoanedBooks = () => {
 	const { mostLoanedBooks } = useAnalytics();
 
 	useEffect(() => {
-		mostLoanedBooks.mutate();
+		mostLoanedBooks.refetch();
 	}, []);
 
 	const config = {
@@ -31,8 +32,8 @@ export const MostLoanedBooks = () => {
 		},
 	} satisfies ChartConfig;
 
-	const data = mostLoanedBooks.data
-		? [...mostLoanedBooks.data]
+	const data = mostLoanedBooks.data?.data
+		? [...mostLoanedBooks.data.data]
 				.sort((a, b) => b.count - a.count) // Orden descendente
 				.slice(0, 5) // Top 5
 		: [];

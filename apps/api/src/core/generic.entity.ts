@@ -1,3 +1,4 @@
+import { IGeneric } from '@repo/common';
 import {
 	CreateDateColumn,
 	DeleteDateColumn,
@@ -5,7 +6,7 @@ import {
 	UpdateDateColumn,
 } from 'typeorm';
 
-export class GenericEntity {
+export class GenericEntity implements IGeneric {
 	@PrimaryGeneratedColumn()
 	id!: number;
 
@@ -13,7 +14,7 @@ export class GenericEntity {
 	created_at!: Date;
 
 	@UpdateDateColumn()
-	updated_at?: Date;
+	updated_at: Date;
 
 	@DeleteDateColumn({
 		nullable: true,

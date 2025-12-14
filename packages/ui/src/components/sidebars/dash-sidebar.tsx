@@ -1,12 +1,21 @@
 'use client';
+
 import {
+	Activity,
+	BarChart3,
 	BookCopy,
 	BookOpen,
+	Building2,
 	Home,
+	LayoutDashboard,
 	Library,
 	LogOut,
 	Settings,
+	ShieldCheck,
+	User,
 } from 'lucide-react';
+
+import { useMemo } from 'react';
 
 import {
 	Sidebar,
@@ -22,66 +31,117 @@ import {
 	SidebarRail,
 } from '@/ui/sidebar';
 
+import {
+	IApiResponse,
+	IRequestUser,
+	MenuLinkBase,
+	PAYLOAD_TYPE,
+	ROLES,
+} from '@repo/common';
 import { useAuth } from '@repo/hooks';
-import type { LucideIcon } from 'lucide-react';
 
-interface MenuLink {
-	title: string;
-	href: string;
-	icon: LucideIcon;
-	tooltip?: string;
+// --- TIPO ---
+export interface MenuLink extends MenuLinkBase {
+	icon: React.ComponentType<any>;
 }
 
-interface MenuSection {
-	title: string;
-	links: MenuLink[];
-}
-
-const menuSections: MenuSection[] = [
+// --- CONFIGURACIÓN UNIFICADA (Super Admin + Tenant) ---
+const ALL_MENU_ITEMS: MenuLink[] = [
+	// Zona Super Admin
 	{
-		title: 'Principal',
-		links: [
-			{
-				title: 'Inicio',
-				href: '/dashboard',
-				icon: Home,
-				tooltip: 'Inicio',
-			},
-			{
-				title: 'Libros',
-				href: '/dashboard/books',
-				icon: BookOpen,
-				tooltip: 'Libros',
-			},
-			{
-				title: 'Prestamos',
-				href: '/dashboard/loans',
-				icon: BookCopy,
-				tooltip: 'Prestamos',
-			},
-		],
+		title: 'Panel Global',
+		href: '/super-admin/dashboard',
+		tooltip: 'Visión general',
+		icon: LayoutDashboard,
+		roles: [ROLES.SUPER_ADMIN],
+	},
+	{
+		title: 'Tenants',
+		href: '/super-admin/tenants',
+		tooltip: 'Gestión de Clientes',
+		icon: Building2,
+		roles: [ROLES.SUPER_ADMIN],
+	},
+	{
+		title: 'Admin Users',
+		href: '/super-admin/admins',
+		tooltip: 'Gestión de Super Admins',
+		icon: ShieldCheck,
+		roles: [ROLES.SUPER_ADMIN],
+	},
+	{
+		title: 'Actividad',
+		href: '/super-admin/activity',
+		tooltip: 'Logs del Sistema',
+		icon: Activity,
+		roles: [ROLES.SUPER_ADMIN],
+	},
+	// {
+	//   title: "Configuración",
+	//   href: "/super-admin/settings",
+	//   tooltip: "Ajustes de Plataforma",
+	//   icon: Settings,
+	//   roles: [ROLES.SUPER_ADMIN],
+	// },
+	//TODO: Super admin config
+	// Zona Tenant / Usuario Normal
+	{
+		title: 'Inicio',
+		href: '/dashboard',
+		tooltip: 'Inicio',
+		icon: Home,
+		roles: [ROLES.ADMIN, ROLES.LIBRARIAN, ROLES.STUDENT],
+	},
+	{
+		title: 'Libros',
+		href: '/dashboard/books',
+		tooltip: 'Libros',
+		icon: BookOpen,
+		roles: [ROLES.ADMIN, ROLES.LIBRARIAN],
+	},
+	{
+		title: 'Préstamos',
+		href: '/dashboard/loans',
+		tooltip: 'Préstamos',
+		icon: BookCopy,
+		roles: [ROLES.ADMIN, ROLES.LIBRARIAN],
 	},
 ];
 
-const footerLinks: MenuLink[] = [
+const FOOTER_LINKS: MenuLink[] = [
 	{
 		title: 'Perfil',
 		href: '/dashboard/profile',
-		icon: Settings,
+		icon: User,
 		tooltip: 'Perfil',
-	},
-	{
-		title: 'Cerrar Sesión',
-		href: '#',
-		icon: LogOut,
-		tooltip: 'Salir',
+		roles: [], // Vacío = Visible para todos (lógica custom abajo)
 	},
 ];
 
+// --- COMPONENTE ---
 export function DashSidebar() {
-	const { signOut } = useAuth();
+	const { signOut, session } = useAuth();
+	const sessionData = session.data?.data;
+
+	// Filtramos los items basándonos en el usuario actual
+	const filteredLinks = useMemo(() => {
+		if (!sessionData) return [];
+		// Detectamos si es Super Admin por su TYPE o ROL
+		const isSuperAdmin =
+			sessionData.type === PAYLOAD_TYPE.SUPER_ADMIN_LOGIN ||
+			sessionData.roleName === ROLES.SUPER_ADMIN;
+
+		// El rol efectivo para comparar
+		const currentRole = isSuperAdmin ? ROLES.SUPER_ADMIN : sessionData.roleName;
+
+		return ALL_MENU_ITEMS.filter((item) =>
+			item.roles.includes(currentRole as ROLES),
+		);
+	}, [session.isSuccess]);
+
 	return (
 		<Sidebar className="bg-sidebar-background text-sidebar-foreground border-r border-sidebar-border">
+			{/* HEADER */}
 			<SidebarHeader className="border-b border-sidebar-border">
 				<SidebarMenu>
 					<SidebarMenuItem>
@@ -90,76 +150,88 @@ export function DashSidebar() {
 							asChild
 							className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
 						>
-							<div className="flex items-center">
-								<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-									<Library className="size-5" />
+							<a
+								href={
+									sessionData?.type === PAYLOAD_TYPE.SUPER_ADMIN_LOGIN
+										? '/super-admin/dashboard'
+										: '/dashboard'
+								}
+							>
+								<div className="flex items-center">
+									<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+										<Library className="size-5" />
+									</div>
+									<div className="flex flex-col gap-0.5 leading-none ml-2">
+										<span className="font-semibold">Vir-tome</span>
+										<span className="text-xs text-muted-foreground">
+											{sessionData?.tenant?.name || 'Gestión Bibliotecaria'}
+										</span>
+									</div>
 								</div>
-								<div className="flex flex-col gap-0.5 leading-none ml-2">
-									<span className="font-semibold">Vit-tome</span>
-									<span className="text-xs text-muted-foreground">
-										Gestión Bibliotecaria
-									</span>
-								</div>
-							</div>
+							</a>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarHeader>
 
+			{/* CONTENT (Menu Principal) */}
 			<SidebarContent className="[&_*]:border-sidebar-border">
-				{menuSections.map((section) => (
-					<SidebarGroup key={section.title}>
-						<SidebarGroupLabel className="text-sidebar-foreground/80">
-							{section.title}
-						</SidebarGroupLabel>
-						<SidebarGroupContent>
-							<SidebarMenu>
-								{section.links.map((link) => (
+				<SidebarGroup>
+					<SidebarGroupLabel className="text-sidebar-foreground/80">
+						Menu
+					</SidebarGroupLabel>
+					<SidebarGroupContent>
+						<SidebarMenu>
+							{filteredLinks.map((link) => {
+								const isActive = document.location.pathname === link.href;
+								return (
 									<SidebarMenuItem key={link.href}>
 										<SidebarMenuButton
 											asChild
 											tooltip={link.tooltip}
+											isActive={isActive}
 											className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
 										>
 											<a href={link.href} className="text-sidebar-foreground">
-												<link.icon className="mr-2" />
+												<link.icon className="mr-2 h-4 w-4" />
 												<span>{link.title}</span>
 											</a>
 										</SidebarMenuButton>
 									</SidebarMenuItem>
-								))}
-							</SidebarMenu>
-						</SidebarGroupContent>
-					</SidebarGroup>
-				))}
+								);
+							})}
+						</SidebarMenu>
+					</SidebarGroupContent>
+				</SidebarGroup>
 			</SidebarContent>
 
+			{/* FOOTER */}
 			<SidebarFooter className="border-t border-sidebar-border">
 				<SidebarMenu>
-					{footerLinks.map((link) => (
+					{FOOTER_LINKS.map((link) => (
 						<SidebarMenuItem key={link.title}>
 							<SidebarMenuButton
 								asChild
 								className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
 							>
-								{link.href.includes('#') ? (
-									<a
-										href={link.href}
-										onClick={() => signOut.mutate()}
-										className="text-sidebar-foreground"
-									>
-										<link.icon className="mr-2" />
-										<span>{link.title}</span>
-									</a>
-								) : (
-									<a href={link.href} className="text-sidebar-foreground">
-										<link.icon className="mr-2" />
-										<span>{link.title}</span>
-									</a>
-								)}
+								<a href={link.href} className="text-sidebar-foreground">
+									<link.icon className="mr-2 h-4 w-4" />
+									<span>{link.title}</span>
+								</a>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					))}
+
+					{/* Botón de Logout separado para manejar el onClick */}
+					<SidebarMenuItem>
+						<SidebarMenuButton
+							onClick={() => signOut.mutate()}
+							className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+						>
+							<LogOut className="mr-2 h-4 w-4" />
+							<span>Cerrar Sesión</span>
+						</SidebarMenuButton>
+					</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarFooter>
 

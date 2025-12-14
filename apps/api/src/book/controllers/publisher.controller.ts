@@ -9,6 +9,7 @@ import {
 	Controller,
 	Delete,
 	Get,
+	HttpStatus,
 	Param,
 	ParseIntPipe,
 	Patch,
@@ -29,7 +30,12 @@ import {
 	ApiTags,
 	ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { CreatePublisherDto, ROLES, UpdatePublisherDto } from '@repo/common';
+import {
+	CreatePublisherDto,
+	IApiResponse,
+	ROLES,
+	UpdatePublisherDto,
+} from '@repo/common';
 import { PublisherEntity } from '../entities/publisher.entity';
 import { PublisherService } from '../services/publisher.service';
 
@@ -67,8 +73,14 @@ export class PublisherController {
 	async create(
 		@CurrentTenant() tenant: TenantEntity,
 		@Body() createDto: CreatePublisherDto,
-	): Promise<PublisherEntity> {
-		return this.publisherService.create(tenant.id, createDto);
+	): Promise<IApiResponse<PublisherEntity>> {
+		const data = await this.publisherService.create(tenant.id, createDto);
+		return {
+			message: 'Editorial creada exitosamente',
+			data,
+			status: HttpStatus.CREATED,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Get()
@@ -82,8 +94,14 @@ export class PublisherController {
 	})
 	async findAll(
 		@CurrentTenant() tenant: TenantEntity,
-	): Promise<PublisherEntity[]> {
-		return this.publisherService.findAll(tenant.id);
+	): Promise<IApiResponse<PublisherEntity[]>> {
+		const data = await this.publisherService.findAll(tenant.id);
+		return {
+			message: 'Editoriales obtenidas exitosamente',
+			data,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Get(':id')
@@ -107,8 +125,14 @@ export class PublisherController {
 	async findOne(
 		@CurrentTenant() tenant: TenantEntity,
 		@Param('id', ParseIntPipe) id: number,
-	): Promise<PublisherEntity | null> {
-		return this.publisherService.findById(tenant.id, id);
+	): Promise<IApiResponse<PublisherEntity | null>> {
+		const data = await this.publisherService.findById(tenant.id, id);
+		return {
+			message: 'Editorial obtenida exitosamente',
+			data,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Patch(':id')
@@ -139,8 +163,14 @@ export class PublisherController {
 		@CurrentTenant() tenant: TenantEntity,
 		@Param('id') id: number,
 		@Body() updateDto: UpdatePublisherDto,
-	): Promise<void> {
+	): Promise<IApiResponse<void>> {
 		await this.publisherService.update(tenant.id, id, updateDto);
+		return {
+			message: 'Editorial actualizada exitosamente',
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+			data: null,
+		};
 	}
 
 	@Delete(':id')
@@ -169,7 +199,13 @@ export class PublisherController {
 	async remove(
 		@CurrentTenant() tenant: TenantEntity,
 		@Param('id') id: number,
-	): Promise<void> {
+	): Promise<IApiResponse<void>> {
 		await this.publisherService.delete(tenant.id, id);
+		return {
+			message: 'Editorial eliminada exitosamente',
+			data: null,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 }

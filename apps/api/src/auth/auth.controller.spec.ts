@@ -1,8 +1,15 @@
+import { IAuthUser } from '@/core/core.types';
 import { PasswordAdapter } from '@/core/passport-adapter';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 // src/auth/__tests__/auth.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
-import { PAYLOAD_TYPE, SignInDto, SignUpDto } from '@repo/common';
+import {
+	IApiResponse,
+	PAYLOAD_TYPE,
+	ROLES,
+	SignInDto,
+	SignUpDto,
+} from '@repo/common';
 import { Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -16,7 +23,12 @@ jest.mock('@/core/passport-adapter', () => ({
 describe('AuthController', () => {
 	let authController: AuthController;
 	let authService: AuthService;
-
+	const controllerResponse: IApiResponse<any> = {
+		message: expect.any(String),
+		data: null,
+		timestamp: expect.any(String),
+		status: expect.any(Number),
+	};
 	const mockAuthService = {
 		login: jest.fn(),
 		register: jest.fn(),
@@ -87,7 +99,8 @@ describe('AuthController', () => {
 				loginDto,
 				mockRequest.tenantId,
 			);
-			expect(result).toBe(expectedResult.user);
+			controllerResponse.data = expectedResult;
+			expect(result).toEqual(controllerResponse);
 		});
 
 		it('should pass correct tenantId to service', async () => {
@@ -109,7 +122,7 @@ describe('AuthController', () => {
 			email: 'newuser@escuela1.com',
 			name: 'New',
 			surname: 'User',
-			roleId: 3,
+			role: ROLES.SUPER_ADMIN,
 		};
 
 		const expectedRegisterResult = {
@@ -136,14 +149,18 @@ describe('AuthController', () => {
 			mockAuthService.register.mockResolvedValue(expectedRegisterResult);
 
 			// Act
-			const result = await authController.register(registerDto, mockRequest);
+			const result = await authController.register(
+				registerDto,
+				mockRequest.user as unknown as IAuthUser,
+			);
 
 			// Assert
 			expect(authService.register).toHaveBeenCalledWith(
 				registerDto,
 				mockRequest.tenantId,
 			);
-			expect(result).toBe(expectedRegisterResult);
+			controllerResponse.data = expectedRegisterResult;
+			expect(result).toEqual(controllerResponse);
 		});
 
 		it('should handle registration errors', async () => {
@@ -154,7 +171,10 @@ describe('AuthController', () => {
 
 			// Act & Assert
 			await expect(
-				authController.register(registerDto, mockRequest),
+				authController.register(
+					registerDto,
+					mockRequest.user as unknown as IAuthUser,
+				),
 			).rejects.toThrow(BadRequestException);
 		});
 	});
@@ -166,14 +186,15 @@ describe('AuthController', () => {
 			mockAuthService.refreshToken.mockResolvedValue(expectedResult);
 
 			// Act
-			const result = await authController.refresh(mockRequest);
+			const result = await authController.refresh(mockRequest, mockResponse);
 
 			// Assert
 			expect(authService.refreshToken).toHaveBeenCalledWith(
 				mockRequest.user.userId,
 				mockRequest.user.tenantId,
 			);
-			expect(result).toBe(expectedResult);
+			controllerResponse.data = expectedResult;
+			expect(result).toEqual(controllerResponse);
 		});
 
 		it('should handle refresh token errors', async () => {
@@ -183,9 +204,9 @@ describe('AuthController', () => {
 			);
 
 			// Act & Assert
-			await expect(authController.refresh(mockRequest)).rejects.toThrow(
-				UnauthorizedException,
-			);
+			await expect(
+				authController.refresh(mockRequest, mockResponse),
+			).rejects.toThrow(UnauthorizedException);
 		});
 	});
 });

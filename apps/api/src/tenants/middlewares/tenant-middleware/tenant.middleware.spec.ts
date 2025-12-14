@@ -1,6 +1,8 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 // src/common/middleware/__tests__/tenant.middleware.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
+import { PAYLOAD_TYPE } from '@repo/common';
 import { Request, Response } from 'express';
 import { TenantsService } from '../../../tenants/tenants.service';
 import { TenantMiddleware } from './tenant.middleware';
@@ -8,6 +10,7 @@ import { TenantMiddleware } from './tenant.middleware';
 describe('TenantMiddleware', () => {
 	let middleware: TenantMiddleware;
 	let tenantsService: TenantsService;
+	let jwtService: any;
 
 	const mockTenant = {
 		id: 1,
@@ -21,6 +24,10 @@ describe('TenantMiddleware', () => {
 		findBySubdomain: jest.fn(),
 	};
 
+	const mockJwtService = {
+		verify: jest.fn(),
+	};
+
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
 			providers: [
@@ -29,6 +36,8 @@ describe('TenantMiddleware', () => {
 					provide: TenantsService,
 					useValue: mockTenantsService,
 				},
+				{ provide: 'JwtService', useValue: mockJwtService },
+				{ provide: JwtService, useValue: mockJwtService },
 			],
 		}).compile();
 
@@ -36,6 +45,7 @@ describe('TenantMiddleware', () => {
 		tenantsService = module.get<TenantsService>(TenantsService);
 
 		jest.clearAllMocks();
+		jwtService = module.get<jest.Mocked<any>>(JwtService);
 	});
 
 	const createMockRequest = (overrides?: Partial<Request>): Partial<Request> => {

@@ -1,3 +1,4 @@
+'use client';
 import {
 	Dialog,
 	DialogContent,
@@ -21,7 +22,7 @@ export const NewLoan = () => {
 					<CircleFadingPlus className="ml-2 h-4 w-4" />
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="p-0">
+			<DialogContent className="p-0 min-w-[620px] min-h-[680px]">
 				<DialogHeader className="hidden">
 					<DialogTitle>Crear Préstamo</DialogTitle>
 				</DialogHeader>

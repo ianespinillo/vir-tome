@@ -1,17 +1,14 @@
 import { SuperAdminService } from '@/super-admin/services/super-admin.service';
 import { TenantsService } from '@/tenants/tenants.service';
 import { UsersService } from '@/users/services/users.service';
-import {
-	Injectable,
-	NotFoundException,
-	UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import {
 	IAuthPayload,
 	ISuperAdminLoginPayload,
 	PAYLOAD_TYPE,
+	ROLES,
 } from '@repo/common';
 import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -29,7 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 		super({
 			jwtFromRequest: ExtractJwt.fromExtractors([
 				ExtractJwt.fromAuthHeaderAsBearerToken(),
-				(req: Request) => req.cookies.token ?? null,
+				(req: Request) => req.cookies?.access_token ?? null,
 			]),
 			ignoreExpiration: false,
 			secretOrKey: configService.get<string>('JWT_SECRET', 'defaultSecretKey'),
@@ -44,9 +41,11 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 					throw new UnauthorizedException('Super admin not found');
 				}
 				return {
-					userId: superAdmin.id,
+					id: superAdmin.id,
 					email: superAdmin.email,
 					type: PAYLOAD_TYPE.SUPER_ADMIN_LOGIN,
+					entity: superAdmin,
+					roleName: ROLES.SUPER_ADMIN,
 				};
 			}
 
@@ -60,18 +59,23 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 				if (!user) {
 					throw new UnauthorizedException('User not found');
 				}
+
 				const inTenant = user.hasAccessToTenant(tenant.id);
 				if (!inTenant) {
 					throw new UnauthorizedException('User has no access to tenant');
 				}
+
+				const role = user.getRoleInTenant(tenant.id);
+				const { password, ...rest } = user;
 				return {
-					userId: user.id,
+					id: user.id,
 					email: user.email,
-					tenantId: tenant.id,
-					roleId: user.getRoleInTenant(tenant.id)?.id || null,
-					roleName: user.getRoleInTenant(tenant.id)?.name || null,
-					tenant, // full object if your guards need it
 					type: PAYLOAD_TYPE.USER_LOGIN,
+					entity: rest,
+					tenant: tenant,
+					tenantId: tenant.id,
+					roleId: role?.id || null,
+					roleName: role?.name || null,
 				};
 			}
 

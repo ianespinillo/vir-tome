@@ -30,9 +30,9 @@ export function PersonalInfoForm() {
 	useEffect(() => {
 		if (data) {
 			form.reset({
-				name: data.user.name,
-				surname: data.user.surname,
-				email: data.user.email,
+				name: data.data?.entity.name,
+				surname: data.data?.entity.surname,
+				email: data.data?.entity.email,
 			});
 		}
 	}, [data, form]);

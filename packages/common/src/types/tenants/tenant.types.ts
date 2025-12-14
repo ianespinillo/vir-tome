@@ -14,3 +14,10 @@ export interface TenantSettings {
 		max_loans?: number;
 	};
 }
+export interface ITenantStats {
+	total: number;
+	active: number;
+	inactive: number;
+	demo: number;
+	production: number;
+}

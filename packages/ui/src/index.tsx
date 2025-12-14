@@ -14,12 +14,27 @@ export { BooksCount } from './components/cards/books-count';
 export { LoansCount } from './components/cards/loans-count';
 export { LastLoansTable } from './components/tables/table/last-loans';
 export { LastReturnsTable } from './components/tables/table/last-returns';
-// contexts
-export * from './contexts/book.context';
+export { RecentTenantsTable } from './components/tables/table/recent-tenants-table';
+export { OverviewChart } from './components/charts/overview-chart';
+export { KpiGrid } from './components/kpi/kpi-grid';
+export { TenantsTable } from './components/tables/table/tenants-table';
+export { UsersTable } from './components/tables/table/user-table';
+export { CreateTenantDialog } from './components/dialogs/tenants/create-tenant-dialog';
+export { EditTenantDialog } from './components/dialogs/edit-tenant-dialog';
+export { TenantDetailsDialog } from './components/dialogs/tenants/tenant-details-dialog';
+export { CreateUserDialog } from './components/dialogs/users/create-user-dialog';
+export { UserDetailsDialog } from './components/dialogs/users/user-details-dialog';
+export { MostLoanedBooksTable } from './components/tables/table/most-loaned-books-table';
+export { LastUsersTable } from './components/tables/table/last-users';
 
 // ui
 export * from './ui/scroll-area';
 
+// toaster
+export { Toaster } from 'sonner';
+
+// Modal context provider
+export { ModalCrudProvider, useModalCrud } from './contexts/modal-crud-context';
 // charts
 export { MostLoanedBooks } from './components/cards/most-loaned-books';
 
@@ -32,6 +47,7 @@ export { StatCard } from './components/cards/stat-card';
 
 // Shadcn
 export { Button } from './ui/button';
+export { AddButton } from './components/buttons/add-button';
 
 //Lucide
 export {
@@ -45,4 +61,4 @@ export {
 	Play,
 } from 'lucide-react';
 // Input
-export { BookFilter } from './components/inputs/book-filter';
+export { InputFilter } from './components/inputs/input-filter';

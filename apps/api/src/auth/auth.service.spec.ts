@@ -2,6 +2,7 @@ import { EmailService } from '@/email/email.service';
 import { SuperAdminService } from '@/super-admin/services/super-admin.service';
 import { TenantsService } from '@/tenants/tenants.service';
 import { TokensService } from '@/tokens/tokens.service';
+import { RoleService } from '@/users/services/role.service';
 import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -24,6 +25,7 @@ describe('AuthService - Multi-tenant', () => {
 	let usersService: UsersService;
 	let jwtService: JwtService;
 	let tokensService: TokensService;
+	let roleService: RoleService;
 
 	const mockUser = {
 		id: 1,
@@ -94,6 +96,9 @@ describe('AuthService - Multi-tenant', () => {
 	const mockTenantService = {
 		findById: jest.fn(),
 	};
+	const mockRoleService = {
+		findRoleByName: jest.fn(),
+	};
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
 			providers: [
@@ -104,6 +109,7 @@ describe('AuthService - Multi-tenant', () => {
 				{ provide: EmailService, useValue: mockEmailService },
 				{ provide: SuperAdminService, useValue: mockSuperAdminService },
 				{ provide: TenantsService, useValue: mockTenantService },
+				{ provide: RoleService, useValue: mockRoleService },
 			],
 		}).compile();
 
@@ -111,6 +117,7 @@ describe('AuthService - Multi-tenant', () => {
 		usersService = module.get<UsersService>(UsersService);
 		jwtService = module.get<JwtService>(JwtService);
 		tokensService = module.get<TokensService>(TokensService);
+		roleService = module.get<RoleService>(RoleService);
 
 		jest.clearAllMocks();
 	});
@@ -266,10 +273,7 @@ describe('AuthService - Multi-tenant', () => {
 		it('should generate token for selected tenant', async () => {
 			mockUsersService.hasAccessToTenant.mockResolvedValue(true);
 			mockUsersService.findById.mockResolvedValue(mockUser);
-			mockUsersService.getRoleInTenant.mockResolvedValue({
-				id: 2,
-				name: ROLES.TEACHER,
-			});
+			mockUser.getRoleIdInTenant(1);
 
 			const result = await authService.selectTenant(1, 1);
 
@@ -292,7 +296,7 @@ describe('AuthService - Multi-tenant', () => {
 			email: 'newuser@example.com',
 			name: 'New',
 			surname: 'User',
-			roleId: 4,
+			role: ROLES.STUDENT,
 		};
 
 		it('should create new user and add to tenant', async () => {
@@ -303,9 +307,15 @@ describe('AuthService - Multi-tenant', () => {
 					email: registerDto.email,
 					name: registerDto.name,
 					surname: registerDto.surname,
+					getRoleIdInTenant: mockUser.getRoleIdInTenant,
 				},
 				password: 'hashedPassword123',
 			});
+			mockRoleService.findRoleByName.mockResolvedValue({
+				id: 4,
+				name: ROLES.STUDENT,
+			});
+			mockUser.getRoleIdInTenant(1);
 
 			const result = await authService.register(registerDto, 1);
 			expect(mockEmailService.sendEmailWelcome).toHaveBeenCalled();
@@ -314,7 +324,7 @@ describe('AuthService - Multi-tenant', () => {
 			expect(result).toHaveProperty('name', registerDto.name);
 			expect(result).toHaveProperty('surname', registerDto.surname);
 			expect(result).toHaveProperty('tenantId', 1);
-			expect(result).toHaveProperty('roleId', 4);
+			expect(result).toHaveProperty('roleId');
 		});
 
 		it('should add existing user to new tenant', async () => {

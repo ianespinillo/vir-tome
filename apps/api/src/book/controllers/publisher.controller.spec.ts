@@ -2,7 +2,11 @@ import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 // src/publishers/controllers/publisher.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreatePublisherDto, UpdatePublisherDto } from '@repo/common';
+import {
+	CreatePublisherDto,
+	IApiResponse,
+	UpdatePublisherDto,
+} from '@repo/common';
 import { PublisherEntity } from '../entities/publisher.entity';
 import { PublisherService } from '../services/publisher.service';
 import { PublisherController } from './publisher.controller';
@@ -43,6 +47,12 @@ describe('PublisherController', () => {
 		update: jest.fn(),
 		delete: jest.fn(),
 	};
+	const controllerResponse: IApiResponse<any> = {
+		message: expect.any(String),
+		data: null,
+		timestamp: expect.any(String),
+		status: expect.any(Number),
+	};
 
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -69,9 +79,9 @@ describe('PublisherController', () => {
 			mockPublisherService.create.mockResolvedValue(mockPublisher);
 
 			const result = await controller.create(mockTenant, createPublisherDto);
-
+			controllerResponse.data = mockPublisher;
 			expect(publisherService.create).toHaveBeenCalledWith(1, createPublisherDto);
-			expect(result).toEqual(mockPublisher);
+			expect(result).toEqual(controllerResponse);
 		});
 
 		it('should throw BadRequestException for duplicate publisher name', async () => {
@@ -96,17 +106,17 @@ describe('PublisherController', () => {
 			mockPublisherService.findAll.mockResolvedValue(publishers);
 
 			const result = await controller.findAll(mockTenant);
-
+			controllerResponse.data = publishers;
 			expect(publisherService.findAll).toHaveBeenCalledWith(1);
-			expect(result).toEqual(publishers);
+			expect(result).toEqual(controllerResponse);
 		});
 
 		it('should return empty array when no publishers', async () => {
 			mockPublisherService.findAll.mockResolvedValue([]);
 
 			const result = await controller.findAll(mockTenant);
-
-			expect(result).toEqual([]);
+			controllerResponse.data = [];
+			expect(result).toEqual(controllerResponse);
 		});
 	});
 
@@ -115,9 +125,9 @@ describe('PublisherController', () => {
 			mockPublisherService.findById.mockResolvedValue(mockPublisher);
 
 			const result = await controller.findOne(mockTenant, 1);
-
+			controllerResponse.data = mockPublisher;
 			expect(publisherService.findById).toHaveBeenCalledWith(1, 1);
-			expect(result).toEqual(mockPublisher);
+			expect(result).toEqual(controllerResponse);
 		});
 
 		it('should throw NotFoundException for non-existent publisher', async () => {

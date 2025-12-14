@@ -1,9 +1,12 @@
 import { IsSuperAdmin } from '@/auth/decorators/is-superadmin.decorator';
+import { TenantEntity } from '@/tenants/entities/tenant.entity';
+import { UserEntity } from '@/users/entities/user.entity';
 import {
 	Body,
 	Controller,
 	Delete,
 	Get,
+	HttpStatus,
 	Param,
 	ParseIntPipe,
 	Patch,
@@ -19,7 +22,16 @@ import {
 	ApiResponse,
 	ApiTags,
 } from '@nestjs/swagger';
-import { CreateTenantDto, UpdateTenantDto } from '@repo/common';
+import {
+	CreateTenantDto,
+	IApiResponse,
+	IDashboardResponse,
+	ILoansByMonth,
+	IMessageResponse,
+	IPaginatedResponse,
+	TenantMetricsDto,
+	UpdateTenantDto,
+} from '@repo/common';
 import { AdminService } from '../services/admin.service';
 
 // src/admin/admin.controller.ts
@@ -48,8 +60,26 @@ export class SuperAdminController {
 			},
 		},
 	})
-	async getDashboard() {
-		return this.adminService.getDashboardMetrics();
+	async getDashboard(): Promise<IApiResponse<IDashboardResponse>> {
+		const data = await this.adminService.getDashboardMetrics();
+		return {
+			message: 'Dashboard data retrieved successfully',
+			data,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
+	}
+
+	@Get('loans/monthly')
+	@ApiOperation({ summary: 'Get loans by month' })
+	async getLoansByMonth(): Promise<IApiResponse<ILoansByMonth[]>> {
+		const res = await this.adminService.getLoansByMonth();
+		return {
+			message: 'Loans by month retrieved successfully',
+			data: res,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	// ============================================
@@ -92,23 +122,53 @@ export class SuperAdminController {
 		@Query('page') page = 1,
 		@Query('search') search?: string,
 		@Query('status') status = 'all',
-	) {
-		return this.adminService.listTenants(page, search, status);
+	): Promise<IApiResponse<IPaginatedResponse<TenantEntity>>> {
+		const res = await this.adminService.listTenants(page, search, status);
+		return {
+			message: 'Tenants retrieved successfully',
+			data: {
+				items: res.data,
+				meta: {
+					total: res.meta.total,
+					current_page: res.meta.page,
+					last_page: Math.round(res.meta.total / 10),
+					per_page: 10,
+				},
+			},
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Get('tenants/:id')
 	@ApiOperation({ summary: 'Get tenant details' })
 	@ApiParam({ name: 'id', type: Number })
-	async getTenant(@Param('id', ParseIntPipe) id: number) {
-		return this.adminService.getTenantDetails(id);
+	async getTenant(
+		@Param('id', ParseIntPipe) id: number,
+	): Promise<IApiResponse<TenantEntity>> {
+		const tenant = await this.adminService.getTenantDetails(id);
+		return {
+			message: 'Tenant retrieved successfully',
+			data: tenant,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Post('tenants')
 	@ApiOperation({ summary: 'Create new tenant' })
 	@ApiBody({ type: CreateTenantDto })
 	@ApiResponse({ status: 201, description: 'Tenant created with admin user' })
-	async createTenant(@Body() dto: CreateTenantDto) {
-		return this.adminService.createTenant(dto);
+	async createTenant(
+		@Body() dto: CreateTenantDto,
+	): Promise<IApiResponse<TenantEntity>> {
+		const entity = await this.adminService.createTenant(dto);
+		return {
+			message: 'Tenant created successfully',
+			data: entity,
+			status: HttpStatus.CREATED,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Patch('tenants/:id')
@@ -118,15 +178,29 @@ export class SuperAdminController {
 	async updateTenant(
 		@Param('id', ParseIntPipe) id: number,
 		@Body() dto: UpdateTenantDto,
-	) {
-		return this.adminService.updateTenant(id, dto);
+	): Promise<IApiResponse<TenantEntity>> {
+		const entity = await this.adminService.updateTenant(id, dto);
+		return {
+			message: 'Tenant updated successfully',
+			data: entity,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Delete('tenants/:id')
 	@ApiOperation({ summary: 'Soft delete tenant' })
 	@ApiParam({ name: 'id', type: Number })
-	async deleteTenant(@Param('id', ParseIntPipe) id: number) {
-		return this.adminService.softDeleteTenant(id);
+	async deleteTenant(
+		@Param('id', ParseIntPipe) id: number,
+	): Promise<IApiResponse<IMessageResponse>> {
+		const tenant = await this.adminService.softDeleteTenant(id);
+		return {
+			message: 'Tenant deleted successfully',
+			data: tenant,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	// ============================================
@@ -135,15 +209,31 @@ export class SuperAdminController {
 	@Put('tenants/:id/activate')
 	@ApiOperation({ summary: 'Activate tenant' })
 	@ApiParam({ name: 'id', type: Number })
-	async activateTenant(@Param('id', ParseIntPipe) id: number) {
-		return this.adminService.setTenantStatus(id, true);
+	async activateTenant(
+		@Param('id', ParseIntPipe) id: number,
+	): Promise<IApiResponse<IMessageResponse>> {
+		const res = await this.adminService.setTenantStatus(id, true);
+		return {
+			message: 'Tenant activated successfully',
+			data: res,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Put('tenants/:id/deactivate')
 	@ApiOperation({ summary: 'Deactivate tenant' })
 	@ApiParam({ name: 'id', type: Number })
-	async deactivateTenant(@Param('id', ParseIntPipe) id: number) {
-		return this.adminService.setTenantStatus(id, false);
+	async deactivateTenant(
+		@Param('id', ParseIntPipe) id: number,
+	): Promise<IApiResponse<IMessageResponse>> {
+		const res = await this.adminService.setTenantStatus(id, false);
+		return {
+			message: 'Tenant deactivated successfully',
+			data: res,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	// ============================================
@@ -157,8 +247,16 @@ export class SuperAdminController {
 		description: 'Detailed metrics for tenant',
 		type: 'TenantMetricsDto', // Usar el DTO definido arriba
 	})
-	async getTenantMetrics(@Param('id', ParseIntPipe) id: number) {
-		return this.adminService.getTenantMetrics(id);
+	async getTenantMetrics(
+		@Param('id', ParseIntPipe) id: number,
+	): Promise<IApiResponse<TenantMetricsDto>> {
+		const res = await this.adminService.getTenantMetrics(id);
+		return {
+			message: 'Tenant metrics retrieved successfully',
+			data: res,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	@Get('tenants/:id/activity')
@@ -173,8 +271,14 @@ export class SuperAdminController {
 	async getTenantActivity(
 		@Param('id', ParseIntPipe) id: number,
 		@Query('days') days = 30,
-	) {
-		return this.adminService.getTenantActivity(id, days);
+	): Promise<IApiResponse<any>> {
+		const res = await this.adminService.getTenantActivity(id, days);
+		return {
+			message: 'Tenant activity retrieved successfully',
+			data: res,
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	// ============================================
@@ -187,7 +291,21 @@ export class SuperAdminController {
 	async getTenantUsers(
 		@Param('id', ParseIntPipe) id: number,
 		@Query('page') page = 1,
-	) {
-		return this.adminService.getTenantUsers(id, page);
+	): Promise<IApiResponse<IPaginatedResponse<UserEntity>>> {
+		const { data, meta } = await this.adminService.getTenantUsers(id, page);
+		return {
+			message: 'Tenant users retrieved successfully',
+			data: {
+				items: data,
+				meta: {
+					total: meta.total,
+					current_page: meta.page,
+					last_page: Math.round(meta.total / 10),
+					per_page: 10,
+				},
+			},
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
 	}
 }

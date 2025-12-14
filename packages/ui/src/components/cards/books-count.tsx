@@ -1,3 +1,4 @@
+'use client';
 import { useAnalytics } from '@repo/hooks';
 import { BookOpen } from 'lucide-react';
 import { useEffect } from 'react';
@@ -7,7 +8,7 @@ export const BooksCount = () => {
 	const { countBooks } = useAnalytics();
 
 	useEffect(() => {
-		countBooks.mutate();
+		countBooks.refetch();
 	}, []);
 
 	if (!countBooks.data) return null;
@@ -15,7 +16,7 @@ export const BooksCount = () => {
 	return (
 		<GenericCountCard
 			title="Total Libros"
-			value={countBooks.data}
+			value={countBooks.data.data}
 			icon={<BookOpen className="h-10 w-10" />}
 			color="indigo"
 		/>

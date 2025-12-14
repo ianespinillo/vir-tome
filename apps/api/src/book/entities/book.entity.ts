@@ -1,3 +1,4 @@
+import { IBook, ILoan } from '@repo/common';
 import {
 	Column,
 	Entity,
@@ -11,9 +12,8 @@ import { MultiTenantEntity } from '../../core/multi-tenant.entity';
 import { LoanEntity } from '../../loan/entities/loan.entity';
 import { CategoryEntity } from './category.entity';
 import { PublisherEntity } from './publisher.entity';
-
 @Entity({ name: 'book' })
-export class BookEntity extends MultiTenantEntity {
+export class BookEntity extends MultiTenantEntity implements IBook {
 	@Column()
 	title!: string;
 
@@ -58,4 +58,19 @@ export class BookEntity extends MultiTenantEntity {
 	)
 	@JoinColumn({ name: 'publisherId' })
 	publisher!: PublisherEntity;
+
+	public getLoansHistory(): ILoan[] {
+		return this.loans;
+	}
+
+	public getCategories(): CategoryEntity[] {
+		return this.categories;
+	}
+	public getPublisher(): PublisherEntity {
+		return this.publisher;
+	}
+
+	public getCategoriesNames(): string[] {
+		return this.categories.map((category) => category.name);
+	}
 }

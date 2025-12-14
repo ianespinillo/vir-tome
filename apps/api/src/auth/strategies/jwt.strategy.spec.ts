@@ -4,7 +4,7 @@ import { UsersService } from '@/users/services/users.service';
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PAYLOAD_TYPE } from '@repo/common';
+import { PAYLOAD_TYPE, ROLES } from '@repo/common';
 import { JwtStrategy } from '../strategies/jwt.strategy'; // Ajusta la ruta según tu estructura
 
 describe('JwtStrategy', () => {
@@ -69,12 +69,17 @@ describe('JwtStrategy', () => {
 					.mockResolvedValue(mockSuperAdmin);
 
 				const result = await strategy.validate(payload);
-
+				console.log(result);
 				expect(mockSuperAdminService.findById).toHaveBeenCalledWith(payload.sub);
 				expect(result).toEqual({
-					userId: mockSuperAdmin.id,
+					id: mockSuperAdmin.id,
 					email: mockSuperAdmin.email,
 					type: PAYLOAD_TYPE.SUPER_ADMIN_LOGIN,
+					roleName: ROLES.SUPER_ADMIN,
+					entity: {
+						email: mockSuperAdmin.email,
+						id: mockSuperAdmin.id,
+					},
 				});
 			});
 
@@ -159,12 +164,13 @@ describe('JwtStrategy', () => {
 				expect(mockUser.hasAccessToTenant).toHaveBeenCalledWith(mockTenant.id);
 				expect(mockUser.getRoleInTenant).toHaveBeenCalledWith(mockTenant.id);
 				expect(result).toEqual({
-					userId: mockUser.id,
+					id: mockUser.id,
 					email: mockUser.email,
+					entity: mockUser,
 					tenantId: mockTenant.id,
+					tenant: mockTenant,
 					roleId: mockRole.id,
 					roleName: mockRole.name,
-					tenant: mockTenant,
 					type: PAYLOAD_TYPE.USER_LOGIN,
 				});
 			});
@@ -183,7 +189,8 @@ describe('JwtStrategy', () => {
 				const result = await strategy.validate(payload);
 
 				expect(result).toEqual({
-					userId: mockUser.id,
+					id: mockUser.id,
+					entity: mockUser,
 					email: mockUser.email,
 					tenantId: mockTenant.id,
 					roleId: null,
