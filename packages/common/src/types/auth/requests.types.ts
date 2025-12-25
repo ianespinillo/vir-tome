@@ -41,13 +41,19 @@ export interface ISingleTenantGeneralLogin {
 	requiresTenantSelection: boolean;
 	access_token: string;
 	user: Partial<IUser>;
-	tenants: Partial<ITenant>;
+	tenant: Partial<ITenant>;
 }
 
 export interface IMultipleTenantGeneralLogin {
 	requiresTenantSelection: boolean;
 	user: Partial<IUser>;
-	tenants: Partial<ITenant>[];
+	tenants: Partial<TenantSelection>[];
+}
+export interface TenantSelection {
+	id: number;
+	name: string;
+	subdomain: string;
+	role: string;
 }
 
 export type IGeneralLoginResponse =

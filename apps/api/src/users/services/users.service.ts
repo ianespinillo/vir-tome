@@ -147,10 +147,7 @@ export class UsersService {
 		user: UserEntity;
 		password: string;
 	}> {
-		const roleExists = await this.rolesService.findRoleByName(
-			data.role,
-			tenantId,
-		);
+		const roleExists = await this.rolesService.findRoleByName(data.role);
 		if (!roleExists) {
 			throw new BadRequestException('Invalid role ID');
 		}
@@ -391,9 +388,9 @@ export class UsersService {
 		return stats;
 	}
 	async filterInTenantByRole(
-		role: Roles,
 		page: number,
 		user: IAuthUser,
+		role?: ROLES,
 		q?: string,
 	): Promise<IPaginatedResponse<IUser>> {
 		const take = 6;
@@ -403,11 +400,15 @@ export class UsersService {
 			.leftJoinAndSelect('user.userTenants', 'ut')
 			.leftJoinAndSelect('ut.role', 'role')
 			.leftJoinAndSelect('ut.tenant', 'tenant')
-			.where('user.deleted_at IS NULL')
-			.andWhere('role.name = :role', { role });
-
+			.where('user.deleted_at IS NULL');
+		if (role) {
+			qb.andWhere('role.name = :role', { role });
+		}
 		if (user.roleName === ROLES.ADMIN) {
 			qb.andWhere('ut.tenant_id = :tenantId', { tenantId: user.tenantId });
+			qb.andWhere('ut.role.name NOT IN (:superAdminRole)', {
+				superAdminRole: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
+			});
 		}
 		if (q) {
 			qb.andWhere('(user.name ILIKE :q OR user.email ILIKE :q)', {

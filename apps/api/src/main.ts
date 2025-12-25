@@ -18,11 +18,37 @@ async function bootstrap() {
 	app.setGlobalPrefix('api');
 	app.use(cookieParser());
 	app.useGlobalFilters(new AllExceptionsFilter());
+	const baseDomain = process.env.FRONTEND_URL; // vir-tome.local
+	const isProd = process.env.NODE_ENV === 'production';
+
 	app.enableCors({
-		origin: 'http://localhost:3000',
+		origin: (origin, callback) => {
+			if (!origin) return callback(null, true);
+
+			let url: URL;
+			try {
+				url = new URL(origin);
+			} catch {
+				return callback(new Error('Invalid origin'), false);
+			}
+
+			const hostname = url.hostname;
+
+			const isAllowedDomain =
+				hostname === baseDomain || hostname.endsWith(`.${baseDomain}`);
+
+			const isAllowedProtocol = isProd
+				? url.protocol === 'https:'
+				: url.protocol === 'http:';
+
+			if (isAllowedDomain && isAllowedProtocol) {
+				return callback(null, true);
+			}
+
+			return callback(new Error(`CORS blocked: ${origin}`), false);
+		},
+
 		credentials: true,
-		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-		allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Tenant-ID'],
 	});
 
 	/// Swagger API

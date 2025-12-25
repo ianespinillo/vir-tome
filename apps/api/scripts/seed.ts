@@ -44,15 +44,23 @@ async function seed() {
 
 	// 1. LIMPIEZA TOTAL (Orden inverso para respetar Foreign Keys)
 	console.log('🧹 Limpiando datos viejos...');
-	await AppDataSource.query(`TRUNCATE TABLE "loan" CASCADE`);
-	await AppDataSource.query(`TRUNCATE TABLE "user_tenants" CASCADE`);
-	await AppDataSource.query(`TRUNCATE TABLE "book_categories" CASCADE`); // Tabla pivote
-	await AppDataSource.query(`TRUNCATE TABLE "book" CASCADE`);
-	await AppDataSource.query(`TRUNCATE TABLE "category" CASCADE`);
-	await AppDataSource.query(`TRUNCATE TABLE "publisher" CASCADE`);
-	await AppDataSource.query(`TRUNCATE TABLE "roles" CASCADE`);
-	await AppDataSource.query(`TRUNCATE TABLE "tenant" CASCADE`);
-	await AppDataSource.query(`TRUNCATE TABLE "users" CASCADE`);
+	await AppDataSource.query(`TRUNCATE TABLE "loan" RESTART IDENTITY CASCADE`);
+	await AppDataSource.query(
+		`TRUNCATE TABLE "user_tenants" RESTART IDENTITY CASCADE`,
+	);
+	await AppDataSource.query(
+		`TRUNCATE TABLE "book_categories" RESTART IDENTITY CASCADE`,
+	); // Tabla pivote
+	await AppDataSource.query(`TRUNCATE TABLE "book" RESTART IDENTITY CASCADE`);
+	await AppDataSource.query(
+		`TRUNCATE TABLE "category" RESTART IDENTITY CASCADE`,
+	);
+	await AppDataSource.query(
+		`TRUNCATE TABLE "publisher" RESTART IDENTITY CASCADE`,
+	);
+	await AppDataSource.query(`TRUNCATE TABLE "roles" RESTART IDENTITY CASCADE`);
+	await AppDataSource.query(`TRUNCATE TABLE "tenant" RESTART IDENTITY CASCADE`);
+	await AppDataSource.query(`TRUNCATE TABLE "users" RESTART IDENTITY CASCADE`);
 	// await AppDataSource.query(`TRUNCATE TABLE "super-admin" CASCADE`);
 	// 2. SETTINGS
 	faker.seed(123); // ¡Importante! Hace que los datos sean siempre iguales
@@ -174,17 +182,17 @@ async function seed() {
 	// ==========================================
 	// CREAR SUPER ADMIN (TÚ)
 	// ==========================================
-	// console.log('👑 Creando Super Admin...');
-	// const superAdminRepo = AppDataSource.getRepository(SuperAdminEntity);
-	// const { password, hashedPassword } =
-	// 	await PasswordAdapter.generateHashedPassword(8);
-	// console.log(`Super admin password: ${password}`);
-	// const superAdmin = await superAdminRepo.save({
-	// 	email: 'espinilloian@hotmail.com',
-	// 	name: 'Ian',
-	// 	password: hashedPassword,
-	// 	isActive: true,
-	// });
+	console.log('👑 Creando Super Admin...');
+	const superAdminRepo = AppDataSource.getRepository(SuperAdminEntity);
+	const { password, hashedPassword } =
+		await PasswordAdapter.generateHashedPassword(8);
+	console.log(`Super admin password: ${password}`);
+	const superAdmin = await superAdminRepo.save({
+		email: 'espinilloian@hotmail.com',
+		name: 'Ian',
+		password: hashedPassword,
+		isActive: true,
+	});
 	// ==========================================
 	// CREAR DATOS DEL DOMINIO (Solo para Demo Tenant)
 	// ==========================================

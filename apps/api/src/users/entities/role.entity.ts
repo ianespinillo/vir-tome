@@ -4,16 +4,12 @@ import { Column, Entity, Index } from 'typeorm';
 import { GenericEntity } from '../../core/generic.entity';
 
 @Entity('roles')
-@Index(['name', 'tenant_id'], { unique: true })
 export class RoleEntity extends GenericEntity implements IRole {
 	@Column({
 		type: 'enum',
 		enum: ROLES,
 	})
 	name!: ROLES;
-
-	@Column({ nullable: true })
-	tenant_id: number;
 
 	@Column({ nullable: true })
 	description: string;

@@ -10,6 +10,7 @@ export * from './dto/auth/forgot-password.dto';
 export * from './dto/auth/reset-password.dto';
 export * from './dto/tenants/create-tenant.dto';
 export * from './dto/tenants/update-tenant.dto';
+export * from './dto/tenants/add-user-to-tenant.dto';
 export * from './enum/roles.enum';
 export * from './enum/tokens-type.enum';
 export * from './enum/payload-type.enum';

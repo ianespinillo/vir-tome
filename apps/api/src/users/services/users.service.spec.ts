@@ -446,7 +446,10 @@ describe('UsersService', () => {
 	describe('changeRoleInTenant', () => {
 		it('should update the role_id', async () => {
 			userTenantsRepo.findOne?.mockResolvedValue(mockUserTenant);
-			userTenantsRepo.save?.mockResolvedValue({ ...mockUserTenant, role_id: 2 });
+			userTenantsRepo.save?.mockResolvedValue({
+				...mockUserTenant,
+				role_id: 2,
+			});
 
 			const newRoleId = 2;
 			const result = await service.changeRoleInTenant(1, 1, newRoleId);

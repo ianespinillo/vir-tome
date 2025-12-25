@@ -1,4 +1,5 @@
 'use client';
+import { LinkTenantDialog } from '@/components/dialogs/tenants/link-tenant-dialog';
 import { useModalCrud } from '@/contexts/modal-crud-context';
 import { Button } from '@/ui/button';
 import {
@@ -8,16 +9,16 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuTrigger,
 } from '@/ui/dropdown-menu';
-import { IUser } from '@repo/common';
+import { IUser, ROLES } from '@repo/common';
 import { useUsers } from '@repo/hooks';
-import { ColumnDef } from '@tanstack/react-table';
-import {
-	ArrowUpDown,
-	LogIn,
-	MoreHorizontal,
-	Pencil,
-	Trash,
-} from 'lucide-react';
+import { ColumnDef, Table, TableMeta } from '@tanstack/react-table';
+
+declare module '@tanstack/react-table' {
+	interface TableMeta<TData> {
+		rol?: ROLES;
+	}
+}
+import { ArrowUpDown, MoreHorizontal, Trash } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const userColumns: ColumnDef<IUser>[] = [
@@ -66,12 +67,12 @@ export const userColumns: ColumnDef<IUser>[] = [
 	},
 	{
 		id: 'actions',
-		cell: ({ row }) => <UserActions user={row.original} />,
+		cell: ({ row, table }) => <UserActions user={row.original} />,
 	},
 ];
 
-function UserActions({ user }: { user: IUser }) {
-	const { setEntity, setEditOpen, setDetailsOpen } = useModalCrud<
+function UserActions({ user }: Readonly<{ user: IUser }>) {
+	const { setEntity, setDetailsOpen } = useModalCrud<
 		IUser,
 		ReturnType<typeof useUsers>
 	>();
@@ -94,7 +95,6 @@ function UserActions({ user }: { user: IUser }) {
 				>
 					Ver detalles
 				</DropdownMenuItem>
-
 				<DropdownMenuItem
 					onClick={() => {
 						navigator.clipboard.writeText(user.id.toString());

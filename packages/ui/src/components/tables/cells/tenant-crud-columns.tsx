@@ -1,11 +1,10 @@
 // src/app/super-admin/tenants/components/columns.tsx
 'use client';
 
-import { EditTenantDialog } from '@/components/dialogs/edit-tenant-dialog';
+import { LinkTenantDialog } from '@/components/dialogs/tenants/link-tenant-dialog';
 import { useModalCrud } from '@/contexts/modal-crud-context';
 import { Badge } from '@/ui/badge';
 import { Button } from '@/ui/button';
-import { Checkbox } from '@/ui/checkbox';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -13,7 +12,8 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuTrigger,
 } from '@/ui/dropdown-menu';
-import { ITenant } from '@repo/common';
+import { ITenant, ROLES } from '@repo/common';
+import { useTenants } from '@repo/hooks';
 import { ColumnDef } from '@tanstack/react-table';
 import {
 	ArrowUpDown,
@@ -22,8 +22,8 @@ import {
 	Pencil,
 	Trash,
 } from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
-import { useTenants } from '../../../../../hooks/src/hooks/use-tenant';
 
 export const tenantCrudColumns: ColumnDef<ITenant>[] = [
 	// 2. Nombre con ORDENAMIENTO (Sorting)
@@ -101,60 +101,73 @@ function TenantActions({ tenant }: Readonly<{ tenant: ITenant }>) {
 		setDetailsOpen,
 		hook: { deleteTenant },
 	} = useModalCrud<ITenant, ReturnType<typeof useTenants>>();
-
+	const [linkOpen, setLinkOpen] = useState(false);
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button variant="ghost" className="h-8 w-8 p-0">
-					<span className="sr-only">Abrir menú</span>
-					<MoreHorizontal className="h-4 w-4" />
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end">
-				<DropdownMenuLabel>Acciones</DropdownMenuLabel>
+		<>
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<Button variant="ghost" className="h-8 w-8 p-0">
+						<span className="sr-only">Abrir menú</span>
+						<MoreHorizontal className="h-4 w-4" />
+					</Button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="end">
+					<DropdownMenuLabel>Acciones</DropdownMenuLabel>
 
-				<DropdownMenuItem
-					onClick={() => {
-						setEntity(tenant);
-						setDetailsOpen(true);
-					}}
-				>
-					Ver detalles
-				</DropdownMenuItem>
+					<DropdownMenuItem
+						onClick={() => {
+							setEntity(tenant);
+							setDetailsOpen(true);
+						}}
+					>
+						Ver detalles
+					</DropdownMenuItem>
 
-				<DropdownMenuItem
-					onClick={() => navigator.clipboard.writeText(tenant.id.toString())}
-				>
-					Copiar ID
-				</DropdownMenuItem>
+					<DropdownMenuItem
+						onClick={() => navigator.clipboard.writeText(tenant.id.toString())}
+					>
+						Copiar ID
+					</DropdownMenuItem>
 
-				<DropdownMenuItem
-					onClick={() => {
-						setEntity(tenant);
-						setEditOpen(true);
-					}}
-				>
-					<Pencil className="mr-2 h-4 w-4" />
-					Editar
-				</DropdownMenuItem>
+					<DropdownMenuItem
+						onClick={() => {
+							setEntity(tenant);
+							setEditOpen(true);
+						}}
+					>
+						<Pencil className="mr-2 h-4 w-4" />
+						Editar
+					</DropdownMenuItem>
+					<DropdownMenuItem onClick={() => setLinkOpen(true)}>
+						Vincular usuario existente
+					</DropdownMenuItem>
 
-				{/* Acción especial de SuperAdmin: Loguearse como este tenant */}
-				<DropdownMenuItem onClick={() => console.log('Impersonate', tenant.id)}>
-					<LogIn className="mr-2 h-4 w-4" /> Acceder al panel
-				</DropdownMenuItem>
+					{/* Acción especial de SuperAdmin: Loguearse como este tenant */}
+					<DropdownMenuItem onClick={() => console.log('Impersonate', tenant.id)}>
+						<LogIn className="mr-2 h-4 w-4" /> Acceder al panel
+					</DropdownMenuItem>
 
-				<DropdownMenuItem
-					className="text-red-600 focus:text-red-600"
-					onClick={() => {
-						toast.promise(deleteTenant.mutateAsync(tenant.id), {
-							success: 'Tenant eliminado satisfactoriamente',
-							error: 'Error al eliminar tenant',
-						});
-					}}
-				>
-					<Trash className="mr-2 h-4 w-4" /> Eliminar
-				</DropdownMenuItem>
-			</DropdownMenuContent>
-		</DropdownMenu>
+					<DropdownMenuItem
+						className="text-red-600 focus:text-red-600"
+						onClick={() => {
+							toast.promise(deleteTenant.mutateAsync(tenant.id), {
+								success: 'Tenant eliminado satisfactoriamente',
+								error: 'Error al eliminar tenant',
+							});
+						}}
+					>
+						<Trash className="mr-2 h-4 w-4" /> Eliminar
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
+			<LinkTenantDialog
+				tenantId={tenant.id}
+				availableRoles={Object.values(ROLES).filter(
+					(role) => role !== ROLES.SUPER_ADMIN,
+				)}
+				open={linkOpen}
+				onOpenChange={setLinkOpen}
+			/>
+		</>
 	);
 }

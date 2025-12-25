@@ -1,3 +1,4 @@
+import { UsersModule } from '@/users/users.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BookController } from './controllers/book.controller';
@@ -13,6 +14,7 @@ import { PublisherService } from './services/publisher.service';
 @Module({
 	imports: [
 		TypeOrmModule.forFeature([BookEntity, CategoryEntity, PublisherEntity]),
+		UsersModule,
 	],
 	providers: [BookService, CategoryService, PublisherService],
 	controllers: [CategoryController, BookController, PublisherController],

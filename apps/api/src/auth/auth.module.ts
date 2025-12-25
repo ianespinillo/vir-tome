@@ -8,9 +8,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { MultitenantGuard } from './guard/multitenant.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
 @Module({
-	providers: [ConfigService, AuthService, JwtStrategy],
+	providers: [ConfigService, AuthService, JwtStrategy, MultitenantGuard],
 	controllers: [AuthController],
 	imports: [
 		UsersModule,

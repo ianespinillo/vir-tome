@@ -10,15 +10,14 @@ export class RoleService {
 		@InjectRepository(RoleEntity)
 		private readonly roleRepository: Repository<RoleEntity>,
 	) {}
-	async createRole(name: string, tenantId: number): Promise<RoleEntity> {
-		const exists = await this.findRoleByName(name, tenantId);
+	async createRole(name: string): Promise<RoleEntity> {
+		const exists = await this.findRoleByName(name);
 		if (exists) {
 			throw new BadRequestException('Role already exists');
 		}
 		try {
 			return await this.roleRepository.save({
 				name: name as ROLES,
-				tenant_id: tenantId,
 			});
 		} catch (error) {
 			if (error instanceof Error) {
@@ -27,28 +26,20 @@ export class RoleService {
 			throw error;
 		}
 	}
-	async findRoleByName(
-		name: string,
-		tenantId: number,
-	): Promise<RoleEntity | null> {
+	async findRoleByName(name: string): Promise<RoleEntity | null> {
 		if (!Object.values(ROLES).includes(name as ROLES)) {
 			throw new BadRequestException('Invalid role name');
 		}
 		return this.roleRepository.findOne({
 			where: {
 				name: name as ROLES,
-				tenant_id: tenantId,
 			},
 		});
 	}
-	async findAllRoles(tenantId: number): Promise<RoleEntity[]> {
-		return this.roleRepository.find({
-			where: {
-				tenant_id: tenantId,
-			},
-		});
+	async findAllRoles(): Promise<RoleEntity[]> {
+		return this.roleRepository.find();
 	}
-	async initializeDefaultRoles(tenantId: number): Promise<RoleEntity[]> {
+	async initializeDefaultRoles(): Promise<RoleEntity[]> {
 		const defaultRoles = [
 			{ name: ROLES.ADMIN },
 			{ name: ROLES.LIBRARIAN },
@@ -59,11 +50,11 @@ export class RoleService {
 		const roles: RoleEntity[] = [];
 		for (const roleData of defaultRoles) {
 			try {
-				const role = await this.createRole(roleData.name, tenantId);
+				const role = await this.createRole(roleData.name);
 				roles.push(role);
 			} catch (error) {
 				if (error instanceof BadRequestException) {
-					const existing = await this.findRoleByName(roleData.name, tenantId);
+					const existing = await this.findRoleByName(roleData.name);
 					if (existing) roles.push(existing);
 				}
 			}
@@ -71,11 +62,10 @@ export class RoleService {
 
 		return roles;
 	}
-	async findById(roleId: number, tenantId: number): Promise<RoleEntity | null> {
+	async findById(roleId: number): Promise<RoleEntity | null> {
 		return this.roleRepository.findOne({
 			where: {
 				id: roleId,
-				tenant_id: tenantId,
 			},
 		});
 	}
@@ -89,7 +79,6 @@ export class RoleService {
 
 		return this.roleRepository.find({
 			where: {
-				tenant_id: tenantId,
 				name: In(defaultRoleNames),
 			},
 		});

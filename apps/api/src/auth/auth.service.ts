@@ -16,9 +16,13 @@ import { JwtService } from '@nestjs/jwt';
 import {
 	ForgotPasswordDTO,
 	type IAuthPayload,
+	IGeneralLoginResponse,
+	IMultipleTenantGeneralLogin,
+	ISingleTenantGeneralLogin,
 	type ISuperAdminLoginPayload,
 	SignInDto as LoginDto,
 	PAYLOAD_TYPE,
+	ROLES,
 	ResetPasswordDto,
 	SignUpDto,
 	TokenTypes,
@@ -63,7 +67,10 @@ export class AuthService {
 		if (!isPasswordValid) {
 			throw new UnauthorizedException('Invalid credentials');
 		}
-
+		const tenant = await this.tenantService.findById(tenantId);
+		if (!tenant?.is_active) {
+			throw new UnauthorizedException('Tenant not found or inactive');
+		}
 		// 3. Verificar que el usuario tiene acceso a este tenant
 		const hasAccess = await this.usersService.hasAccessToTenant(
 			user.id,
@@ -99,6 +106,44 @@ export class AuthService {
 				roleId: role.id,
 				roleName: role.name,
 			},
+			tenant,
+		};
+	}
+
+	// ===========================================
+	// CAMBIO DE TENANT EN SESIÓN ACTIVA
+	// ===========================================
+	async switchTenant(userId: number, newTenantId: number) {
+		// Verificar que el usuario tiene acceso al nuevo tenant
+		const hasAccess = await this.usersService.hasAccessToTenant(
+			userId,
+			newTenantId,
+		);
+		if (!hasAccess) {
+			throw new UnauthorizedException(
+				'User does not have access to the new tenant',
+			);
+		}
+		// Obtener datos del usuario y su rol en el nuevo tenant
+		const user = await this.usersService.findById(userId);
+		if (!user) {
+			throw new UnauthorizedException('User not found');
+		}
+		if (user.getRoleInTenant(newTenantId) == null) {
+			throw new UnauthorizedException('User has no role in the new tenant');
+		}
+		// Generar token para el nuevo tenant
+		const payload: IAuthPayload = {
+			sub: user.id,
+			email: user.email,
+			tenantId: newTenantId,
+			roleId: user.getRoleIdInTenant(newTenantId),
+			type: PAYLOAD_TYPE.USER_LOGIN,
+		};
+		const { password, ...userData } = user;
+		return {
+			access_token: this.jwtService.sign(payload),
+			user: userData,
 		};
 	}
 
@@ -109,7 +154,7 @@ export class AuthService {
 	/**
 	 * Login centralizado - devuelve lista de tenants si el usuario tiene múltiples
 	 */
-	async centralLogin(loginDto: LoginDto) {
+	async centralLogin(loginDto: LoginDto): Promise<IGeneralLoginResponse> {
 		// 1. Buscar usuario por email
 		const user = await this.usersService.findByEmail(loginDto.email);
 
@@ -146,7 +191,7 @@ export class AuthService {
 					name: ut.name,
 					role: user.getRoleInTenant(ut.id)?.name || null,
 				})),
-			};
+			} as IMultipleTenantGeneralLogin;
 		}
 
 		// 5. Si tiene un solo tenant, generar token directamente
@@ -173,7 +218,7 @@ export class AuthService {
 				subdomain: singleTenant.tenant.subdomain,
 				name: singleTenant.tenant.name,
 			},
-		};
+		} as ISingleTenantGeneralLogin;
 	}
 
 	/**
@@ -239,10 +284,7 @@ export class AuthService {
 			if (hasAccess) {
 				throw new BadRequestException('User already exists in this tenant');
 			}
-			const role = await this.roleService.findRoleByName(
-				registerDto.role,
-				tenantId,
-			);
+			const role = await this.roleService.findRoleByName(registerDto.role);
 			if (!role) throw new NotFoundException('Role not founded in tenant');
 			// Usuario existe pero no en este tenant, agregarlo
 			await this.usersService.addUserToTenant(user.id, tenantId, role.id);
@@ -273,7 +315,7 @@ export class AuthService {
 			name: result.user.name,
 			surname: result.user.surname,
 			tenantId: tenantId,
-			roleId: result.user.getRoleIdInTenant(tenantId),
+			roleId: Object.values(ROLES).indexOf(registerDto.role) + 1, // Asumiendo que los IDs de rol son secuenciales
 		};
 	}
 

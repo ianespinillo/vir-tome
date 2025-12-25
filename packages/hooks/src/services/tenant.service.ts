@@ -7,7 +7,8 @@ import {
 } from '@repo/common';
 import axios from 'axios';
 export class TenantService {
-	private static readonly baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/tenants`;
+	private static readonly baseUrl =
+		`${process.env.NODE_ENV === 'production' ? 'https://' : 'http://'}${process.env.NEXT_PUBLIC_API_URL}/tenants`;
 
 	public static async getPaginatedTenants(page: number, searchTerm?: string) {
 		return await axios.get<IApiResponse<IPaginatedResponse<ITenant[]>>>(

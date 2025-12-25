@@ -89,7 +89,13 @@ describe('TenantsController', () => {
 
 	describe('getStats', () => {
 		it('should return tenant statistics', async () => {
-			const stats = { total: 10, active: 8, inactive: 2, demo: 2, production: 8 };
+			const stats = {
+				total: 10,
+				active: 8,
+				inactive: 2,
+				demo: 2,
+				production: 8,
+			};
 			mockTenantsService.getStats.mockResolvedValue(stats);
 
 			const result = await controller.getStats();

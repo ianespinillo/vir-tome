@@ -233,26 +233,19 @@ describe('Multi-tenant Integration (Container)', () => {
 			const userRepo = getRepository(UserEntity);
 			const roleRepo = getRepository(RoleEntity);
 
-			// Create role for tenant1
-			const role1 = await roleRepo.save({
+			// Create global role (since roles are global)
+			const role = await roleRepo.save({
 				name: ROLES.ADMIN,
-				tenant_id: tenant1.id,
 			});
 
-			// Create role for tenant2 with same name
-			const role2 = await roleRepo.save({
-				name: ROLES.ADMIN,
-				tenant_id: tenant2.id,
-			});
-
-			// Create users referencing their respective tenant roles
+			// Create users referencing the global role
 			const user1 = await userRepo.save({
 				name: 'Admin',
 				surname: 'User1',
 				email: 'admin@tenant1.com',
 				password: 'password',
 				tenant_id: tenant1.id,
-				role: { id: role1.id },
+				role: { id: role.id },
 			});
 
 			const user2 = await userRepo.save({
@@ -261,22 +254,12 @@ describe('Multi-tenant Integration (Container)', () => {
 				email: 'admin@tenant2.com',
 				password: 'password',
 				tenant_id: tenant2.id,
-				role: { id: role2.id },
+				role: { id: role.id },
 			});
 
-			// Verify roles are isolated by tenant
-			const tenant1Roles = await roleRepo.find({
-				where: { tenant_id: tenant1.id },
-			});
-			const tenant2Roles = await roleRepo.find({
-				where: { tenant_id: tenant2.id },
-			});
-
-			expect(tenant1Roles).toHaveLength(1);
-			expect(tenant1Roles[0].id).toBe(role1.id);
-
-			expect(tenant2Roles).toHaveLength(1);
-			expect(tenant2Roles[0].id).toBe(role2.id);
+			// Verify the global role exists
+			const allRoles = await roleRepo.find();
+			expect(allRoles.some((r) => r.id === role.id)).toBe(true);
 		});
 	});
 

@@ -555,18 +555,12 @@ describe('Multi-tenant Data Isolation (Container)', () => {
 				is_active: true,
 			});
 
-			// 4. Verificar aislamiento de roles
-			const tenant1Roles = await roleRepository.find({
-				where: { tenant_id: tenant1.id },
-			});
-			const tenant2Roles = await roleRepository.find({
-				where: { tenant_id: tenant2.id },
-			});
+			// 4. Verificar que roles son globales (no aislados por tenant)
+			const allRoles = await roleRepository.find();
 
-			expect(tenant1Roles).toHaveLength(1);
-			expect(tenant1Roles[0].id).toBe(adminRole1.id);
-			expect(tenant2Roles).toHaveLength(1);
-			expect(tenant2Roles[0].id).toBe(adminRole2.id);
+			expect(allRoles.length).toBeGreaterThanOrEqual(2);
+			expect(allRoles.some((role) => role.id === adminRole1.id)).toBe(true);
+			expect(allRoles.some((role) => role.id === adminRole2.id)).toBe(true);
 
 			// 5. Verificar aislamiento de usuarios a través de la relación
 			const tenant1Users = await userTenantRepository.find({

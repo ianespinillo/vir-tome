@@ -17,7 +17,6 @@ export class TenantMiddleware implements NestMiddleware {
 		const tenant =
 			(await this.getTenantFromHeader(req)) ??
 			(await this.getTenantFromSubdomain(req));
-
 		if (tenant) {
 			this.validateAndAssignTenant(req, tenant);
 		}
@@ -45,7 +44,7 @@ export class TenantMiddleware implements NestMiddleware {
 	private async getTenantFromSubdomain(
 		req: Request,
 	): Promise<TenantEntity | null> {
-		const host = req.get('host') || '';
+		const host = req.get('host') || ''; // Use 'host' instead of 'origin'
 		const subdomain = this.extractSubdomain(host);
 
 		if (this.isSpecialCase(subdomain, host)) return null;
@@ -74,9 +73,15 @@ export class TenantMiddleware implements NestMiddleware {
 	}
 
 	private extractSubdomain(host: string): string {
-		const base = host.split(':')[0]; // remove port
+		const base = host.split(':')[0]; // Remove port
 		const parts = base.split('.');
-		return parts[0];
+
+		// Adjust logic to handle the specific format of your URLs
+		if (parts.length > 2 && parts[1] === 'vir-tome' && parts[2] === 'local') {
+			return parts[0]; // Return the first part as the subdomain
+		}
+
+		return '';
 	}
 
 	private isSpecialCase(subdomain: string, host: string): boolean {

@@ -3,7 +3,6 @@ import { IGeneric } from './generic.type';
 
 export interface IRole extends IGeneric {
 	name: ROLES;
-	tenant_id: number;
 	description?: string;
 	isSuperAdmin(): boolean;
 	isAdmin(): boolean;

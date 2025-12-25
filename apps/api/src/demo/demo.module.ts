@@ -1,3 +1,4 @@
+import { UsersModule } from '@/users/users.module';
 // src/demo/demo.module.ts
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -26,6 +27,7 @@ import { DemoMiddleware } from './middleware/demo.middleware';
 			PublisherEntity,
 			RoleEntity,
 		]),
+		UsersModule,
 	],
 	controllers: [DemoController],
 	providers: [DemoResetService, DemoSeeder, DemoMiddleware],

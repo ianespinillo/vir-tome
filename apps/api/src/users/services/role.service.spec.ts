@@ -4,29 +4,15 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { ROLES } from '@repo/common'; // Asumo que ROLES es un enum de cadena
 import { In, Repository } from 'typeorm';
 import { RoleEntity } from '../entities/role.entity'; // Asumo la ruta
-import { RoleService } from './role.service'; // Asumo la ruta
+import { RoleService } from '../services/role.service'; // Asumo la ruta
 
 // Mock de la entidad RoleEntity para usar en los tests
 const mockRole: RoleEntity = {
 	id: 1,
 	name: ROLES.ADMIN,
-	tenant_id: 101,
 	created_at: new Date(),
 	updated_at: new Date(),
 } as RoleEntity;
-
-// Mock del enum ROLES (si no está disponible globalmente en el entorno de prueba)
-// En un caso real, `@repo/common` debería estar disponible o mockeado de forma global.
-// Para este ejemplo, asumimos que ROLES es algo como:
-/*
-export enum ROLES {
-    ADMIN = 'ADMIN',
-    LIBRARIAN = 'LIBRARIAN',
-    TEACHER = 'TEACHER',
-    STUDENT = 'STUDENT',
-}
-*/
-
 describe('RoleService', () => {
 	let service: RoleService;
 	let roleRepository: Repository<RoleEntity>;
@@ -68,23 +54,22 @@ describe('RoleService', () => {
 	// --- Tests para findRoleByName ---
 	describe('findRoleByName', () => {
 		const name = ROLES.ADMIN;
-		const tenantId = 101;
 
 		it('should return a role if found', async () => {
 			mockRoleRepository.findOne.mockResolvedValue(mockRole);
 
-			const result = await service.findRoleByName(name, tenantId);
+			const result = await service.findRoleByName(name);
 
 			expect(result).toEqual(mockRole);
 			expect(mockRoleRepository.findOne).toHaveBeenCalledWith({
-				where: { name: name, tenant_id: tenantId },
+				where: { name: name },
 			});
 		});
 
 		it('should return null if role is not found', async () => {
 			mockRoleRepository.findOne.mockResolvedValue(null);
 
-			const result = await service.findRoleByName(name, tenantId);
+			const result = await service.findRoleByName(name);
 
 			expect(result).toBeNull();
 		});
@@ -92,7 +77,7 @@ describe('RoleService', () => {
 		it('should throw BadRequestException for an invalid role name', async () => {
 			const invalidName = 'INVALID_ROLE';
 
-			await expect(service.findRoleByName(invalidName, tenantId)).rejects.toThrow(
+			await expect(service.findRoleByName(invalidName)).rejects.toThrow(
 				new BadRequestException('Invalid role name'),
 			);
 			// Aseguramos que la base de datos no fue consultada
@@ -103,7 +88,6 @@ describe('RoleService', () => {
 	// --- Tests para createRole ---
 	describe('createRole', () => {
 		const name = ROLES.LIBRARIAN;
-		const tenantId = 101;
 
 		it('should successfully create and return a new role', async () => {
 			// 1. findRoleByName debe devolver null (no existe)
@@ -111,14 +95,12 @@ describe('RoleService', () => {
 			// 2. save debe devolver la entidad creada
 			mockRoleRepository.save.mockResolvedValue({ ...mockRole, name: name });
 
-			const result = await service.createRole(name, tenantId);
+			const result = await service.createRole(name);
 
 			expect(result.name).toBe(name);
-			expect(result.tenant_id).toBe(tenantId);
 			expect(mockRoleRepository.findOne).toHaveBeenCalledTimes(1);
 			expect(mockRoleRepository.save).toHaveBeenCalledWith({
 				name: name,
-				tenant_id: tenantId,
 			});
 		});
 
@@ -126,7 +108,7 @@ describe('RoleService', () => {
 			// findRoleByName debe devolver la entidad (existe)
 			mockRoleRepository.findOne.mockResolvedValue(mockRole);
 
-			await expect(service.createRole(name, tenantId)).rejects.toThrow(
+			await expect(service.createRole(name)).rejects.toThrow(
 				new BadRequestException('Role already exists'),
 			);
 			// Aseguramos que save no fue llamado
@@ -140,7 +122,7 @@ describe('RoleService', () => {
 			const dbError = new Error('DB connection failed');
 			mockRoleRepository.save.mockRejectedValue(dbError);
 
-			await expect(service.createRole(name, tenantId)).rejects.toThrow(
+			await expect(service.createRole(name)).rejects.toThrow(
 				new BadRequestException(dbError.message),
 			);
 		});
@@ -151,26 +133,21 @@ describe('RoleService', () => {
 			const unknownError = new Error('Unknown exception'); // No es instancia de Error
 			mockRoleRepository.save.mockRejectedValue(unknownError);
 
-			await expect(service.createRole(name, tenantId)).rejects.toThrow(
-				unknownError,
-			);
+			await expect(service.createRole(name)).rejects.toThrow(unknownError);
 		});
 	});
 
 	// --- Tests para findAllRoles ---
 	describe('findAllRoles', () => {
-		const tenantId = 101;
 		const allRolesMock = [mockRole, { ...mockRole, id: 2, name: ROLES.STUDENT }];
 
-		it('should return all roles for a given tenantId', async () => {
+		it('should return all roles', async () => {
 			mockRoleRepository.find.mockResolvedValue(allRolesMock);
 
-			const result = await service.findAllRoles(tenantId);
+			const result = await service.findAllRoles();
 
 			expect(result).toEqual(allRolesMock);
-			expect(mockRoleRepository.find).toHaveBeenCalledWith({
-				where: { tenant_id: tenantId },
-			});
+			expect(mockRoleRepository.find).toHaveBeenCalledWith();
 		});
 	});
 
@@ -188,7 +165,7 @@ describe('RoleService', () => {
 			{ ...mockRole, id: 2, name: ROLES.STUDENT },
 		];
 
-		it('should find all default roles for a given tenantId', async () => {
+		it('should find all default roles', async () => {
 			mockRoleRepository.find.mockResolvedValue(defaultRolesMock);
 
 			const result = await service.getDefaultRoles(tenantId);
@@ -196,7 +173,6 @@ describe('RoleService', () => {
 			expect(result).toEqual(defaultRolesMock);
 			expect(mockRoleRepository.find).toHaveBeenCalledWith({
 				where: {
-					tenant_id: tenantId,
 					name: In(defaultRoleNames), // TypeORM's 'In' operator
 				},
 			});
@@ -205,7 +181,6 @@ describe('RoleService', () => {
 
 	// --- Tests para initializeDefaultRoles ---
 	describe('initializeDefaultRoles', () => {
-		const tenantId = 101;
 		const defaultRoles = [
 			ROLES.ADMIN,
 			ROLES.LIBRARIAN,
@@ -232,7 +207,7 @@ describe('RoleService', () => {
 				return createdRolesMock[index];
 			});
 
-			const result = await service.initializeDefaultRoles(tenantId);
+			const result = await service.initializeDefaultRoles();
 
 			// Deben haberse llamado 4 veces a findOne (en createRole)
 			expect(mockRoleRepository.findOne).toHaveBeenCalledTimes(4);
@@ -246,7 +221,11 @@ describe('RoleService', () => {
 
 		it('should return existing roles and create non-existing ones', async () => {
 			const existingAdminRole = { ...mockRole, id: 1, name: ROLES.ADMIN };
-			const existingLibrarianRole = { ...mockRole, id: 2, name: ROLES.LIBRARIAN };
+			const existingLibrarianRole = {
+				...mockRole,
+				id: 2,
+				name: ROLES.LIBRARIAN,
+			};
 			const newTeacherRole = { ...mockRole, id: 3, name: ROLES.TEACHER };
 			const newStudentRole = { ...mockRole, id: 4, name: ROLES.STUDENT };
 
@@ -282,7 +261,7 @@ describe('RoleService', () => {
 			// Cuando createRole falla con BadRequestException, llama a findRoleByName de nuevo
 			// para obtener el rol existente.
 
-			const result = await service.initializeDefaultRoles(tenantId);
+			const result = await service.initializeDefaultRoles();
 
 			// Deberíamos haber llamado a findOne 4 veces inicialmente (en createRole).
 			// Luego, dos veces más en el bloque `catch` para ADMIN y LIBRARIAN. Total: 6 veces.
@@ -330,7 +309,7 @@ describe('RoleService', () => {
 				return {} as RoleEntity;
 			});
 
-			const result = await service.initializeDefaultRoles(tenantId);
+			const result = await service.initializeDefaultRoles();
 
 			// Se crean 3 roles, 1 falla y 1 existe. Total de retorno: 3.
 			expect(result).toHaveLength(3);

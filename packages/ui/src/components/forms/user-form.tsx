@@ -64,11 +64,12 @@ export const UserForm = ({ role }: Readonly<Props>) => {
 
 	const onSubmit = (data: SignUpDto) => {
 		toast.promise(register.mutateAsync(data), {
-			success: 'Usuario creado satisfactoriamente',
+			success: () => {
+				setCreateOpen(false);
+				return 'Usuario creado exitosamente';
+			},
 			error: 'Error creando el usuario',
 		});
-
-		setCreateOpen(false);
 	};
 
 	return (

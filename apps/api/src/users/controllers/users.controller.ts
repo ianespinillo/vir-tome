@@ -4,12 +4,14 @@ import { IAuthUser } from '@/core/core.types';
 import { ValidRolePipe } from '@/tenants/pipe/valid-role.pipe';
 import {
 	BadRequestException,
+	Body,
 	Controller,
 	Get,
 	HttpStatus,
 	NotFoundException,
 	Param,
 	ParseIntPipe,
+	Post,
 	Query,
 	UnauthorizedException,
 } from '@nestjs/common';
@@ -21,12 +23,15 @@ import {
 	ApiTags,
 } from '@nestjs/swagger';
 import {
+	AddUserToTenantDto,
 	IApiResponse,
 	IPaginatedResponse,
 	IUser,
+	IUserTenant,
 	ROLES,
 	Roles,
 } from '@repo/common';
+import { InyectRoleidPipe } from '../pipes/inyect-roleid.pipe';
 import { UsersService } from '../services/users.service';
 
 @ApiTags('users') // Grupo de endpoints para Swagger
@@ -68,13 +73,13 @@ export class UsersController {
 		description: 'Solicitud incorrecta',
 	})
 	async getUsersByRole(
-		@Query('role', ValidRolePipe) role: Roles,
 		@User() user: IAuthUser,
 		@Query('q') q?: string,
+		@Query('role', ValidRolePipe) role?: ROLES,
 		@Query('page', new ParseIntPipe({ optional: true })) page = 1,
 	): Promise<IApiResponse<IPaginatedResponse<IUser>>> {
 		const data: IPaginatedResponse<IUser> =
-			await this.service.filterInTenantByRole(role, page, user, q);
+			await this.service.filterInTenantByRole(page, user, role, q);
 		return {
 			message: 'Users list retrived succesfully',
 			data,
@@ -160,6 +165,62 @@ export class UsersController {
 			timestamp: new Date().toISOString(),
 			status: HttpStatus.OK,
 			data: rest2,
+		};
+	}
+	@Get(':id/tenants')
+	@RolesDecorator(ROLES.ADMIN, ROLES.SUPER_ADMIN)
+	@ApiOperation({ summary: 'Obtener los tenants de un usuario' })
+	@ApiParam({
+		name: 'id',
+		required: true,
+		type: Number,
+		description: 'ID del usuario',
+	})
+	@ApiResponse({
+		status: HttpStatus.OK,
+		description: 'Tenants obtenidos exitosamente',
+	})
+	@ApiResponse({
+		status: HttpStatus.NOT_FOUND,
+		description: 'Usuario no encontrado',
+	})
+	@ApiResponse({
+		status: HttpStatus.UNAUTHORIZED,
+		description: 'No se proporcionó sesión',
+	})
+	@ApiResponse({
+		status: HttpStatus.BAD_REQUEST,
+		description: 'Solicitud incorrecta',
+	})
+	async getUserTenants(
+		@Param('id', new ParseIntPipe()) id: number,
+	): Promise<IApiResponse<IUserTenant[]>> {
+		const data = await this.service.getUserTenants(id);
+		return {
+			message: 'User tenants retrieved successfully',
+			data,
+			timestamp: new Date().toISOString(),
+			status: HttpStatus.OK,
+		};
+	}
+
+	@Post(':id/attach-tenant')
+	@ApiOperation({ summary: 'Adjuntar un tenant a un usuario' })
+	@ApiParam({ name: 'id', type: Number })
+	async attachTenant(
+		@Param('id', ParseIntPipe) id: number,
+		@Body(InyectRoleidPipe) attachTenantDto: AddUserToTenantDto,
+	): Promise<IApiResponse<IUser>> {
+		const { user } = await this.service.addUserToTenant(
+			id,
+			attachTenantDto.tenantId,
+			attachTenantDto.roleId ?? 0,
+		);
+		return {
+			message: 'User attached to tenant successfully',
+			data: user,
+			timestamp: new Date().toISOString(),
+			status: HttpStatus.OK,
 		};
 	}
 }

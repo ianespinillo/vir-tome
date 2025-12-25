@@ -69,9 +69,7 @@ export class TenantsService {
 			},
 		});
 		const saved = await this.tenantRepository.save(tenant);
-		// inicializar todos los roles para el tenant
-		await this.roleService.initializeDefaultRoles(saved.id);
-		const role = await this.roleService.findRoleByName(ROLES.ADMIN, saved.id);
+		const role = await this.roleService.findRoleByName(ROLES.ADMIN);
 		if (!role) throw new ConflictException('No admin role registered');
 		// creo el primer admin
 		const { user, password } = await this.userService.create(saved.id, {

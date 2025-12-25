@@ -129,7 +129,6 @@ describe('TenantsService', () => {
 
 			expect(result).toEqual(savedTenant);
 			expect(mockEmailService.sendEmailWelcome).toHaveBeenCalled();
-			expect(mockRoleService.initializeDefaultRoles).toHaveBeenCalled();
 			expect(mockRepository.findOne).toHaveBeenCalledTimes(2);
 			expect(mockRepository.save).toHaveBeenCalledWith(savedTenant);
 		});

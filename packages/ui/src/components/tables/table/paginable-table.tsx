@@ -25,7 +25,6 @@ import { parseAsInteger, useQueryState } from 'nuqs';
 // components/GenericTable.tsx
 interface PaginableTableProps<T> {
 	query: UseQueryResult<IApiResponse<IPaginatedResponse<T>>>;
-
 	columns: ColumnDef<T>[];
 }
 

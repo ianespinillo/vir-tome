@@ -1,4 +1,5 @@
 import { TenantEntity } from '@/tenants/entities/tenant.entity';
+import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 // src/books/controllers/book.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
@@ -72,6 +73,10 @@ describe('BookController', () => {
 				{
 					provide: BookService,
 					useValue: mockBookService,
+				},
+				{
+					provide: UsersService,
+					useValue: {},
 				},
 			],
 		}).compile();

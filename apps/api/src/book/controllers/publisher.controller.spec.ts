@@ -1,4 +1,5 @@
 import { TenantEntity } from '@/tenants/entities/tenant.entity';
+import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 // src/publishers/controllers/publisher.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
@@ -61,6 +62,10 @@ describe('PublisherController', () => {
 				{
 					provide: PublisherService,
 					useValue: mockPublisherService,
+				},
+				{
+					provide: UsersService,
+					useValue: {},
 				},
 			],
 		}).compile();
@@ -158,7 +163,10 @@ describe('PublisherController', () => {
 		});
 
 		it('should throw NotFoundException when updating non-existent publisher', async () => {
-			const updatePublisherDto: UpdatePublisherDto = { id: 999, name: 'Updated' };
+			const updatePublisherDto: UpdatePublisherDto = {
+				id: 999,
+				name: 'Updated',
+			};
 
 			mockPublisherService.update.mockRejectedValue(new NotFoundException());
 
