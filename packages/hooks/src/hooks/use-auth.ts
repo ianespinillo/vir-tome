@@ -1,6 +1,8 @@
 import {
 	IApiResponse,
 	IAuthResponse,
+	IGeneralLoginResponse,
+	ILoginResponse,
 	IRequestUser,
 	ISignUpResponse,
 	PAYLOAD_TYPE,
@@ -56,6 +58,25 @@ export const useAuth = () => {
 		mutationFn: async (data: SignUpDto) => (await AuthService.signUp(data)).data,
 		onSuccess: () => client.invalidateQueries(),
 	});
+	const generalLogin = useMutation<
+		IApiResponse<IGeneralLoginResponse>,
+		IApiResponse<Error>,
+		SignInDto
+	>({
+		mutationKey: ['general-login'],
+		mutationFn: async (data: SignInDto) =>
+			(await AuthService.generalLogin(data)).data,
+	});
+	const switchTenant = useMutation<
+		IApiResponse<ILoginResponse>,
+		IApiResponse<Error>,
+		number
+	>({
+		mutationKey: ['switch-tenant'],
+		mutationFn: async (tenantId: number) =>
+			(await AuthService.switchTenant(tenantId)).data,
+		onSuccess: () => client.invalidateQueries(),
+	});
 	return {
 		session,
 		signIn,
@@ -65,5 +86,7 @@ export const useAuth = () => {
 		confirmEmail,
 		superAdminLogin,
 		register,
+		generalLogin,
+		switchTenant,
 	};
 };

@@ -1,3 +1,4 @@
+import { getCookieDomain } from '@/core/cookie-helper';
 import { IAuthUser } from '@/core/core.types';
 // src/auth/auth.controller.ts
 import {
@@ -57,13 +58,17 @@ export class AuthController {
 		@Res({ passthrough: true }) res: Response,
 	): Promise<IApiResponse<ILoginResponse>> {
 		if (!loginDto.tenantId) throw new BadRequestException('No tenant id found');
-		const { access_token, user } = await this.authService.login(
+		const { access_token, user, tenant } = await this.authService.login(
 			loginDto,
 			loginDto.tenantId,
 		);
 		res.cookie('access_token', access_token, {
 			httpOnly: true,
+			path: '/',
+			domain: '.vir-tome.local',
 			secure: false,
+			expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
+			sameSite: 'lax',
 		});
 		// Returning the user allows Nest to handle sending the response while
 		// we still set the cookie using the response object passed with passthrough.
@@ -72,6 +77,43 @@ export class AuthController {
 			data: {
 				access_token,
 				user,
+			},
+			status: HttpStatus.OK,
+			timestamp: new Date().toISOString(),
+		};
+	}
+	@AuthBearer()
+	@Post('switch-tenant')
+	@ApiOperation({
+		summary: 'Switch Tenant',
+		description:
+			'Switch tenant context for users with access to multiple tenants.',
+	})
+	@ApiResponse({
+		status: 201,
+		description: 'Tenant switched successfully. Returns new access token.',
+	})
+	@ApiUnauthorizedResponse({ description: 'Invalid credentials' })
+	async switchTenant(
+		@Body() dto: { tenantId: number },
+		@User() user: IAuthUser,
+		@Res({ passthrough: true }) res: Response,
+	): Promise<IApiResponse<ILoginResponse>> {
+		const { access_token, user: updatedUser } =
+			await this.authService.switchTenant(user.id, dto.tenantId);
+		res.cookie('access_token', access_token, {
+			httpOnly: true,
+			path: '/',
+			domain: '.vir-tome.local',
+			secure: false,
+			expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
+			sameSite: 'lax',
+		});
+		return {
+			message: 'Tenant switched successfully',
+			data: {
+				access_token,
+				user: updatedUser,
 			},
 			status: HttpStatus.OK,
 			timestamp: new Date().toISOString(),
@@ -94,16 +136,19 @@ export class AuthController {
 		@Res({ passthrough: true }) res: Response,
 	): Promise<IApiResponse<IGeneralLoginResponse>> {
 		const result = await this.authService.centralLogin(loginDto);
-		if (!result.requiresTenantSelection) {
+		if (result.requiresTenantSelection === false && 'tenant' in result) {
 			res.cookie('access_token', result.access_token, {
 				httpOnly: true,
+				expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
 				secure: false,
+				path: '/',
+				domain: `${result.tenant.subdomain}.${getCookieDomain()}`,
 				sameSite: 'lax',
 			});
 		}
 		return {
 			message: 'Login successful',
-			data: result as IGeneralLoginResponse,
+			data: result,
 			status: HttpStatus.OK,
 			timestamp: new Date().toISOString(),
 		};
@@ -126,6 +171,7 @@ export class AuthController {
 		const { access_token, user } = await this.authService.adminLogin(loginDto);
 		res.cookie('access_token', access_token, {
 			httpOnly: true,
+			expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
 			secure: false,
 			sameSite: 'lax',
 		});

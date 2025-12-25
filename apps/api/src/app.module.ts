@@ -86,7 +86,10 @@ import { UsersModule } from './users/users.module';
 })
 export class AppModule implements NestModule {
 	configure(consumer: MiddlewareConsumer) {
-		consumer.apply(TenantMiddleware).exclude('/auth/*', '/demo/*').forRoutes('*');
+		consumer
+			.apply(TenantMiddleware)
+			.exclude('/auth/*', '/demo/*', '/tenants/subdomain/*')
+			.forRoutes('*');
 		consumer.apply(DemoMiddleware).forRoutes('*');
 	}
 }

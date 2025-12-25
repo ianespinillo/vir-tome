@@ -3,7 +3,7 @@ import axios, { AxiosRequestConfig } from 'axios';
 
 export class AnalyticsService {
 	private static readonly BASE_URL =
-		`${process.env.NEXT_PUBLIC_API_URL}/analytics`;
+		`${process.env.NODE_ENV === 'production' ? 'https://' : 'http://'}${process.env.NEXT_PUBLIC_API_URL}/analytics`;
 	private static readonly AXIOS_CONFIG: AxiosRequestConfig = {
 		withCredentials: true,
 		headers: {

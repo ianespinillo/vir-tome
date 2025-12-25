@@ -39,6 +39,7 @@ import {
 	ROLES,
 } from '@repo/common';
 import { useAuth } from '@repo/hooks';
+import { SwitchTenant } from '../select/switch-tenant';
 
 // --- TIPO ---
 export interface MenuLink extends MenuLinkBase {
@@ -208,6 +209,16 @@ export function DashSidebar() {
 			{/* FOOTER */}
 			<SidebarFooter className="border-t border-sidebar-border">
 				<SidebarMenu>
+					{
+						// Mostrar SwitchTenant solo si el usuario tiene múltiples tenants y no es Super Admin
+						sessionData && sessionData.roleName !== ROLES.SUPER_ADMIN && (
+							<SidebarMenuItem>
+								<div className="px-3 py-2">
+									<SwitchTenant userId={sessionData.id} />
+								</div>
+							</SidebarMenuItem>
+						)
+					}
 					{FOOTER_LINKS.map((link) => (
 						<SidebarMenuItem key={link.title}>
 							<SidebarMenuButton

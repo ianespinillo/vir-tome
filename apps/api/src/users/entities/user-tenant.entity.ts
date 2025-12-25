@@ -35,7 +35,9 @@ export class UserTenantEntity implements IUserTenant {
 	@ManyToOne(
 		() => TenantEntity,
 		(tenant) => tenant.userTenants,
-		{ onDelete: 'CASCADE' },
+		{
+			onDelete: 'CASCADE',
+		},
 	)
 	@JoinColumn({ name: 'tenant_id' })
 	tenant!: TenantEntity;

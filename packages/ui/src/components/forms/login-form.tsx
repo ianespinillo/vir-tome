@@ -1,10 +1,12 @@
 'use client';
+import { useUINav } from '@/contexts/navigation-context';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
-import { PAYLOAD_TYPE, SignInDto } from '@repo/common';
+import { PAYLOAD_TYPE, SignInDto, TenantSelection } from '@repo/common';
 import { useAuth } from '@repo/hooks';
 import { Lock, Mail } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { Toaster, toast } from 'sonner';
 import { Button } from '../../ui/button';
 import {
 	Card,
@@ -15,23 +17,44 @@ import {
 } from '../../ui/card';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
-type Props = { onSuccess: () => void };
+import { TenantSelectionDialog } from '../dialogs/tenants/tenant-selection-dialog';
 
-export function LoginForm({ onSuccess }: Readonly<Props>) {
+export function LoginForm() {
 	const [error, setError] = useState<string | null>(null);
+	const [open, setOpen] = useState(false);
+	const [tenantOptions, setTenantOptions] = useState<TenantSelection[]>([]);
 	const {
 		register,
 		handleSubmit,
+		setValue,
+		getValues,
 		formState: { errors, isSubmitting, isValid },
-	} = useForm({
+	} = useForm<SignInDto>({
 		resolver: classValidatorResolver(SignInDto),
 		defaultValues: {
 			email: '',
 			password: '',
-			type: PAYLOAD_TYPE.SUPER_ADMIN_LOGIN,
+			type: PAYLOAD_TYPE.USER_LOGIN,
 		},
 	});
-	const { signIn, superAdminLogin } = useAuth();
+	const { navigate } = useUINav();
+	const { signIn, superAdminLogin, generalLogin } = useAuth();
+	const handleSignInSuccess = (tenant: TenantSelection) => {
+		setValue('tenantId', tenant.id);
+		toast.promise(signIn.mutateAsync(getValues()), {
+			loading: 'Signing in...',
+			success: () => {
+				setTimeout(() => {
+					navigate(
+						`${process.env.NODE_ENV === 'production' ? 'https://' : 'http://'}${tenant.subdomain}.${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
+						{ isExternal: true },
+					);
+				}, 1000);
+				return 'Signed in successfully';
+			},
+			error: 'Failed to sign in',
+		});
+	};
 	useEffect(() => {
 		if (error) {
 			const timer = setTimeout(() => {
@@ -42,19 +65,31 @@ export function LoginForm({ onSuccess }: Readonly<Props>) {
 	}, [error]);
 	const onSubmit = handleSubmit((data) => {
 		if (document.location.pathname.includes('super-admin')) {
-			return superAdminLogin.mutate(data as SignInDto, {
+			setValue('type', PAYLOAD_TYPE.SUPER_ADMIN_LOGIN);
+			return superAdminLogin.mutate(data, {
 				onSuccess: () => {
-					onSuccess();
+					navigate('/super-admin/dashboard', { isExternal: false });
 				},
 				onError: (err: any) => {
 					setError(err.message || 'Failed to sign in as super admin');
 				},
 			});
 		}
-		signIn.mutateAsync(data as SignInDto, {
+		generalLogin.mutateAsync(data, {
 			onSuccess: (data) => {
 				if (data) {
-					onSuccess();
+					if (data.data?.requiresTenantSelection && 'tenants' in data.data) {
+						setTenantOptions((data.data.tenants as TenantSelection[]) || []);
+						setOpen(true);
+					} else if (
+						data.data?.requiresTenantSelection === false &&
+						'tenant' in data.data
+					) {
+						navigate(
+							`${process.env.NODE_ENV === 'production' ? 'https://' : 'http://'}${data.data.tenant.subdomain}.${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
+							{ isExternal: true },
+						);
+					}
 				} else {
 					setError('Invalid credentials');
 				}
@@ -70,6 +105,7 @@ export function LoginForm({ onSuccess }: Readonly<Props>) {
 	});
 	return (
 		<div className="h-screen flex items-center justify-center">
+			<Toaster position="top-right" richColors />
 			<Card className="w-full max-w-md shadow-lg transition-all duration-300 hover:shadow-xl">
 				<CardHeader className="space-y-1 text-center">
 					<CardTitle className="text-2xl font-bold">Vir-tome</CardTitle>
@@ -135,6 +171,12 @@ export function LoginForm({ onSuccess }: Readonly<Props>) {
 					</form>
 				</CardContent>
 			</Card>
+			<TenantSelectionDialog
+				tenants={tenantOptions}
+				open={open}
+				onOpenChange={setOpen}
+				onSelectTenant={handleSignInSuccess}
+			/>
 		</div>
 	);
 }

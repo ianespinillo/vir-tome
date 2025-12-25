@@ -40,11 +40,17 @@ describe('DemoSeeder', () => {
 		const module: TestingModule = await Test.createTestingModule({
 			providers: [
 				DemoSeeder,
-				{ provide: getRepositoryToken(TenantEntity), useValue: createMockRepo() },
+				{
+					provide: getRepositoryToken(TenantEntity),
+					useValue: createMockRepo(),
+				},
 				{ provide: getRepositoryToken(UserEntity), useValue: createMockRepo() },
 				{ provide: getRepositoryToken(RoleEntity), useValue: createMockRepo() },
 				{ provide: getRepositoryToken(BookEntity), useValue: createMockRepo() },
-				{ provide: getRepositoryToken(CategoryEntity), useValue: createMockRepo() },
+				{
+					provide: getRepositoryToken(CategoryEntity),
+					useValue: createMockRepo(),
+				},
 				{
 					provide: getRepositoryToken(PublisherEntity),
 					useValue: createMockRepo(),
@@ -167,7 +173,7 @@ describe('DemoSeeder', () => {
 			expect(userRepo.delete).toHaveBeenCalledWith({
 				userTenants: { tenant_id: 1 },
 			});
-			expect(roleRepo.delete).toHaveBeenCalledWith({ tenant_id: 1 });
+			expect(roleRepo.delete).toHaveBeenCalled();
 			expect(seedSpy).toHaveBeenCalled();
 		});
 

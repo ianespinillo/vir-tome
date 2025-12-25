@@ -1,5 +1,6 @@
 import {
 	IApiResponse,
+	IGeneralLoginResponse,
 	ILoginResponse,
 	IMessageResponse,
 	IRequestUser,
@@ -12,7 +13,8 @@ import {
 import axios from 'axios';
 
 export class AuthService {
-	private static readonly baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth`;
+	private static readonly baseUrl =
+		`${process.env.NODE_ENV === 'production' ? 'https://' : 'http://'}${process.env.NEXT_PUBLIC_API_URL}/auth`;
 
 	public static async getSession() {
 		return await axios.get<IApiResponse<IRequestUser>>(
@@ -115,6 +117,30 @@ export class AuthService {
 		return axios.post<IApiResponse<ISignUpResponse>>(
 			`${AuthService.baseUrl}/register`,
 			dto,
+			{
+				withCredentials: true,
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			},
+		);
+	}
+	public static async generalLogin(dto: SignInDto) {
+		return axios.post<IApiResponse<IGeneralLoginResponse>>(
+			`${AuthService.baseUrl}/general-login`,
+			dto,
+			{
+				withCredentials: true,
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			},
+		);
+	}
+	public static async switchTenant(tenantId: number) {
+		return await axios.post<IApiResponse<ILoginResponse>>(
+			`${AuthService.baseUrl}/switch-tenant`,
+			{ tenantId },
 			{
 				withCredentials: true,
 				headers: {

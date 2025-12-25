@@ -1,4 +1,5 @@
 import { BookModule } from '@/book/book.module';
+import { UsersModule } from '@/users/users.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoanEntity } from './entities/loan.entity';
@@ -8,7 +9,7 @@ import { LoanService } from './loan.service';
 @Module({
 	controllers: [LoanController],
 	providers: [LoanService],
-	imports: [BookModule, TypeOrmModule.forFeature([LoanEntity])],
+	imports: [BookModule, TypeOrmModule.forFeature([LoanEntity]), UsersModule],
 	exports: [LoanService],
 })
 export class LoanModule {}

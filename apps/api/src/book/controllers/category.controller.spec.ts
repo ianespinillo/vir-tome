@@ -1,4 +1,5 @@
 import { TenantEntity } from '@/tenants/entities/tenant.entity';
+import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 // src/categories/controllers/category.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
@@ -63,6 +64,10 @@ describe('CategoryController', () => {
 				{
 					provide: CategoryService,
 					useValue: mockCategoryService,
+				},
+				{
+					provide: UsersService,
+					useValue: {},
 				},
 			],
 		}).compile();

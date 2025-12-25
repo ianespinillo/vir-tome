@@ -63,7 +63,10 @@ describe('JwtStrategy', () => {
 			} as any;
 
 			it('should validate and return super admin user', async () => {
-				const mockSuperAdmin = { id: 'super-admin-id', email: 'super@admin.com' };
+				const mockSuperAdmin = {
+					id: 'super-admin-id',
+					email: 'super@admin.com',
+				};
 				jest
 					.spyOn(mockSuperAdminService, 'findById')
 					.mockResolvedValue(mockSuperAdmin);

@@ -44,13 +44,8 @@ export const useTenants = ({ searchTerm = '', page = 1 }: GenericHookProps) => {
 			(await TenantService.getTenantById(id)).data,
 	});
 	const updateTenant = useMutation({
-		mutationFn: async ({
-			data,
-			id,
-		}: {
-			data: UpdateTenantDto;
-			id: number;
-		}) => (await TenantService.updateTenant(id, data)).data,
+		mutationFn: async ({ data, id }: { data: UpdateTenantDto; id: number }) =>
+			(await TenantService.updateTenant(id, data)).data,
 		onSuccess: () => {
 			client.refetchQueries({ queryKey: ['tenants', page, searchTerm] });
 		},
@@ -83,7 +78,7 @@ export const useTenants = ({ searchTerm = '', page = 1 }: GenericHookProps) => {
 	const getTenantAdmins = useQuery<IApiResponse<IPaginatedResponse<IUser>>>({
 		queryKey: ['admins', page, searchTerm],
 		queryFn: async () =>
-			(await UsersService.getUsersByRole(ROLES.ADMIN, page, searchTerm)).data,
+			(await UsersService.getUsersByRole(page, ROLES.ADMIN, searchTerm)).data,
 	});
 	const getAllTenants = useQuery({
 		queryKey: ['full-tenants'],

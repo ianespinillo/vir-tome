@@ -87,7 +87,7 @@ export class DemoSeeder {
 		await this.categoryRepository.delete({ tenant_id: tenantId });
 		await this.publisherRepository.delete({ tenant_id: tenantId });
 		await this.userRepository.delete({ userTenants: { tenant_id: tenantId } });
-		await this.roleRepository.delete({ tenant_id: tenantId });
+		await this.roleRepository.delete({});
 
 		console.log('🧹 Demo data reset completed');
 
@@ -164,14 +164,12 @@ export class DemoSeeder {
 			let role = await this.roleRepository.findOne({
 				where: {
 					name: roleData.name,
-					tenant_id: tenantId,
 				},
 			});
 
 			if (!role) {
 				role = this.roleRepository.create({
 					...roleData,
-					tenant_id: tenantId,
 				});
 				role = await this.roleRepository.save(role);
 			}

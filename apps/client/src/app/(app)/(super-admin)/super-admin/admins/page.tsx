@@ -28,7 +28,7 @@ export default function AdminsPage() {
 						<Button />
 					</div>
 					<div className="w-full">
-						<UsersTable role={ROLES.ADMIN} />
+						<UsersTable />
 					</div>
 				</div>
 				<CreateUserDialog role={ROLES.ADMIN} />

@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 export { LoginForm } from './components/forms/login-form';
 export { CategoryTable } from './components/tables/table/category-table';
 export { DashSidebar } from './components/sidebars/dash-sidebar';
@@ -27,7 +29,6 @@ export { UserDetailsDialog } from './components/dialogs/users/user-details-dialo
 export { MostLoanedBooksTable } from './components/tables/table/most-loaned-books-table';
 export { LastUsersTable } from './components/tables/table/last-users';
 
-// ui
 export * from './ui/scroll-area';
 
 // toaster
@@ -35,6 +36,7 @@ export { Toaster } from 'sonner';
 
 // Modal context provider
 export { ModalCrudProvider, useModalCrud } from './contexts/modal-crud-context';
+export { UIConfigProvider, useUINav } from './contexts/navigation-context';
 // charts
 export { MostLoanedBooks } from './components/cards/most-loaned-books';
 

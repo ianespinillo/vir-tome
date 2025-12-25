@@ -133,7 +133,10 @@ describe('MultiTenantService', () => {
 		repo.update.mockResolvedValue({} as any);
 		repo.findOne.mockResolvedValue(entity);
 
-		await service.update(tenantId, 1, { tenant_id: 999, name: 'Updated' } as any);
+		await service.update(tenantId, 1, {
+			tenant_id: 999,
+			name: 'Updated',
+		} as any);
 
 		expect(repo.update).toHaveBeenCalledWith(
 			1,

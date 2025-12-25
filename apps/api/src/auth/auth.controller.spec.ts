@@ -1,5 +1,6 @@
 import { IAuthUser } from '@/core/core.types';
 import { PasswordAdapter } from '@/core/passport-adapter';
+import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 // src/auth/__tests__/auth.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
@@ -34,7 +35,10 @@ describe('AuthController', () => {
 		register: jest.fn(),
 		refreshToken: jest.fn(),
 	};
-
+	const mockUserService = {
+		findById: jest.fn(),
+		hasAccessToTenant: jest.fn(),
+	};
 	const mockRequest = {
 		tenantId: 1,
 		user: { userId: 1, tenantId: 1 },
@@ -57,6 +61,10 @@ describe('AuthController', () => {
 				{
 					provide: AuthService,
 					useValue: mockAuthService,
+				},
+				{
+					provide: UsersService,
+					useValue: mockUserService,
 				},
 			],
 		}).compile();

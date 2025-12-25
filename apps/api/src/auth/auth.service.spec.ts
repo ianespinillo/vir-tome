@@ -10,6 +10,8 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
 	IAuthPayload,
+	IMultipleTenantGeneralLogin,
+	ISingleTenantGeneralLogin,
 	PAYLOAD_TYPE,
 	ROLES,
 	SignInDto,
@@ -132,6 +134,15 @@ describe('AuthService - Multi-tenant', () => {
 		it('should login user successfully in tenant 1', async () => {
 			mockUsersService.findByEmail.mockResolvedValue(mockUser);
 			(bcrypt.compare as jest.Mock).mockResolvedValue(true);
+			mockTenantService.findById.mockResolvedValue({
+				id: 2,
+				user_id: 1,
+				tenant_id: 2,
+				role_id: 3,
+				is_active: true,
+				tenant: { id: 2, name: 'Escuela 2', subdomain: 'escuela2' },
+				role: { id: 3, name: ROLES.LIBRARIAN },
+			});
 			mockUsersService.hasAccessToTenant.mockResolvedValue(true);
 			mockUsersService.getRoleInTenant.mockResolvedValue({
 				id: 2,
@@ -178,6 +189,15 @@ describe('AuthService - Multi-tenant', () => {
 		it('should fail if user has no access to tenant', async () => {
 			mockUsersService.findByEmail.mockResolvedValue(mockUser);
 			(bcrypt.compare as jest.Mock).mockResolvedValue(true);
+			mockTenantService.findById.mockResolvedValue({
+				id: 2,
+				user_id: 1,
+				tenant_id: 2,
+				role_id: 3,
+				is_active: true,
+				tenant: { id: 2, name: 'Escuela 2', subdomain: 'escuela2' },
+				role: { id: 3, name: ROLES.LIBRARIAN },
+			});
 			mockUsersService.hasAccessToTenant.mockResolvedValue(false);
 
 			await expect(authService.login(loginDto, 3)).rejects.toThrow(
@@ -188,6 +208,15 @@ describe('AuthService - Multi-tenant', () => {
 		it('should fail if user has no role in tenant', async () => {
 			mockUsersService.findByEmail.mockResolvedValue(mockUser);
 			(bcrypt.compare as jest.Mock).mockResolvedValue(true);
+			mockTenantService.findById.mockResolvedValue({
+				id: 2,
+				user_id: 1,
+				tenant_id: 2,
+				role_id: 3,
+				is_active: true,
+				tenant: { id: 2, name: 'Escuela 2', subdomain: 'escuela2' },
+				role: { id: 3, name: ROLES.LIBRARIAN },
+			});
 			mockUsersService.hasAccessToTenant.mockResolvedValue(true);
 			mockUsersService.getRoleInTenant.mockResolvedValue(null);
 
@@ -200,6 +229,15 @@ describe('AuthService - Multi-tenant', () => {
 			// Login en tenant 1 como TEACHER
 			mockUsersService.findByEmail.mockResolvedValue(mockUser);
 			(bcrypt.compare as jest.Mock).mockResolvedValue(true);
+			mockTenantService.findById.mockResolvedValue({
+				id: 2,
+				user_id: 1,
+				tenant_id: 2,
+				role_id: 3,
+				is_active: true,
+				tenant: { id: 2, name: 'Escuela 2', subdomain: 'escuela2' },
+				role: { id: 3, name: ROLES.LIBRARIAN },
+			});
 			mockUsersService.hasAccessToTenant.mockResolvedValue(true);
 			mockUsersService.getRoleInTenant.mockResolvedValue({
 				id: 2,
@@ -236,7 +274,9 @@ describe('AuthService - Multi-tenant', () => {
 				{ id: 2, subdomain: 'escuela2', name: 'Escuela 2' },
 			]);
 
-			const result = await authService.centralLogin(loginDto);
+			const result = (await authService.centralLogin(
+				loginDto,
+			)) as IMultipleTenantGeneralLogin;
 			expect(result.requiresTenantSelection).toBe(true);
 			expect(result.tenants).toHaveLength(2);
 			expect(result.tenants?.[0].subdomain).toBe('escuela1');
@@ -251,7 +291,9 @@ describe('AuthService - Multi-tenant', () => {
 				{ id: 1, subdomain: 'escuela1', name: 'Escuela 1' },
 			]);
 
-			const result = await authService.centralLogin(loginDto);
+			const result = (await authService.centralLogin(
+				loginDto,
+			)) as ISingleTenantGeneralLogin;
 
 			expect(result.requiresTenantSelection).toBe(false);
 			expect(result).toHaveProperty('access_token');
@@ -335,7 +377,10 @@ describe('AuthService - Multi-tenant', () => {
 				id: 4,
 				name: ROLES.STUDENT,
 			});
-			mockTenantService.findById.mockResolvedValue({ id: 3, name: 'Escuela 3' });
+			mockTenantService.findById.mockResolvedValue({
+				id: 3,
+				name: 'Escuela 3',
+			});
 
 			const result = await authService.register(registerDto, 3);
 			expect(usersService.addUserToTenant).toHaveBeenCalledWith(1, 3, 4);
@@ -416,6 +461,48 @@ describe('AuthService - Multi-tenant', () => {
 
 			await expect(authService.refreshToken(1, 999)).rejects.toThrow(
 				'User has no access to this tenant',
+			);
+		});
+	});
+	describe('switchTenant', () => {
+		it('should switch tenant for user', async () => {
+			mockUsersService.findById.mockResolvedValue(mockUser);
+			mockUsersService.hasAccessToTenant.mockResolvedValue(true);
+			mockUsersService.getRoleInTenant.mockResolvedValue({
+				id: 3,
+				name: ROLES.LIBRARIAN,
+			});
+
+			const result = await authService.switchTenant(1, 2);
+
+			expect(result).toHaveProperty('access_token');
+			expect(result.user.userTenants).toHaveLength(2);
+			expect(
+				result.user.userTenants.find((ut) => ut.tenant_id === 2)?.role_id,
+			).toBe(3);
+		});
+		it('should fail if user doesnt exists', async () => {
+			mockUsersService.findById.mockResolvedValue(null);
+
+			await expect(authService.switchTenant(999, 1)).rejects.toThrow(
+				'User not found',
+			);
+		});
+		it('should fail if user has no role in new tenant', async () => {
+			mockUsersService.findById.mockResolvedValue(mockUser);
+			mockUsersService.hasAccessToTenant.mockResolvedValue(true);
+			mockUser.getRoleInTenant = jest.fn().mockReturnValue(null);
+
+			await expect(authService.switchTenant(1, 2)).rejects.toThrow(
+				'User has no role in the new tenant',
+			);
+		});
+		it('should fail if user has no access to new tenant', async () => {
+			mockUsersService.findById.mockResolvedValue(mockUser);
+			mockUsersService.hasAccessToTenant.mockResolvedValue(false);
+
+			await expect(authService.switchTenant(1, 999)).rejects.toThrow(
+				'User does not have access to the new tenant',
 			);
 		});
 	});

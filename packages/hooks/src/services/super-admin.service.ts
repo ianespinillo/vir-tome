@@ -3,7 +3,7 @@ import axios from 'axios';
 
 export class SuperAdminService {
 	private static readonly baseUrl =
-		`${process.env.NEXT_PUBLIC_API_URL}/super-admin`;
+		`${process.env.NODE_ENV === 'production' ? 'https://' : 'http://'}${process.env.NEXT_PUBLIC_API_URL}/super-admin`;
 
 	public static async getDashMetrics() {
 		return await axios.get<IApiResponse<IDashboardResponse>>(

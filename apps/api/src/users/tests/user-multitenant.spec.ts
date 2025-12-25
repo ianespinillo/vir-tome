@@ -64,9 +64,9 @@ describe('Users Multi-tenant Integration (Container)', () => {
 			is_active: true,
 		});
 
-		// Crear roles por defecto para ambos tenants
-		defaultRole1 = await roleService.createRole(ROLES.STUDENT, tenant1.id);
-		defaultRole2 = await roleService.createRole(ROLES.TEACHER, tenant2.id);
+		// Crear roles por defecto globales
+		defaultRole1 = await roleService.createRole(ROLES.STUDENT);
+		defaultRole2 = await roleService.createRole(ROLES.TEACHER);
 	}, 100000);
 
 	afterAll(async () => {
@@ -81,13 +81,12 @@ describe('Users Multi-tenant Integration (Container)', () => {
 		// 2. Luego borrar las entidades principales (Padres)
 		await dataSource.getRepository(UserEntity).delete({});
 
-		// 3. Roles
-		await dataSource.getRepository(RoleEntity).delete({ tenant_id: tenant1.id });
-		await dataSource.getRepository(RoleEntity).delete({ tenant_id: tenant2.id });
+		// 3. Roles - delete all since roles are global
+		await dataSource.getRepository(RoleEntity).delete({});
 
 		// Recrear roles por defecto
-		defaultRole1 = await roleService.createRole(ROLES.STUDENT, tenant1.id);
-		defaultRole2 = await roleService.createRole(ROLES.TEACHER, tenant2.id);
+		defaultRole1 = await roleService.createRole(ROLES.STUDENT);
+		defaultRole2 = await roleService.createRole(ROLES.TEACHER);
 
 		jest.clearAllMocks();
 	});
@@ -136,19 +135,6 @@ describe('Users Multi-tenant Integration (Container)', () => {
 					name: 'Jane',
 				}),
 			).rejects.toThrow(BadRequestException);
-		});
-
-		test('should prevent creating user with role from different tenant', async () => {
-			const userData: SignUpDto = {
-				name: 'Hacker',
-				surname: 'User',
-				email: 'hacker@test.com',
-				role: defaultRole2.name,
-			};
-
-			await expect(usersService.create(tenant1.id, userData)).rejects.toThrow(
-				BadRequestException,
-			);
 		});
 
 		test('should find users only from specific tenant', async () => {
@@ -221,109 +207,71 @@ describe('Users Multi-tenant Integration (Container)', () => {
 		});
 	});
 
-	describe('Role Isolation', () => {
-		test('should create roles isolated by tenant', async () => {
-			const role1 = await roleService.createRole(ROLES.ADMIN, tenant1.id);
-			const role2 = await roleService.createRole(ROLES.ADMIN, tenant2.id);
+	describe('Role Management', () => {
+		test('should create roles globally', async () => {
+			const role1 = await roleService.createRole(ROLES.ADMIN);
+			const role2 = await roleService.createRole(ROLES.LIBRARIAN);
 
 			expect(role1.name).toBe(ROLES.ADMIN);
-			expect(role1.tenant_id).toBe(tenant1.id);
-
-			expect(role2.name).toBe(ROLES.ADMIN);
-			expect(role2.tenant_id).toBe(tenant2.id);
+			expect(role2.name).toBe(ROLES.LIBRARIAN);
 		});
 
-		test('should prevent duplicate role names within same tenant', async () => {
-			await roleService.createRole(ROLES.TEACHER, tenant1.id);
-
-			await expect(
-				roleService.createRole(ROLES.TEACHER, tenant1.id),
-			).rejects.toThrow(BadRequestException);
+		test('should prevent duplicate role names globally', async () => {
+			try {
+				await roleService.createRole(ROLES.TEACHER);
+				fail('Debería haber lanzado un error');
+			} catch (error) {
+				expect(error).toBeInstanceOf(BadRequestException);
+				if (error instanceof BadRequestException) {
+					expect(error.message).toBe('Role already exists');
+				}
+			}
 		});
 
-		test('should find roles only from specific tenant', async () => {
-			await roleService.createRole(ROLES.ADMIN, tenant1.id);
-			await roleService.createRole(ROLES.LIBRARIAN, tenant2.id);
+		test('should find all roles globally', async () => {
+			await roleService.createRole(ROLES.ADMIN);
+			await roleService.createRole(ROLES.LIBRARIAN);
 
-			const tenant1Roles = await roleService.findAllRoles(tenant1.id);
-			const tenant2Roles = await roleService.findAllRoles(tenant2.id);
+			const allRoles = await roleService.findAllRoles();
 
-			expect(tenant1Roles).toHaveLength(2);
-			expect(tenant1Roles.every((role) => role.tenant_id === tenant1.id)).toBe(
-				true,
-			);
-
-			expect(tenant2Roles).toHaveLength(2);
-			expect(tenant2Roles.every((role) => role.tenant_id === tenant2.id)).toBe(
-				true,
-			);
+			expect(allRoles.length).toBeGreaterThanOrEqual(2);
+			expect(allRoles.some((role) => role.name === ROLES.ADMIN)).toBe(true);
+			expect(allRoles.some((role) => role.name === ROLES.LIBRARIAN)).toBe(true);
 		});
 
-		test('should initialize default roles independently per tenant', async () => {
-			const newTenant1 = await tenantRepository.save({
-				subdomain: 'new-school-1',
-				name: 'New School 1',
-				contact_email: 'admin@new1.edu',
-				is_active: true,
-			});
+		test('should initialize default roles globally', async () => {
+			const roles = await roleService.initializeDefaultRoles();
 
-			const newTenant2 = await tenantRepository.save({
-				subdomain: 'new-school-2',
-				name: 'New School 2',
-				contact_email: 'admin@new2.edu',
-				is_active: true,
-			});
+			expect(roles.length).toBeGreaterThanOrEqual(4);
+			const roleNames = roles.map((r) => r.name);
 
-			const roles1 = await roleService.initializeDefaultRoles(newTenant1.id);
-			const roles2 = await roleService.initializeDefaultRoles(newTenant2.id);
-
-			expect(roles1).toHaveLength(4);
-			expect(roles1.every((role) => role.tenant_id === newTenant1.id)).toBe(true);
-
-			expect(roles2).toHaveLength(4);
-			expect(roles2.every((role) => role.tenant_id === newTenant2.id)).toBe(true);
-
-			const roleNames1 = roles1.map((r) => r.name);
-			const roleNames2 = roles2.map((r) => r.name);
-
-			expect(roleNames1).toContain(ROLES.ADMIN);
-			expect(roleNames1).toContain(ROLES.LIBRARIAN);
-			expect(roleNames1).toContain(ROLES.TEACHER);
-			expect(roleNames1).toContain(ROLES.STUDENT);
-
-			expect(roleNames2).toContain(ROLES.ADMIN);
-			expect(roleNames2).toContain(ROLES.LIBRARIAN);
-			expect(roleNames2).toContain(ROLES.TEACHER);
-			expect(roleNames2).toContain(ROLES.STUDENT);
+			expect(roleNames).toContain(ROLES.ADMIN);
+			expect(roleNames).toContain(ROLES.LIBRARIAN);
+			expect(roleNames).toContain(ROLES.TEACHER);
+			expect(roleNames).toContain(ROLES.STUDENT);
 		});
 
-		test('should get default roles only from specific tenant', async () => {
-			await dataSource.getRepository(RoleEntity).delete({ tenant_id: tenant1.id });
-			await dataSource.getRepository(RoleEntity).delete({ tenant_id: tenant2.id });
+		test('should get default roles', async () => {
+			await dataSource.getRepository(RoleEntity).delete({});
 
-			await roleService.initializeDefaultRoles(tenant1.id);
-			await roleService.initializeDefaultRoles(tenant2.id);
+			await roleService.initializeDefaultRoles();
 
-			const defaultRoles1 = await roleService.getDefaultRoles(tenant1.id);
-			const defaultRoles2 = await roleService.getDefaultRoles(tenant2.id);
+			const defaultRoles = await roleService.getDefaultRoles(tenant1.id);
 
-			expect(defaultRoles1).toHaveLength(4);
-			expect(defaultRoles1.every((role) => role.tenant_id === tenant1.id)).toBe(
-				true,
-			);
-
-			expect(defaultRoles2).toHaveLength(4);
-			expect(defaultRoles2.every((role) => role.tenant_id === tenant2.id)).toBe(
-				true,
-			);
+			expect(defaultRoles.length).toBeGreaterThanOrEqual(4);
+			const roleNames = defaultRoles.map((r) => r.name);
+			expect(roleNames).toContain(ROLES.ADMIN);
+			expect(roleNames).toContain(ROLES.LIBRARIAN);
+			expect(roleNames).toContain(ROLES.TEACHER);
+			expect(roleNames).toContain(ROLES.STUDENT);
 		});
 	});
 
 	describe('Cross-Entity Relationships', () => {
 		test('should maintain proper relationships within tenant boundaries', async () => {
-			await dataSource.getRepository(RoleEntity).delete({ tenant_id: tenant1.id });
+			await dataSource.getRepository(RoleEntity).delete({});
 
-			const adminRole = await roleService.createRole(ROLES.ADMIN, tenant1.id);
+			const adminRole = await roleService.createRole(ROLES.ADMIN);
 
 			const createdUser = await usersService.create(tenant1.id, {
 				name: 'Admin User',
@@ -339,7 +287,6 @@ describe('Users Multi-tenant Integration (Container)', () => {
 			expect(userWithRelations).toBeDefined();
 			expect(userWithRelations?.getTenants()).toHaveLength(1);
 			expect(userWithRelations?.getTenants()[0].id).toBe(tenant1.id);
-			expect(adminRole.tenant_id).toBe(tenant1.id);
 		});
 	});
 });

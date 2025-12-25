@@ -36,12 +36,12 @@ import { TenantEntity } from './entities/tenant.entity';
 import { ValidRolePipe } from './pipe/valid-role.pipe';
 import { TenantsService } from './tenants.service';
 @ApiTags('tenants')
-@RolesDecorator(ROLES.ADMIN, ROLES.SUPER_ADMIN)
 @Controller('tenants')
 export class TenantsController {
 	constructor(private readonly tenantsService: TenantsService) {}
 
 	@Post()
+	@RolesDecorator(ROLES.SUPER_ADMIN)
 	@ApiOperation({ summary: 'Crear un tenant' })
 	@ApiResponse({ status: 201, description: 'Tenant creado correctamente' })
 	async create(
@@ -58,6 +58,7 @@ export class TenantsController {
 	@ApiOperation({ summary: 'Listar todos los tenants' })
 	@ApiResponse({ status: 200, description: 'Lista de tenants' })
 	@Get()
+	@RolesDecorator(ROLES.SUPER_ADMIN)
 	async findAll(
 		@Query('page', new ParseIntPipe({ optional: true })) page = 1,
 		@Query('full', new ParseBoolPipe({ optional: true })) full = false,
@@ -82,6 +83,7 @@ export class TenantsController {
 	}
 
 	@Get('active')
+	@RolesDecorator(ROLES.SUPER_ADMIN)
 	@ApiOperation({ summary: 'Listar tenants activos' })
 	async findActive(): Promise<IApiResponse<TenantEntity[]>> {
 		const tenants = await this.tenantsService.findActive();
@@ -94,6 +96,7 @@ export class TenantsController {
 	}
 
 	@Get('stats')
+	@RolesDecorator(ROLES.SUPER_ADMIN)
 	@ApiOperation({ summary: 'Obtener estadísticas de tenants' })
 	async getStats(): Promise<IApiResponse<ITenantStats>> {
 		const stats = await this.tenantsService.getStats();
@@ -106,6 +109,7 @@ export class TenantsController {
 	}
 
 	@Get('lasts')
+	@RolesDecorator(ROLES.SUPER_ADMIN)
 	@ApiOperation({ summary: 'Get lasts tenants registered' })
 	async getLastTenants(): Promise<IApiResponse<TenantEntity[]>> {
 		const data = await this.tenantsService.getLastsTenants();
@@ -133,6 +137,7 @@ export class TenantsController {
 	}
 
 	@Get(':id')
+	@RolesDecorator(ROLES.SUPER_ADMIN)
 	@ApiOperation({ summary: 'Buscar tenant por ID' })
 	@ApiParam({ name: 'id', type: Number })
 	async findOne(
@@ -148,6 +153,7 @@ export class TenantsController {
 	}
 
 	@Patch(':id')
+	@RolesDecorator(ROLES.SUPER_ADMIN)
 	@ApiOperation({ summary: 'Actualizar un tenant' })
 	@ApiParam({ name: 'id', type: Number })
 	async update(
@@ -165,6 +171,7 @@ export class TenantsController {
 	}
 
 	@Patch(':id/activate')
+	@RolesDecorator(ROLES.SUPER_ADMIN)
 	@ApiOperation({ summary: 'Activar un tenant' })
 	@ApiParam({ name: 'id', type: Number })
 	async activate(
@@ -180,6 +187,7 @@ export class TenantsController {
 	}
 
 	@Patch(':id/deactivate')
+	@RolesDecorator(ROLES.SUPER_ADMIN)
 	@ApiOperation({ summary: 'Desactivar un tenant' })
 	@ApiParam({ name: 'id', type: Number })
 	async deactivate(
@@ -195,6 +203,7 @@ export class TenantsController {
 	}
 
 	@Delete(':id')
+	@RolesDecorator(ROLES.SUPER_ADMIN)
 	@ApiOperation({ summary: 'Eliminar un tenant' })
 	@ApiParam({ name: 'id', type: Number })
 	async remove(
