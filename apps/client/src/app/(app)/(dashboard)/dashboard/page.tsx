@@ -10,24 +10,37 @@ import React from 'react';
 
 export default function DashPage() {
 	return (
-		<section className="h-screen flex flex-col p-5">
-			<h1 className="text-5xl font-bold text-primary">Dashboard</h1>
-			<span className="text-muted-foreground text-xl">
-				Estas son las estadísticas de tu biblioteca
-			</span>
-			<div className="flex-1 p-3 space-y-3 overflow-auto">
-				<div className="flex w-full h-full justify-around">
-					<div className="flex flex-col gap-4 basis-1/2 h-full">
-						<div className=" flex justify-around basis-1/2">
-							<BooksCount />
-							<LoansCount />
-						</div>
-						<div className="basis-1/2">
-							<MostLoanedBooks />
-						</div>
+		<section className="min-h-screen flex flex-col p-4 px-6 bg-background">
+			<div className="mb-8 space-y-2">
+				<h1 className="text-4xl md:text-5xl font-bold text-foreground">
+					Dashboard
+				</h1>
+				<p className="text-muted-foreground text-lg md:text-xl">
+					Estas son las estadísticas de tu biblioteca
+				</p>
+			</div>
+
+			<div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6 overflow-auto">
+				{/* Columna izquierda */}
+				<div className="flex flex-col gap-6">
+					{/* Cards de conteo */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+						<BooksCount />
+						<LoansCount />
 					</div>
-					<div className="flex flex-col justify-around basis-1/2 h-full">
+
+					{/* Libros más prestados */}
+					<div className="flex-1 min-h-[300px]">
+						<MostLoanedBooks />
+					</div>
+				</div>
+
+				{/* Columna derecha */}
+				<div className="flex flex-col gap-6">
+					<div className="flex-1 min-h-[250px]">
 						<LastLoansTable />
+					</div>
+					<div className="flex-1 min-h-[250px]">
 						<LastReturnsTable />
 					</div>
 				</div>

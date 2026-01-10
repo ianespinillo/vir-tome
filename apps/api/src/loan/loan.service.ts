@@ -91,7 +91,7 @@ export class LoanService extends GenericService {
 				book: loan.book.title,
 			})),
 			total,
-			current_page: page,
+			current_page: Number(page),
 			last_page: Math.ceil(total / 6),
 		};
 	}

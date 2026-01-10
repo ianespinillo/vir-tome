@@ -1,30 +1,36 @@
-import { ICategory, IPaginatedResponse } from '@repo/common';
-import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import {
+	GenericHookProps,
+	IApiResponse,
+	ICategory,
+	IPaginatedResponse,
+} from '@repo/common';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import {} from 'react';
+import { CategoryService } from '../services/categories.service';
 
-export const useCategory = () => {
-	const [pageIndex, setPageIndex] = useState(1);
-	const categories = useQuery<IPaginatedResponse<ICategory>, Error>({
-		queryKey: ['categories', pageIndex],
-		queryFn: () =>
-			fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/categories?page=${pageIndex}`,
-			).then((res) => res.json()),
+export const useCategory = ({ page, searchTerm }: GenericHookProps) => {
+	const categories = useQuery<
+		IApiResponse<IPaginatedResponse<ICategory>>,
+		IApiResponse<Error>
+	>({
+		queryKey: ['categories', page],
+		queryFn: async () =>
+			(await CategoryService.getCategories(page, searchTerm)).data,
+		placeholderData: keepPreviousData,
 		staleTime: 5000,
+		refetchOnWindowFocus: false,
+		refetchOnMount: false,
 	});
 	const allCategories = useQuery({
 		queryKey: ['categories'],
-		queryFn: () =>
-			fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories?full=true`).then(
-				(res) => res.json() as Promise<ICategory[]>,
-			),
+		queryFn: async () => (await CategoryService.getAllCategories()).data,
+		placeholderData: keepPreviousData,
+		refetchOnWindowFocus: false,
+		refetchOnMount: false,
 	});
 
 	return {
-		categories: {
-			...categories,
-			pageIndex,
-		},
-		allCategories,
+		categories,
+		// allCategories,
 	};
 };

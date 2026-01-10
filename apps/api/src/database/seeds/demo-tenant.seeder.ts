@@ -49,7 +49,7 @@ export class DemoSeeder {
 		await this.createSuperAdmin();
 		console.log('✅ Created super admin');
 		// 4. Crear categorías
-		const categories = await this.createCategories(demoTenant.id);
+		const categories = await this.createCategories();
 		console.log(`✅ Created ${categories.length} categories`);
 
 		// 5. Crear editoriales
@@ -84,8 +84,8 @@ export class DemoSeeder {
 		// Eliminar en orden inverso por las foreign keys
 		await this.loanRepository.delete({ deleted_at: IsNull() });
 		await this.bookRepository.delete({ tenant_id: tenantId });
-		await this.categoryRepository.delete({ tenant_id: tenantId });
-		await this.publisherRepository.delete({ tenant_id: tenantId });
+		await this.categoryRepository.delete({});
+		await this.publisherRepository.delete({});
 		await this.userRepository.delete({ userTenants: { tenant_id: tenantId } });
 		await this.roleRepository.delete({});
 
@@ -258,7 +258,7 @@ export class DemoSeeder {
 		return users;
 	}
 
-	private async createCategories(tenantId: number): Promise<CategoryEntity[]> {
+	private async createCategories(): Promise<CategoryEntity[]> {
 		const categoryNames = [
 			'Literatura Infantil',
 			'Ciencias Naturales',
@@ -275,13 +275,12 @@ export class DemoSeeder {
 		const categories: CategoryEntity[] = [];
 		for (const name of categoryNames) {
 			let category = await this.categoryRepository.findOne({
-				where: { name, tenant_id: tenantId, deleted_at: IsNull() },
+				where: { name, deleted_at: IsNull() },
 			});
 
 			if (!category) {
 				category = this.categoryRepository.create({
 					name,
-					tenant_id: tenantId,
 				});
 				category = await this.categoryRepository.save(category);
 			}
@@ -307,13 +306,12 @@ export class DemoSeeder {
 		const publishers: PublisherEntity[] = [];
 		for (const name of publisherNames) {
 			let publisher = await this.publisherRepository.findOne({
-				where: { name, tenant_id: tenantId, deleted_at: IsNull() },
+				where: { name, deleted_at: IsNull() },
 			});
 
 			if (!publisher) {
 				publisher = this.publisherRepository.create({
 					name,
-					tenant_id: tenantId,
 				});
 				publisher = await this.publisherRepository.save(publisher);
 			}

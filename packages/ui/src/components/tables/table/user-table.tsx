@@ -1,3 +1,4 @@
+'use client';
 import { useModalCrud } from '@/contexts/modal-crud-context';
 import { toTitleCase } from '@/helpers/to-title-case';
 import {
@@ -20,9 +21,6 @@ export const UsersTable = () => {
 	} = useModalCrud<IUser, ReturnType<typeof useUsers>>();
 	const [role, setRole] = useState<BASEROLES | undefined>(undefined);
 	const [_, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
-	useEffect(() => {
-		// Reset to first page when role changes
-	}, [role]);
 	const ROLES = Object.values(BASEROLES).map((role) => {
 		if (role === BASEROLES.SUPER_ADMIN) return null;
 		return role;

@@ -1,5 +1,5 @@
 // Importa tus enums reales de @repo/common
-import { LoanStatus, ROLES } from '@repo/common';
+import { LoanStatus, ROLES, argPublishers } from '@repo/common';
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { BookEntity } from '../src/book/entities/book.entity';
@@ -182,17 +182,17 @@ async function seed() {
 	// ==========================================
 	// CREAR SUPER ADMIN (TÚ)
 	// ==========================================
-	console.log('👑 Creando Super Admin...');
-	const superAdminRepo = AppDataSource.getRepository(SuperAdminEntity);
-	const { password, hashedPassword } =
-		await PasswordAdapter.generateHashedPassword(8);
-	console.log(`Super admin password: ${password}`);
-	const superAdmin = await superAdminRepo.save({
-		email: 'espinilloian@hotmail.com',
-		name: 'Ian',
-		password: hashedPassword,
-		isActive: true,
-	});
+	// console.log('👑 Creando Super Admin...');
+	// const superAdminRepo = AppDataSource.getRepository(SuperAdminEntity);
+	// const { password, hashedPassword } =
+	// 	await PasswordAdapter.generateHashedPassword(8);
+	// console.log(`Super admin password: ${password}`);
+	// const superAdmin = await superAdminRepo.save({
+	// 	email: 'espinilloian@hotmail.com',
+	// 	name: 'Ian',
+	// 	password: hashedPassword,
+	// 	isActive: true,
+	// });
 	// ==========================================
 	// CREAR DATOS DEL DOMINIO (Solo para Demo Tenant)
 	// ==========================================
@@ -205,13 +205,8 @@ async function seed() {
 
 	// 1. Editoriales
 	const publishers: PublisherEntity[] = [];
-	for (let i = 0; i < 5; i++) {
-		publishers.push(
-			await publisherRepo.save({
-				name: faker.company.name(),
-				tenant_id: demoTenant.id, // Asumiendo que MultiTenantEntity tiene esta col
-			}),
-		);
+	for (const p of argPublishers) {
+		publishers.push(await publisherRepo.save({ name: p }));
 	}
 
 	// 2. Categorías
@@ -221,7 +216,6 @@ async function seed() {
 		categories.push(
 			await categoryRepo.save({
 				name: name,
-				tenant_id: demoTenant.id,
 			}),
 		);
 	}

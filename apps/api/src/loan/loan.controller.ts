@@ -3,7 +3,8 @@ import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
 import { Roles } from '@/auth/decorators/roles.decorator';
 import { RolesGuard } from '@/auth/guard/role.guard';
 
-import { CurrentUserId } from '@/auth/decorators/user.decorator';
+import { CurrentUserId, User } from '@/auth/decorators/user.decorator';
+import { IAuthUser } from '@/core/core.types';
 import { CurrentTenant } from '@/tenants/decorators/current-tenant.decorator';
 import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import {
@@ -84,10 +85,10 @@ export class LoanController {
 	})
 	async createLoan(
 		@Body() data: CreateLoanDto,
-		@CurrentTenant() tenant: TenantEntity,
+		@User() user: IAuthUser,
 		@CurrentUserId() userId: number,
 	): Promise<IApiResponse<LoanEntity>> {
-		const res = await this.loanService.createLoan(tenant.id, data, userId);
+		const res = await this.loanService.createLoan(user.tenantId, data, userId);
 		return {
 			message: 'Préstamo registrado exitosamente',
 			data: res,
@@ -120,10 +121,10 @@ export class LoanController {
 		description: 'El préstamo ya fue devuelto anteriormente',
 	})
 	async returnBook(
-		@CurrentTenant() tenant: TenantEntity,
+		@User() user: IAuthUser,
 		@Param('id', ParseIntPipe) loanId: number,
 	): Promise<IApiResponse<UpdateResult>> {
-		const res = await this.loanService.returnBook(tenant.id, loanId);
+		const res = await this.loanService.returnBook(user.tenantId, loanId);
 		return {
 			message: 'Devolución registrada exitosamente',
 			data: res,
@@ -151,10 +152,10 @@ export class LoanController {
 		description: 'Listado de préstamos',
 	})
 	async findAll(
-		@CurrentTenant() tenant: TenantEntity,
+		@User() user: IAuthUser,
 		@Query('page') page = 1,
 	): Promise<IApiResponse<IPaginatedResponse<{ book: string } & LoanEntity>>> {
-		const res = await this.loanService.paginatedLoans(page, tenant.id);
+		const res = await this.loanService.paginatedLoans(page, user.tenantId);
 		return {
 			message: 'Préstamos obtenidos exitosamente',
 			data: {
@@ -183,10 +184,10 @@ export class LoanController {
 		description: 'Préstamos del estudiante',
 	})
 	async getMyLoans(
-		@CurrentTenant() tenant: TenantEntity,
+		@User() user: IAuthUser,
 		@CurrentUserId() userId: number,
 	): Promise<IApiResponse<LoanEntity[]>> {
-		const res = await this.loanService.findByUser(tenant.id, userId);
+		const res = await this.loanService.findByUser(user.tenantId, userId);
 		return {
 			message: 'Préstamos obtenidos exitosamente',
 			data: res,

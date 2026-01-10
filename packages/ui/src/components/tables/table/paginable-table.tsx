@@ -101,7 +101,7 @@ export const PaginableTable = <T,>({
 							<div className="flex items-center justify-between">
 								<Button
 									onClick={() =>
-										setPage(Math.min(paginatedData?.meta.current_page - 1, 1))
+										setPage(Math.max(paginatedData?.meta.current_page - 1, 1))
 									}
 									disabled={paginatedData?.meta.current_page <= 1 || query.isFetching}
 								>

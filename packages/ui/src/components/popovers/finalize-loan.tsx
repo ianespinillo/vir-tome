@@ -1,14 +1,16 @@
 'use client';
+import { useModalCrud } from '@/contexts/modal-crud-context';
 import { Button } from '@/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/popover';
+import { ILoan } from '@repo/common';
 import { useLoans } from '@repo/hooks';
 import { useState } from 'react';
 
-export function FinalizeLoanPopover({
-	loanId,
-}: Readonly<{ loanId: string | number }>) {
+export function FinalizeLoanPopover({ loanId }: Readonly<{ loanId: number }>) {
 	const [open, setOpen] = useState(false);
-	const { finishLoan } = useLoans();
+	const {
+		hook: { finishLoan },
+	} = useModalCrud<ILoan, ReturnType<typeof useLoans>>();
 	const handleConfirm = () => {
 		finishLoan.mutate(loanId);
 		setOpen(false);

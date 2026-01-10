@@ -1,5 +1,16 @@
 'use client';
-import { AddBook, BooksTable, InputFilter } from '@repo/ui';
+import { IBook } from '@repo/common';
+import { useBooks } from '@repo/hooks';
+import {
+	AddBook,
+	AddButton,
+	BookDetailDialog,
+	BooksTable,
+	EditBook,
+	InputFilter,
+	ModalCrudProvider,
+	useModalCrud,
+} from '@repo/ui';
 import React, { useEffect, useState } from 'react';
 
 export default function BooksPage() {
@@ -9,7 +20,7 @@ export default function BooksPage() {
 	}, []);
 
 	return isClient ? (
-		<div>
+		<ModalCrudProvider<IBook, ReturnType<typeof useBooks>> useHook={useBooks}>
 			<div className="px-8 pt-3">
 				<h1 className="text-5xl font-bold text-primary">Libros</h1>
 				<span className="text-muted-foreground text-xl">
@@ -19,9 +30,19 @@ export default function BooksPage() {
 
 			<div className="px-5 flex justify-end gap-x-4">
 				<InputFilter text="Buscar libro..." />
-				<AddBook />
+				<Button />
 			</div>
-			{/* <BooksTable /> */}
-		</div>
+			<div className="p-5">
+				<BooksTable />
+			</div>
+			<AddBook />
+			<EditBook />
+			<BookDetailDialog />
+		</ModalCrudProvider>
 	) : null;
+}
+
+function Button() {
+	const { setCreateOpen } = useModalCrud();
+	return <AddButton action={() => setCreateOpen(true)} text="Agregar libro" />;
 }

@@ -2,8 +2,6 @@
 import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
 import { Roles } from '@/auth/decorators/roles.decorator';
 import { RolesGuard } from '@/auth/guard/role.guard';
-import { CurrentTenant } from '@/tenants/decorators/current-tenant.decorator';
-import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import {
 	Body,
 	Controller,
@@ -11,9 +9,11 @@ import {
 	Get,
 	HttpStatus,
 	Param,
+	ParseBoolPipe,
 	ParseIntPipe,
 	Patch,
 	Post,
+	Query,
 	UseGuards,
 } from '@nestjs/common';
 import {
@@ -33,6 +33,7 @@ import {
 import {
 	CreatePublisherDto,
 	IApiResponse,
+	IPaginatedResponse,
 	ROLES,
 	UpdatePublisherDto,
 } from '@repo/common';
@@ -71,10 +72,9 @@ export class PublisherController {
 		description: 'Datos inválidos o editorial ya existe',
 	})
 	async create(
-		@CurrentTenant() tenant: TenantEntity,
 		@Body() createDto: CreatePublisherDto,
 	): Promise<IApiResponse<PublisherEntity>> {
-		const data = await this.publisherService.create(tenant.id, createDto);
+		const data = await this.publisherService.createPublisher(createDto);
 		return {
 			message: 'Editorial creada exitosamente',
 			data,
@@ -93,9 +93,22 @@ export class PublisherController {
 		description: 'Listado de editoriales',
 	})
 	async findAll(
-		@CurrentTenant() tenant: TenantEntity,
-	): Promise<IApiResponse<PublisherEntity[]>> {
-		const data = await this.publisherService.findAll(tenant.id);
+		@Query('page', new ParseIntPipe({ optional: true })) page = 1,
+		@Query('full', new ParseBoolPipe({ optional: true })) full = false,
+		@Query('q') q?: string,
+	): Promise<
+		IApiResponse<PublisherEntity[] | IPaginatedResponse<PublisherEntity>>
+	> {
+		if (full) {
+			const data = await this.publisherService.findAll();
+			return {
+				message: 'Editoriales obtenidas exitosamente',
+				data,
+				status: HttpStatus.OK,
+				timestamp: new Date().toISOString(),
+			};
+		}
+		const data = await this.publisherService.getPaginated(page, q);
 		return {
 			message: 'Editoriales obtenidas exitosamente',
 			data,
@@ -123,10 +136,9 @@ export class PublisherController {
 		description: 'Editorial no encontrada',
 	})
 	async findOne(
-		@CurrentTenant() tenant: TenantEntity,
 		@Param('id', ParseIntPipe) id: number,
 	): Promise<IApiResponse<PublisherEntity | null>> {
-		const data = await this.publisherService.findById(tenant.id, id);
+		const data = await this.publisherService.findById(id);
 		return {
 			message: 'Editorial obtenida exitosamente',
 			data,
@@ -160,11 +172,10 @@ export class PublisherController {
 		description: 'Editorial no encontrada',
 	})
 	async update(
-		@CurrentTenant() tenant: TenantEntity,
 		@Param('id') id: number,
 		@Body() updateDto: UpdatePublisherDto,
 	): Promise<IApiResponse<void>> {
-		await this.publisherService.update(tenant.id, id, updateDto);
+		await this.publisherService.update(id, updateDto);
 		return {
 			message: 'Editorial actualizada exitosamente',
 			status: HttpStatus.OK,
@@ -196,11 +207,8 @@ export class PublisherController {
 	@ApiBadRequestResponse({
 		description: 'No se puede eliminar - La editorial tiene libros asociados',
 	})
-	async remove(
-		@CurrentTenant() tenant: TenantEntity,
-		@Param('id') id: number,
-	): Promise<IApiResponse<void>> {
-		await this.publisherService.delete(tenant.id, id);
+	async remove(@Param('id') id: number): Promise<IApiResponse<void>> {
+		await this.publisherService.delete(id);
 		return {
 			message: 'Editorial eliminada exitosamente',
 			data: null,

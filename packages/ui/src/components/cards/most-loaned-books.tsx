@@ -47,7 +47,7 @@ export const MostLoanedBooks = () => {
 				{mostLoanedBooks.isPending ? (
 					<Loading />
 				) : (
-					data.length && (
+					data.length > 0 && (
 						<div className="max-h-[400px]">
 							<ChartContainer config={config}>
 								<BarChart
@@ -94,6 +94,14 @@ export const MostLoanedBooks = () => {
 							</ChartContainer>
 						</div>
 					)
+				)}
+				{/* Mostrar mensaje si no hay datos */}
+				{!mostLoanedBooks.isPending && data.length === 0 && (
+					<div className="flex align-center justify-center">
+						<p className="text-center text-muted-foreground">
+							No hay datos disponibles.
+						</p>
+					</div>
 				)}
 			</CardContent>
 		</Card>

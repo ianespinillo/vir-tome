@@ -5,10 +5,15 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateBookDto, IBooKForm, UpdateBookDto } from '@repo/common';
+import {
+	CreateBookDto,
+	IBooKForm,
+	IPaginatedResponse,
+	UpdateBookDto,
+} from '@repo/common';
 import { ILike, In, IsNull, Like, Repository, UpdateResult } from 'typeorm';
 import { BookEntity } from '../entities/book.entity';
-import { CategoryService } from './category.service';
+import { CategoryService } from '../services/category.service';
 import { PublisherService } from './publisher.service';
 
 @Injectable()
@@ -27,15 +32,11 @@ export class BookService extends MultiTenantService<BookEntity> {
 		createBookDto: CreateBookDto,
 	): Promise<BookEntity> {
 		const { categoryIds, publisherId, ...bookData } = createBookDto;
-		const categories = await this.categoryService.findBy(tenantId, {
-			id: In(categoryIds),
-		});
+		const categories =
+			await this.categoryService.findCategoriesByIds(categoryIds);
 		if (!categories || categories.length === 0)
 			throw new BadRequestException('Categories not founded or empty');
-		const publisher = await this.publishersService.findById(
-			tenantId,
-			publisherId,
-		);
+		const publisher = await this.publishersService.findById(publisherId);
 		if (!publisher) throw new NotFoundException('Publisher not founded');
 		return this.create(tenantId, {
 			tenant_id: tenantId,
@@ -79,15 +80,11 @@ export class BookService extends MultiTenantService<BookEntity> {
 		for (const book of books) {
 			let categories: any = [];
 			if (book.categories) {
-				categories = await this.categoryService.findAllOfBook(
-					tenantId,
+				categories = await this.categoryService.findCategoriesByIds(
 					book.categories.map((c) => c.id),
 				);
 			}
-			const publisher = await this.publishersService.findById(
-				tenantId,
-				book.publisher.id,
-			);
+			const publisher = await this.publishersService.findById(book.publisher.id);
 			transformedBooks.push({
 				...book,
 				categories,
@@ -96,7 +93,10 @@ export class BookService extends MultiTenantService<BookEntity> {
 		}
 		return transformedBooks;
 	}
-	async findAllWithDetailsPaginated(tenantId: number, page: number) {
+	async findAllWithDetailsPaginated(
+		tenantId: number,
+		page: number,
+	): Promise<IPaginatedResponse<BookEntity>> {
 		const [data, total] = await this.findAndCount(
 			tenantId,
 			{},
@@ -108,17 +108,16 @@ export class BookService extends MultiTenantService<BookEntity> {
 			},
 		);
 		return {
-			data: data.map((book) => ({
-				...book,
-				categories: book.categories.map((category) => category.name).join(', '),
-				publisher: book.publisher.name,
-			})),
-			total,
-			current_page: page,
-			last_page: Math.ceil(total / 6),
+			items: data,
+			meta: {
+				current_page: page,
+				last_page: Math.ceil(total / 6),
+				per_page: 6,
+				total,
+			},
 		};
 	}
-	async findOneBook(tenantId: number, id: number): Promise<IBooKForm> {
+	async findOneBook(tenantId: number, id: number): Promise<BookEntity> {
 		const book = await this.findOne(
 			tenantId,
 			{
@@ -129,14 +128,7 @@ export class BookService extends MultiTenantService<BookEntity> {
 			},
 		);
 		if (!book) throw new NotFoundException('Book not founded');
-		return {
-			id: book.id,
-			title: book.title,
-			publicationYear: book.publicationYear,
-			categoriesIds: book.categories.flatMap((c) => c.id),
-			availableQuantity: book.availableQuantity,
-			publisherId: book.publisher.id,
-		};
+		return book;
 	}
 
 	async updateBook(
@@ -166,10 +158,7 @@ export class BookService extends MultiTenantService<BookEntity> {
 
 		// 3. Manejar la relación con publisher si viene en el DTO
 		if (updateBookDto.publisherId) {
-			const publisher = await this.publishersService.findById(
-				tenantId,
-				updateBookDto.publisherId,
-			);
+			const publisher = await this.publishersService.findById(tenantId);
 
 			if (!publisher) {
 				throw new NotFoundException(
@@ -182,8 +171,7 @@ export class BookService extends MultiTenantService<BookEntity> {
 
 		// 4. Manejar las categorías si vienen en el DTO
 		if (updateBookDto.categoryIds) {
-			const categories = await this.categoryService.findAllOfBook(
-				tenantId,
+			const categories = await this.categoryService.findCategoriesByIds(
 				updateBookDto.categoryIds,
 			);
 			book.categories = categories;

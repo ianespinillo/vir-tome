@@ -11,7 +11,12 @@ interface InputFilterProps {
 }
 
 export const InputFilter = ({ text }: Readonly<InputFilterProps>) => {
-	const [q, setQ] = useQueryState('q', parseAsString.withDefault(''));
+	const [q, setQ] = useQueryState(
+		'q',
+		parseAsString
+			.withDefault('')
+			.withOptions({ shallow: true, history: 'replace' }),
+	);
 	const [localVal, setLocalVal] = useState(q);
 	const value = useDebounceValue(localVal, 800);
 	useEffect(() => {

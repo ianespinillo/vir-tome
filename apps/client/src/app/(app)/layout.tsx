@@ -1,5 +1,4 @@
 'use client';
-import 'reflect-metadata';
 import { TanstackProvider } from '@repo/hooks';
 import { UIConfigProvider } from '@repo/ui';
 import { useRouter } from 'next/navigation';

@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import type { TenantSettings } from '@repo/common';
 import { Type } from 'class-transformer';
 // src/tenants/dto/create-tenant.dto.ts

@@ -45,7 +45,7 @@ export class CreateBookDto {
 export class UpdateBookDto {
 	@IsInt()
 	@IsOptional()
-	id?: number;
+	id!: number;
 
 	@IsString()
 	@IsNotEmpty()

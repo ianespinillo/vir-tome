@@ -1,12 +1,12 @@
 import { SeeLoan } from '@/components/dialogs/see-loan';
 import { FinalizeLoanPopover } from '@/components/popovers/finalize-loan';
 import { Button } from '@/ui/button';
-import { ILoanResponse } from '@repo/common';
+import { ILoan } from '@repo/common';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { AlertTriangle, ArrowUpDown, Check, Clock, Eye } from 'lucide-react';
 
-export const loanColumn: ColumnDef<ILoanResponse>[] = [
+export const loanColumn: ColumnDef<ILoan>[] = [
 	{
 		accessorKey: 'id',
 		header: 'ID',
@@ -30,7 +30,7 @@ export const loanColumn: ColumnDef<ILoanResponse>[] = [
 		cell: ({ row }) => row.original.book || 'N/A',
 	},
 	{
-		accessorKey: 'loanDate',
+		accessorKey: 'loan_date',
 		header: ({ column }) => (
 			<Button
 				variant="ghost"
@@ -48,7 +48,7 @@ export const loanColumn: ColumnDef<ILoanResponse>[] = [
 		},
 	},
 	{
-		accessorKey: 'returnDate',
+		accessorKey: 'return_date',
 		header: ({ column }) => (
 			<Button
 				variant="ghost"
@@ -98,7 +98,6 @@ export const loanColumn: ColumnDef<ILoanResponse>[] = [
 
 			return (
 				<div className="flex items-center gap-2">
-					<SeeLoan loan={loan} />
 					{loan.status === 'ACTIVE' && <FinalizeLoanPopover loanId={loan.id} />}
 				</div>
 			);

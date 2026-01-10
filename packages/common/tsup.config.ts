@@ -2,7 +2,10 @@ import { defineConfig } from 'tsup';
 
 export default defineConfig({
 	treeshake: true,
-	target: 'node18',
+	target: 'es2020',
+	esbuildOptions(options) {
+		options.keepNames = true;
+	},
 	bundle: false,
 	format: ['cjs', 'esm'],
 	entry: ['src/**/*.ts'],
@@ -10,4 +13,6 @@ export default defineConfig({
 	sourcemap: true,
 	clean: true,
 	dts: true,
+	esbuildPlugins: [],
+	noExternal: ['class-validator', 'class-transformer'],
 });

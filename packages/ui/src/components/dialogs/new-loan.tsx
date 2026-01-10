@@ -11,13 +11,14 @@ import { Button } from '@/ui/button';
 import { CircleFadingPlus } from 'lucide-react';
 import React, { useState } from 'react';
 import { LoanForm } from '../forms/loan-form';
+import { useModalCrud } from '@/contexts/modal-crud-context';
 
 export const NewLoan = () => {
-	const [isOpen, setIsOpen] = useState(false);
+	const {createOpen, setCreateOpen} = useModalCrud()
 	return (
-		<Dialog open={isOpen} onOpenChange={setIsOpen} modal>
+		<Dialog open={createOpen} onOpenChange={setCreateOpen} modal>
 			<DialogTrigger asChild>
-				<Button variant="default" size="sm" onClick={() => setIsOpen(true)}>
+				<Button variant="default" size="sm" onClick={() => setCreateOpen (true)}>
 					Crear Préstamo
 					<CircleFadingPlus className="ml-2 h-4 w-4" />
 				</Button>
@@ -26,7 +27,7 @@ export const NewLoan = () => {
 				<DialogHeader className="hidden">
 					<DialogTitle>Crear Préstamo</DialogTitle>
 				</DialogHeader>
-				<LoanForm onSuccess={() => setIsOpen(false)} />
+				<LoanForm />
 			</DialogContent>
 		</Dialog>
 	);

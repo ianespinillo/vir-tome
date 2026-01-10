@@ -1,12 +1,12 @@
 import { IPublisher } from '@repo/common';
 import { Column, Entity, OneToMany } from 'typeorm';
-import { MultiTenantEntity } from '../../core/multi-tenant.entity';
+import { GenericEntity } from '../../core/generic.entity';
 import { BookEntity } from './book.entity';
 
 @Entity({
 	name: 'publisher',
 })
-export class PublisherEntity extends MultiTenantEntity implements IPublisher {
+export class PublisherEntity extends GenericEntity implements IPublisher {
 	@Column()
 	name!: string;
 

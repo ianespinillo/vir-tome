@@ -17,6 +17,7 @@ export * from './enum/payload-type.enum';
 export * from './constants/index';
 export * from './constants/demo-seed.constants';
 export * from './constants/public-routes.constant';
+export * from './constants/publishers.constant';
 export type * from './types/auth/requests.types';
 export type * from './types/auth/payloads.types';
 export type * from './types/books/book-forms';

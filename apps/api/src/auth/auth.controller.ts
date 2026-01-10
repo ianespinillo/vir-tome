@@ -142,7 +142,7 @@ export class AuthController {
 				expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
 				secure: false,
 				path: '/',
-				domain: `${result.tenant.subdomain}.${getCookieDomain()}`,
+				domain: '.vir-tome.local',
 				sameSite: 'lax',
 			});
 		}

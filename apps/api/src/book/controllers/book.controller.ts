@@ -1,3 +1,5 @@
+import { User } from '@/auth/decorators/user.decorator';
+import { IAuthUser } from '@/core/core.types';
 import {
 	Body,
 	Controller,
@@ -40,7 +42,6 @@ import {
 import { AuthBearer } from '../../auth/decorators/auth-bearer.decorators';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guard/role.guard';
-import { CurrentTenant } from '../../tenants/decorators/current-tenant.decorator';
 import { TenantEntity } from '../../tenants/entities/tenant.entity';
 import { BookEntity } from '../entities/book.entity';
 import { BookService } from '../services/book.service';
@@ -86,10 +87,10 @@ export class BookController {
 	})
 	@ApiBadRequestResponse({ description: 'Bad Request - Invalid input data' })
 	async create(
-		@CurrentTenant() tenant: TenantEntity,
+		@User() user: IAuthUser,
 		@Body() createBookDto: CreateBookDto,
 	): Promise<IApiResponse<BookEntity>> {
-		const data = await this.bookService.createBook(tenant.id, createBookDto);
+		const data = await this.bookService.createBook(user.tenantId, createBookDto);
 		return {
 			message: 'Book created succesfully',
 			data,
@@ -123,11 +124,11 @@ export class BookController {
 		description: 'Not Found - Book with specified ID not found',
 	})
 	async updateStock(
-		@CurrentTenant() tenant: TenantEntity,
+		@User() user: IAuthUser,
 		@Param('id', ParseIntPipe) id: number,
 		@Body() data: UpdateStockDto,
 	): Promise<IApiResponse<void>> {
-		await this.bookService.updateStock(tenant.id, id, data.quantity);
+		await this.bookService.updateStock(user.tenantId, id, data.quantity);
 		return {
 			message: 'Stock updated succesfully',
 			data: null,
@@ -162,11 +163,11 @@ export class BookController {
 		description: 'Not Found - Book with specified ID not found',
 	})
 	async updateBook(
-		@CurrentTenant() tenant: TenantEntity,
+		@User() user: IAuthUser,
 		@Param('id', ParseIntPipe) id: number,
 		@Body() data: UpdateBookDto,
 	): Promise<IApiResponse<BookEntity>> {
-		const res = await this.bookService.updateBook(tenant.id, id, data);
+		const res = await this.bookService.updateBook(user.tenantId, id, data);
 		return {
 			message: 'Book updated succesfully',
 			data: res,
@@ -205,7 +206,7 @@ export class BookController {
 		description: 'Paginated list of books',
 	})
 	async findAll(
-		@CurrentTenant() tenant: TenantEntity,
+		@User() user: IAuthUser,
 		@Query('page', new ParseIntPipe({ optional: true })) page = 1,
 		@Query('full', new ParseBoolPipe({ optional: true })) full = false,
 		@Query('search') search?: string,
@@ -213,7 +214,7 @@ export class BookController {
 		IApiResponse<BookEntity[]> | IApiResponse<IPaginatedResponse<BookEntity>>
 	> {
 		if (full) {
-			const data = await this.bookService.findAll(tenant.id);
+			const data = await this.bookService.findAll(user.tenantId);
 			return {
 				message: 'Books retrieved successfully',
 				data,
@@ -222,7 +223,7 @@ export class BookController {
 			};
 		}
 		if (search) {
-			const data = await this.bookService.findBookByName(tenant.id, search);
+			const data = await this.bookService.findBookByName(user.tenantId, search);
 			return {
 				message: 'Books retrieved successfully',
 				data: {
@@ -239,20 +240,12 @@ export class BookController {
 			};
 		}
 		const data = await this.bookService.findAllWithDetailsPaginated(
-			tenant.id,
+			user.tenantId,
 			page,
 		);
 		return {
 			message: 'Books retrieved successfully',
-			data: {
-				items: data.data as unknown as BookEntity[],
-				meta: {
-					total: data.total,
-					current_page: data.current_page,
-					last_page: data.last_page,
-					per_page: 10,
-				},
-			},
+			data,
 			status: HttpStatus.OK,
 			timestamp: new Date().toISOString(),
 		};
@@ -278,10 +271,10 @@ export class BookController {
 		description: 'Not Found - Book with specified ID not found',
 	})
 	async findById(
-		@CurrentTenant() tenant: TenantEntity,
+		@User() user: IAuthUser,
 		@Param('id', ParseIntPipe) id: number,
-	): Promise<IApiResponse<IBooKForm>> {
-		const data = await this.bookService.findOneBook(tenant.id, id);
+	): Promise<IApiResponse<BookEntity>> {
+		const data = await this.bookService.findOneBook(user.tenantId, id);
 		return {
 			message: 'Book founded succsesfully',
 			data,
@@ -309,10 +302,10 @@ export class BookController {
 		description: 'Not Found - Book with specified ID not found',
 	})
 	async remove(
-		@CurrentTenant() tenant: TenantEntity,
+		@User() user: IAuthUser,
 		@Param('id', ParseIntPipe) id: number,
 	): Promise<IApiResponse<void>> {
-		await this.bookService.delete(tenant.id, id);
+		await this.bookService.delete(user.tenantId, id);
 		return {
 			message: 'Book deleted successfully',
 			data: null,
