@@ -1,4 +1,5 @@
 'use client';
+import { GenericActions } from '@/components/dropdown/generic-actions';
 import { useModalCrud } from '@/contexts/modal-crud-context';
 import { toTitleCase } from '@/helpers/to-title-case';
 import {
@@ -143,44 +144,46 @@ function BookActions({ book }: Readonly<{ book: IBook }>) {
 
 	return (
 		<>
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button variant="ghost" className="h-8 w-8 p-0">
-						<span className="sr-only">Abrir menú</span>
-						<MoreHorizontal className="h-4 w-4" />
-					</Button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent>
-					<DropdownMenuLabel>Acciones</DropdownMenuLabel>
-					<DropdownMenuItem
-						onClick={() => {
+			<GenericActions
+				nodes={[
+					{
+						id: 1,
+						children: 'Ver detalles',
+						onClick: () => {
 							setEntity(book);
 							setDetailsOpen(true);
-						}}
-					>
-						Ver detalles
-					</DropdownMenuItem>
-					<DropdownMenuItem
-						className="cursor-pointer"
-						onClick={() => {
+						},
+					},
+					{
+						id: 2,
+						children: (
+							<>
+								<Pencil className="mr-2 h-4 w-4" />
+								Editar
+							</>
+						),
+						className: 'cursor-pointer',
+						onClick: () => {
 							setEntity(book);
 							setEditOpen(true);
-						}}
-					>
-						<Pencil className="mr-2 h-4 w-4" />
-						Editar
-					</DropdownMenuItem>
-					<DropdownMenuItem
-						className="text-red-600 focus:text-red-600 cursor-pointer"
-						onSelect={(e) => {
+						},
+					},
+					{
+						id: 3,
+						children: (
+							<>
+								<Trash className="mr-2 h-4 w-4" />
+								Eliminar
+							</>
+						),
+						className: 'text-red-600 focus:text-red-600 cursor-pointer',
+						onClick: (e) => {
 							e.preventDefault();
 							setShowDeleteDialog(true);
-						}}
-					>
-						<Trash className="mr-2 h-4 w-4" /> Eliminar
-					</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenu>
+						},
+					},
+				]}
+			/>
 
 			<AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
 				<AlertDialogContent>

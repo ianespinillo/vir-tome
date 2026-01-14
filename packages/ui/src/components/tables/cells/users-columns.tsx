@@ -1,6 +1,8 @@
 'use client';
 import { LinkTenantDialog } from '@/components/dialogs/tenants/link-tenant-dialog';
+import { GenericActions } from '@/components/dropdown/generic-actions';
 import { useModalCrud } from '@/contexts/modal-crud-context';
+import { copyId } from '@/helpers/clipboard-helper';
 import { Button } from '@/ui/button';
 import {
 	DropdownMenu,
@@ -77,45 +79,36 @@ function UserActions({ user }: Readonly<{ user: IUser }>) {
 		ReturnType<typeof useUsers>
 	>();
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button variant="ghost" className="h-8 w-8 p-0">
-					<span className="sr-only">Abrir menú</span>
-					<MoreHorizontal className="h-4 w-4" />
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end">
-				<DropdownMenuLabel>Acciones</DropdownMenuLabel>
-
-				<DropdownMenuItem
-					onClick={() => {
+		<GenericActions
+			nodes={[
+				{
+					id: 1,
+					children: 'Ver detalles',
+					onClick() {
 						setEntity(user);
 						setDetailsOpen(true);
-					}}
-				>
-					Ver detalles
-				</DropdownMenuItem>
-				<DropdownMenuItem
-					onClick={() => {
-						navigator.clipboard.writeText(user.id.toString());
-						toast.info('ID copiado al portapapeles');
-					}}
-				>
-					Copiar ID
-				</DropdownMenuItem>
-
-				<DropdownMenuItem
-					className="text-red-600 focus:text-red-600"
-					/* onClick={() => {
-            toast.promise(deleteTenant.mutateAsync(tenant.id),{
-              success: 'Tenant eliminado satisfactoriamente',
-              error: 'Error al eliminar tenant'
-            })
-          }} */
-				>
-					<Trash className="mr-2 h-4 w-4" /> Eliminar
-				</DropdownMenuItem>
-			</DropdownMenuContent>
-		</DropdownMenu>
+					},
+				},
+				{
+					id: 2,
+					children: 'Copiar ID',
+					onClick() {
+						toast.promise(copyId(user.id), {
+							success: 'ID copiado al portapapeles',
+						});
+					},
+				},
+				{
+					id: 3,
+					className: 'text-red-600 focus:text-red-600',
+					children: (
+						<>
+							<Trash className="mr-2 h-4 w-4" />
+							Eliminar
+						</>
+					),
+				},
+			]}
+		/>
 	);
 }

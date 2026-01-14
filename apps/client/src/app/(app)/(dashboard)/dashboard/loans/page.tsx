@@ -1,7 +1,12 @@
 'use client';
 import { ILoan } from '@repo/common';
 import { useLoans } from '@repo/hooks';
-import { LoansTable, ModalCrudProvider, NewLoan } from '@repo/ui';
+import {
+	LoanDetailsDialog,
+	LoansTable,
+	ModalCrudProvider,
+	NewLoan,
+} from '@repo/ui';
 import React, { useEffect, useState } from 'react';
 export default function BooksPage() {
 	const [isClient, setIsClient] = useState(false);
@@ -21,6 +26,7 @@ export default function BooksPage() {
 				<NewLoan />
 			</div>
 			<LoansTable />
+			<LoanDetailsDialog />
 		</ModalCrudProvider>
 	) : null;
 }

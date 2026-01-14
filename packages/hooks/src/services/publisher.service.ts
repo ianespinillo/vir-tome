@@ -26,4 +26,15 @@ export class PublisherService {
 			},
 		);
 	}
+	public static async getPublisher(id: number) {
+		return axios.get<IApiResponse<IPublisher>>(
+			`${PublisherService.baseUrl}/${id}`,
+			{
+				withCredentials: true,
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			},
+		);
+	}
 }

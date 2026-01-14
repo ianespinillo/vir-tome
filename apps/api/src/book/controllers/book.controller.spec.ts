@@ -1,3 +1,4 @@
+import { IAuthUser } from '@/core/core.types';
 import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -18,7 +19,10 @@ import { BookController } from './book.controller';
 describe('BookController', () => {
 	let controller: BookController;
 	let bookService: BookService;
-
+	const mockRequest = {
+		tenantId: 1,
+		id: 1,
+	} as IAuthUser;
 	const mockTenant: TenantEntity = {
 		id: 1,
 		name: 'Test Tenant',
@@ -99,7 +103,7 @@ describe('BookController', () => {
 
 			mockBookService.createBook.mockResolvedValue(mockBook);
 
-			const result = await controller.create(mockTenant, createBookDto);
+			const result = await controller.create(mockRequest, createBookDto);
 			controllerResponse.data = mockBook;
 			expect(bookService.createBook).toHaveBeenCalledWith(1, createBookDto);
 			expect(result).toEqual(controllerResponse);
@@ -118,7 +122,7 @@ describe('BookController', () => {
 				new BadRequestException('Invalid data'),
 			);
 
-			await expect(controller.create(mockTenant, createBookDto)).rejects.toThrow(
+			await expect(controller.create(mockRequest, createBookDto)).rejects.toThrow(
 				BadRequestException,
 			);
 		});
@@ -131,7 +135,7 @@ describe('BookController', () => {
 
 			mockBookService.updateStock.mockResolvedValue(updatedBook);
 
-			const result = await controller.updateStock(mockTenant, 1, updateStockDto);
+			const result = await controller.updateStock(mockRequest, 1, updateStockDto);
 			expect(bookService.updateStock).toHaveBeenCalledWith(mockTenant.id, 1, 5);
 			expect(result).toEqual(controllerResponse);
 		});
@@ -144,7 +148,7 @@ describe('BookController', () => {
 			);
 
 			await expect(
-				controller.updateStock(mockTenant, 999, updateStockDto),
+				controller.updateStock(mockRequest, 999, updateStockDto),
 			).rejects.toThrow(NotFoundException);
 		});
 	});
@@ -152,6 +156,7 @@ describe('BookController', () => {
 	describe('updateBook', () => {
 		it('should update book details successfully', async () => {
 			const updateBookDto: UpdateBookDto = {
+				id: 1,
 				title: 'Updated Title',
 				publicationYear: 2022,
 				availableQuantity: 20,
@@ -162,7 +167,7 @@ describe('BookController', () => {
 
 			mockBookService.updateBook.mockResolvedValue(updatedBook);
 
-			const result = await controller.updateBook(mockTenant, 1, updateBookDto);
+			const result = await controller.updateBook(mockRequest, 1, updateBookDto);
 			controllerResponse.data = updatedBook;
 			expect(bookService.updateBook).toHaveBeenCalledWith(1, 1, updateBookDto);
 			expect(result).toEqual(controllerResponse);
@@ -175,16 +180,12 @@ describe('BookController', () => {
 				items: [mockBook],
 				meta: { total: 1, current_page: 1, last_page: 1, per_page: 10 },
 			};
-			const serviceResult = {
-				data: [mockBook],
-				total: 1,
-				current_page: 1,
-				last_page: 1,
-			};
 
-			mockBookService.findAllWithDetailsPaginated.mockResolvedValue(serviceResult);
+			mockBookService.findAllWithDetailsPaginated.mockResolvedValue(
+				paginatedResult,
+			);
 
-			const result = await controller.findAll(mockTenant, 1, false);
+			const result = await controller.findAll(mockRequest, 1, false);
 			controllerResponse.data = paginatedResult;
 			expect(bookService.findAllWithDetailsPaginated).toHaveBeenCalledWith(1, 1);
 			expect(result).toEqual(controllerResponse);
@@ -195,7 +196,7 @@ describe('BookController', () => {
 
 			mockBookService.findAll.mockResolvedValue(allBooks);
 
-			const result = await controller.findAll(mockTenant, 1, true);
+			const result = await controller.findAll(mockRequest, 1, true);
 			controllerResponse.data = allBooks;
 			expect(bookService.findAll).toHaveBeenCalledWith(1);
 			expect(result).toEqual(controllerResponse);
@@ -214,7 +215,7 @@ describe('BookController', () => {
 				last_page: 1,
 			});
 			controllerResponse.data = searchResult;
-			const result = await controller.findAll(mockTenant, 1, false, 'test');
+			const result = await controller.findAll(mockRequest, 1, false, 'test');
 			expect(bookService.findBookByName).toHaveBeenCalledWith(1, 'test');
 			expect(result).toEqual(controllerResponse);
 		});
@@ -224,7 +225,7 @@ describe('BookController', () => {
 		it('should return book by id', async () => {
 			mockBookService.findOneBook.mockResolvedValue(mockBook);
 
-			const result = await controller.findById(mockTenant, 1);
+			const result = await controller.findById(mockRequest, 1);
 			controllerResponse.data = mockBook;
 			expect(bookService.findOneBook).toHaveBeenCalledWith(1, 1);
 			expect(result).toEqual(controllerResponse);
@@ -233,7 +234,7 @@ describe('BookController', () => {
 		it('should throw NotFoundException for non-existent book', async () => {
 			mockBookService.findOneBook.mockRejectedValue(new NotFoundException());
 
-			await expect(controller.findById(mockTenant, 999)).rejects.toThrow(
+			await expect(controller.findById(mockRequest, 999)).rejects.toThrow(
 				NotFoundException,
 			);
 		});
@@ -243,7 +244,7 @@ describe('BookController', () => {
 		it('should delete book successfully', async () => {
 			mockBookService.delete.mockResolvedValue(undefined);
 
-			await controller.remove(mockTenant, 1);
+			await controller.remove(mockRequest, 1);
 
 			expect(bookService.delete).toHaveBeenCalledWith(1, 1);
 		});
@@ -251,7 +252,7 @@ describe('BookController', () => {
 		it('should throw NotFoundException when deleting non-existent book', async () => {
 			mockBookService.delete.mockRejectedValue(new NotFoundException());
 
-			await expect(controller.remove(mockTenant, 999)).rejects.toThrow(
+			await expect(controller.remove(mockRequest, 999)).rejects.toThrow(
 				NotFoundException,
 			);
 		});

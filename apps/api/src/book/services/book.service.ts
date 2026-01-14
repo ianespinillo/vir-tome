@@ -158,7 +158,9 @@ export class BookService extends MultiTenantService<BookEntity> {
 
 		// 3. Manejar la relación con publisher si viene en el DTO
 		if (updateBookDto.publisherId) {
-			const publisher = await this.publishersService.findById(tenantId);
+			const publisher = await this.publishersService.findById(
+				updateBookDto.publisherId,
+			);
 
 			if (!publisher) {
 				throw new NotFoundException(

@@ -1,5 +1,5 @@
 import { GenericHookProps, IPublisher } from '@repo/common';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import { PublisherService } from '../services/publisher.service';
 
 export const usePublishers = ({ page, searchTerm }: GenericHookProps) => {
@@ -12,7 +12,16 @@ export const usePublishers = ({ page, searchTerm }: GenericHookProps) => {
 		refetchOnWindowFocus: false,
 		refetchOnMount: false,
 	});
-	const allPublishers = useQuery({
+	const getPublisherById = useMutation({
+		mutationKey: ['publisger'],
+		mutationFn: async (id: number) =>
+			(await PublisherService.getPublisher(id)).data,
+	});
+	return { publishers, getPublisherById };
+};
+
+export const useAllPublishers = () =>
+	useQuery({
 		queryKey: ['publishers'],
 		queryFn: async () => (await PublisherService.getAllPublishers()).data,
 		staleTime: 5000,
@@ -20,5 +29,3 @@ export const usePublishers = ({ page, searchTerm }: GenericHookProps) => {
 		refetchOnWindowFocus: false,
 		refetchOnMount: false,
 	});
-	return { publishers, allPublishers };
-};

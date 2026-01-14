@@ -5,7 +5,7 @@ import {
 	IUser,
 	ROLES,
 } from '@repo/common';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import { UsersService } from '../services/users.service';
 
 export const useUsers = ({ page, searchTerm }: GenericHookProps) => {
@@ -14,6 +14,10 @@ export const useUsers = ({ page, searchTerm }: GenericHookProps) => {
 			queryKey: ['users', page, searchTerm, role],
 			queryFn: async () =>
 				(await UsersService.getUsersByRole(page, role, searchTerm)).data,
+			staleTime: 5000,
+			placeholderData: keepPreviousData,
+			refetchOnWindowFocus: false,
+			refetchOnMount: false,
 		});
 	const getLastRegisters = useQuery<IApiResponse<IUser[]>, IApiResponse<Error>>({
 		queryKey: ['last-registers'],
@@ -29,6 +33,10 @@ export const useUsers = ({ page, searchTerm }: GenericHookProps) => {
 		}: { dto: AddUserToTenantDto; userId: number }) =>
 			(await UsersService.attachUserToTenant(dto, userId)).data,
 	});
+	const getUserById = useMutation({
+		mutationKey: ['user'],
+		mutationFn: async (id: number) => (await UsersService.getUser(id)).data,
+	});
 	const getUserTenants = (userId: number) =>
 		useQuery({
 			queryKey: ['user-tenants', userId],
@@ -39,5 +47,6 @@ export const useUsers = ({ page, searchTerm }: GenericHookProps) => {
 		getLastRegisters,
 		attachUserToTenant,
 		getUserTenants,
+		getUserById,
 	};
 };

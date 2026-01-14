@@ -1,10 +1,23 @@
 import { SeeLoan } from '@/components/dialogs/see-loan';
+import {
+	ActionNode,
+	GenericActions,
+} from '@/components/dropdown/generic-actions';
 import { FinalizeLoanPopover } from '@/components/popovers/finalize-loan';
+import { useModalCrud } from '@/contexts/modal-crud-context';
 import { Button } from '@/ui/button';
-import { ILoan } from '@repo/common';
+import { ILoan, LoanStatus } from '@repo/common';
+import { useLoans } from '@repo/hooks';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { AlertTriangle, ArrowUpDown, Check, Clock, Eye } from 'lucide-react';
+import {
+	AlertTriangle,
+	ArrowUpDown,
+	Check,
+	Clock,
+	Eye,
+	EyeIcon,
+} from 'lucide-react';
 
 export const loanColumn: ColumnDef<ILoan>[] = [
 	{
@@ -19,7 +32,6 @@ export const loanColumn: ColumnDef<ILoan>[] = [
 				onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
 				className="flex items-center gap-2"
 			>
-				Docente
 				<ArrowUpDown className="ml-2 h-4 w-4" />
 			</Button>
 		),
@@ -44,7 +56,11 @@ export const loanColumn: ColumnDef<ILoan>[] = [
 		cell: ({ getValue }) => {
 			const dateString = getValue() as string;
 			if (!dateString) return 'No registrada';
-			return format(new Date(dateString.replace(' ', 'T')), 'dd/MM/yyyy HH:mm');
+			return (
+				<span className="text-center">
+					{dateString.split('-').reverse().join('/')}
+				</span>
+			);
 		},
 	},
 	{
@@ -95,12 +111,33 @@ export const loanColumn: ColumnDef<ILoan>[] = [
 		header: 'Acciones',
 		cell: ({ row }) => {
 			const loan = row.original;
-
-			return (
-				<div className="flex items-center gap-2">
-					{loan.status === 'ACTIVE' && <FinalizeLoanPopover loanId={loan.id} />}
-				</div>
-			);
+			const { setEntity, setDetailsOpen } = useModalCrud<
+				ILoan,
+				ReturnType<typeof useLoans>
+			>();
+			const nodes: ActionNode[] = [
+				{
+					id: 1,
+					children: (
+						<>
+							<EyeIcon className="h-2 w-2 mr-2" />
+							Ver detalle
+						</>
+					),
+					className: 'cursor-pointer',
+					onClick() {
+						setEntity(loan);
+						setDetailsOpen(true);
+					},
+				},
+			];
+			if (loan.status === LoanStatus.ACTIVE) {
+				nodes.push({
+					id: 2,
+					children: <FinalizeLoanPopover loanId={loan.id} />,
+				});
+			}
+			return <GenericActions nodes={nodes} />;
 		},
 	},
 ];

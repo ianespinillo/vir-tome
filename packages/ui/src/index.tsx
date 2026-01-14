@@ -8,7 +8,7 @@ export { BookForm } from './components/forms/book-form';
 export { AddBook } from './components/dialogs/books/add-book';
 export { BooksTable } from './components/tables/table/books-table';
 export { LoansTable } from './components/tables/table/loans-table';
-export { NewLoan } from './components/dialogs/new-loan';
+export { NewLoan } from './components/dialogs/loan/new-loan';
 export { PersonalInfoForm } from './components/forms/personal-info';
 export { PasswordChangeForm } from './components/forms/password-change';
 export { ConfirmEmail } from './components/cards/confirm-email';
@@ -30,7 +30,7 @@ export { MostLoanedBooksTable } from './components/tables/table/most-loaned-book
 export { LastUsersTable } from './components/tables/table/last-users';
 export { EditBook } from './components/dialogs/books/edit-book';
 export { BookDetailDialog } from './components/dialogs/books/book-details';
-
+export { LoanDetailsDialog } from './components/dialogs/loan/loan-details';
 export * from './ui/scroll-area';
 
 // toaster

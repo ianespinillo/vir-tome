@@ -28,5 +28,9 @@
 	"packageManager": "pnpm@9.8.0",
 	"dependencies": {
 		"husky": "^9.1.6"
+	},
+	"resolutions": {
+		"react": "^18",
+		"react-dom": "^18"
 	}
 }

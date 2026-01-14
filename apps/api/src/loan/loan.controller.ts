@@ -86,9 +86,8 @@ export class LoanController {
 	async createLoan(
 		@Body() data: CreateLoanDto,
 		@User() user: IAuthUser,
-		@CurrentUserId() userId: number,
 	): Promise<IApiResponse<LoanEntity>> {
-		const res = await this.loanService.createLoan(user.tenantId, data, userId);
+		const res = await this.loanService.createLoan(user.tenantId, data);
 		return {
 			message: 'Préstamo registrado exitosamente',
 			data: res,

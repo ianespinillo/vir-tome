@@ -31,7 +31,7 @@ export default function AdminsPage() {
 						<UsersTable />
 					</div>
 				</div>
-				<CreateUserDialog role={ROLES.ADMIN} />
+				<CreateUserDialog />
 				<UserDetailsDialog />
 			</ModalCrudProvider>
 		)

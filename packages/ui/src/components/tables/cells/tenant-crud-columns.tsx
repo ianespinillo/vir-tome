@@ -2,7 +2,9 @@
 'use client';
 
 import { LinkTenantDialog } from '@/components/dialogs/tenants/link-tenant-dialog';
+import { GenericActions } from '@/components/dropdown/generic-actions';
 import { useModalCrud } from '@/contexts/modal-crud-context';
+import { copyId } from '@/helpers/clipboard-helper';
 import { Badge } from '@/ui/badge';
 import { Button } from '@/ui/button';
 import {
@@ -104,62 +106,71 @@ function TenantActions({ tenant }: Readonly<{ tenant: ITenant }>) {
 	const [linkOpen, setLinkOpen] = useState(false);
 	return (
 		<>
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button variant="ghost" className="h-8 w-8 p-0">
-						<span className="sr-only">Abrir menú</span>
-						<MoreHorizontal className="h-4 w-4" />
-					</Button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end">
-					<DropdownMenuLabel>Acciones</DropdownMenuLabel>
-
-					<DropdownMenuItem
-						onClick={() => {
+			<GenericActions
+				nodes={[
+					{
+						id: 1,
+						children: 'Ver detalles',
+						onClick: () => {
 							setEntity(tenant);
 							setDetailsOpen(true);
-						}}
-					>
-						Ver detalles
-					</DropdownMenuItem>
-
-					<DropdownMenuItem
-						onClick={() => navigator.clipboard.writeText(tenant.id.toString())}
-					>
-						Copiar ID
-					</DropdownMenuItem>
-
-					<DropdownMenuItem
-						onClick={() => {
+						},
+					},
+					{
+						id: 2,
+						children: 'Copiar ID',
+						onClick: () => {
+							toast.promise(copyId(tenant.id), {
+								success: 'ID copiado al portapapeles',
+							});
+						},
+					},
+					{
+						id: 3,
+						children: (
+							<>
+								<Pencil className="mr-2 h-4 w-4" />
+								Editar
+							</>
+						),
+						onClick: () => {
 							setEntity(tenant);
 							setEditOpen(true);
-						}}
-					>
-						<Pencil className="mr-2 h-4 w-4" />
-						Editar
-					</DropdownMenuItem>
-					<DropdownMenuItem onClick={() => setLinkOpen(true)}>
-						Vincular usuario existente
-					</DropdownMenuItem>
-
-					{/* Acción especial de SuperAdmin: Loguearse como este tenant */}
-					<DropdownMenuItem onClick={() => console.log('Impersonate', tenant.id)}>
-						<LogIn className="mr-2 h-4 w-4" /> Acceder al panel
-					</DropdownMenuItem>
-
-					<DropdownMenuItem
-						className="text-red-600 focus:text-red-600"
-						onClick={() => {
+						},
+					},
+					{
+						id: 4,
+						children: 'Vincular usuario existente',
+						onClick: () => setLinkOpen(true),
+					},
+					{
+						id: 5,
+						children: (
+							<>
+								<LogIn className="mr-2 h-4 w-4" />
+								Acceder al panel
+							</>
+						),
+						onClick: () => console.log('Impersonate', tenant.id),
+					},
+					{
+						id: 6,
+						children: (
+							<>
+								<Trash className="mr-2 h-4 w-4" />
+								Eliminar
+							</>
+						),
+						className: 'text-red-600 focus:text-red-600',
+						onClick: () => {
 							toast.promise(deleteTenant.mutateAsync(tenant.id), {
 								success: 'Tenant eliminado satisfactoriamente',
 								error: 'Error al eliminar tenant',
 							});
-						}}
-					>
-						<Trash className="mr-2 h-4 w-4" /> Eliminar
-					</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenu>
+						},
+					},
+				]}
+			/>
 			<LinkTenantDialog
 				tenantId={tenant.id}
 				availableRoles={Object.values(ROLES).filter(

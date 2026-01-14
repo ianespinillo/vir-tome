@@ -1,5 +1,10 @@
 // Importa tus enums reales de @repo/common
-import { LoanStatus, ROLES, argPublishers } from '@repo/common';
+import {
+	LoanBorrowerType,
+	LoanStatus,
+	ROLES,
+	argPublishers,
+} from '@repo/common';
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { BookEntity } from '../src/book/entities/book.entity';
@@ -182,17 +187,17 @@ async function seed() {
 	// ==========================================
 	// CREAR SUPER ADMIN (TÚ)
 	// ==========================================
-	// console.log('👑 Creando Super Admin...');
-	// const superAdminRepo = AppDataSource.getRepository(SuperAdminEntity);
-	// const { password, hashedPassword } =
-	// 	await PasswordAdapter.generateHashedPassword(8);
-	// console.log(`Super admin password: ${password}`);
-	// const superAdmin = await superAdminRepo.save({
-	// 	email: 'espinilloian@hotmail.com',
-	// 	name: 'Ian',
-	// 	password: hashedPassword,
-	// 	isActive: true,
-	// });
+	console.log('👑 Creando Super Admin...');
+	const superAdminRepo = AppDataSource.getRepository(SuperAdminEntity);
+	const { password, hashedPassword } =
+		await PasswordAdapter.generateHashedPassword(8);
+	console.log(`Super admin password: ${password}`);
+	const superAdmin = await superAdminRepo.save({
+		email: 'espinilloian@hotmail.com',
+		name: 'Ian',
+		password: hashedPassword,
+		isActive: true,
+	});
 	// ==========================================
 	// CREAR DATOS DEL DOMINIO (Solo para Demo Tenant)
 	// ==========================================
@@ -245,6 +250,7 @@ async function seed() {
 		quantity: 1,
 		loan_date: new Date(),
 		status: LoanStatus.ACTIVE,
+		borrower_type: LoanBorrowerType.REGISTERED_USER,
 	});
 
 	// Préstamos Vencidos (Para probar alertas UI color rojo)
@@ -256,19 +262,39 @@ async function seed() {
 		loan_date: faker.date.past(), // Fecha vieja
 		return_date: faker.date.past(), // Fecha devolución vieja
 		status: LoanStatus.OVERDUE,
+		borrower_type: LoanBorrowerType.REGISTERED_USER,
 	});
 	const users = [uAdmin, uStudent, uTraveler]; // Define the users array with existing user entities
 	for (let i = 0; i < 20; i++) {
 		const user = faker.helpers.arrayElement(users);
 		const book = faker.helpers.arrayElement(books);
-
 		await loanRepo.save({
 			user,
 			user_id: user.id,
 			book,
 			quantity: faker.number.int({ min: 1, max: 3 }),
 			loan_date: faker.date.recent(),
+			borrower_type: LoanBorrowerType.REGISTERED_USER,
 			status: faker.helpers.arrayElement([LoanStatus.ACTIVE, LoanStatus.OVERDUE]),
+		});
+	}
+	for (let i = 0; i < 20; i++) {
+		const book = faker.helpers.arrayElement(books);
+
+		await loanRepo.save({
+			borrower_type: LoanBorrowerType.EXTERNAL_BORROWER,
+
+			borrower_name: faker.person.fullName(),
+			borrower_email: faker.internet.email(),
+			borrower_phone: faker.phone.number(),
+			borrower_national_id: faker.string.numeric(8),
+
+			book,
+			book_id: book.id,
+
+			quantity: 1,
+			loan_date: faker.date.recent(),
+			status: LoanStatus.ACTIVE,
 		});
 	}
 

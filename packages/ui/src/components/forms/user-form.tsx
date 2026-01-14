@@ -1,6 +1,10 @@
 'use client';
 
 import { useModalCrud } from '@/contexts/modal-crud-context';
+import {
+	getRolesLabel,
+	getRolesManagables,
+} from '@/helpers/get-roles-managable';
 import { Button } from '@/ui/button';
 import {
 	Card,
@@ -9,8 +13,15 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/ui/card';
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from '@/ui/form';
 import { Input } from '@/ui/input';
-import { Label } from '@/ui/label';
 import {
 	Select,
 	SelectContent,
@@ -22,14 +33,11 @@ import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { ITenant, IUser, ROLES, SignUpDto } from '@repo/common';
 import { useAuth, useTenants, useUsers } from '@repo/hooks';
 import React, { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { Toaster, toast } from 'sonner';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { FormSelect } from '../select/form-select';
 
-interface Props {
-	role: ROLES;
-}
-
-export const UserForm = ({ role }: Readonly<Props>) => {
+export const UserForm = () => {
 	const { entity, setCreateOpen } = useModalCrud<
 		IUser,
 		ReturnType<typeof useUsers>
@@ -38,28 +46,26 @@ export const UserForm = ({ role }: Readonly<Props>) => {
 	const { session, register } = useAuth();
 	const resolver = classValidatorResolver(SignUpDto);
 	const { getAllTenants } = useTenants({ page: 1 });
-	const {
-		control,
-		handleSubmit,
-		setValue,
-		formState: { errors },
-	} = useForm<SignUpDto>({
+
+	const form = useForm<SignUpDto>({
 		resolver,
 		defaultValues: {
-			role,
+			role: undefined,
 			email: entity?.email || '',
 			name: entity?.name || '',
 			surname: entity?.surname || '',
 		},
 	});
+
 	useEffect(() => {
 		if (session.status === 'success' && session.data?.data) {
 			setShowTenantField(session.data?.data?.roleName === ROLES.SUPER_ADMIN);
 		}
 		if (!showTenantField) {
-			setValue('tenantId', session.data?.data?.tenantId);
+			form.setValue('tenantId', session.data?.data?.tenantId);
 		}
-	}, [session, entity]);
+	}, [session, entity, showTenantField, form]);
+
 	const tenants: ITenant[] = getAllTenants.data?.data ?? [];
 
 	const onSubmit = (data: SignUpDto) => {
@@ -81,115 +87,117 @@ export const UserForm = ({ role }: Readonly<Props>) => {
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<div className="space-y-6">
-					<div className="space-y-2">
-						<Label htmlFor="email">
-							Email <span className="text-destructive">*</span>
-						</Label>
-						<Controller
+				<Form {...form}>
+					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+						<FormField
+							control={form.control}
 							name="email"
-							control={control}
 							render={({ field }) => (
-								<Input
-									{...field}
-									id="email"
-									type="email"
-									placeholder="ejemplo@correo.com"
-									maxLength={100}
-									className={errors.email ? 'border-destructive' : ''}
-								/>
+								<FormItem>
+									<FormLabel>
+										Email <span className="text-destructive">*</span>
+									</FormLabel>
+									<FormControl>
+										<Input
+											{...field}
+											type="email"
+											placeholder="ejemplo@correo.com"
+											maxLength={100}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
 							)}
 						/>
-						{errors.email && (
-							<p className="text-sm text-destructive">{errors.email.message}</p>
-						)}
-					</div>
 
-					<div className="space-y-2">
-						<Label htmlFor="name">
-							Nombre <span className="text-destructive">*</span>
-						</Label>
-						<Controller
+						<FormField
+							control={form.control}
+							name="role"
+							render={({ field }) => (
+								<FormItem>
+									<FormSelect<SignUpDto>
+										name="role"
+										selectPlaceholder="Seleccione un rol"
+										label="Rol"
+										options={getRolesLabel(
+											getRolesManagables(session.data?.data?.roleName),
+										)}
+										control={form.control}
+									/>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
 							name="name"
-							control={control}
 							render={({ field }) => (
-								<Input
-									{...field}
-									id="name"
-									type="text"
-									placeholder="Juan"
-									maxLength={100}
-									className={errors.name ? 'border-destructive' : ''}
-								/>
+								<FormItem>
+									<FormLabel>
+										Nombre <span className="text-destructive">*</span>
+									</FormLabel>
+									<FormControl>
+										<Input {...field} type="text" placeholder="Juan" maxLength={100} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
 							)}
 						/>
-						{errors.name && (
-							<p className="text-sm text-destructive">{errors.name.message}</p>
-						)}
-					</div>
 
-					<div className="space-y-2">
-						<Label htmlFor="surname">
-							Apellido <span className="text-destructive">*</span>
-						</Label>
-						<Controller
+						<FormField
+							control={form.control}
 							name="surname"
-							control={control}
 							render={({ field }) => (
-								<Input
-									{...field}
-									id="surname"
-									type="text"
-									placeholder="Pérez"
-									maxLength={100}
-									className={errors.surname ? 'border-destructive' : ''}
-								/>
+								<FormItem>
+									<FormLabel>
+										Apellido <span className="text-destructive">*</span>
+									</FormLabel>
+									<FormControl>
+										<Input {...field} type="text" placeholder="Pérez" maxLength={100} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
 							)}
 						/>
-						{errors.surname && (
-							<p className="text-sm text-destructive">{errors.surname.message}</p>
-						)}
-					</div>
 
-					{showTenantField && (
-						<div className="space-y-2">
-							<Label htmlFor="tenantId">
-								Tenant <span className="text-destructive">*</span>
-							</Label>
-							<Controller
+						{showTenantField && (
+							<FormField
+								control={form.control}
 								name="tenantId"
-								control={control}
-								render={({ field: { value, onChange } }) => (
-									<Select
-										value={value?.toString()}
-										onValueChange={(val) => onChange(Number.parseInt(val))}
-									>
-										<SelectTrigger
-											id="tenantId"
-											className={errors.tenantId ? 'border-destructive' : ''}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											Tenant <span className="text-destructive">*</span>
+										</FormLabel>
+										<Select
+											value={field.value?.toString()}
+											onValueChange={(val) => field.onChange(Number.parseInt(val))}
 										>
-											<SelectValue placeholder="Seleccione un tenant" />
-										</SelectTrigger>
-										<SelectContent>
-											{tenants.map((tenant) => (
-												<SelectItem key={tenant.id} value={tenant.id.toString()}>
-													{tenant.name} ({tenant.subdomain})
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
+											<FormControl>
+												<SelectTrigger>
+													<SelectValue placeholder="Seleccione un tenant" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{tenants.map((tenant) => (
+													<SelectItem key={tenant.id} value={tenant.id.toString()}>
+														{tenant.name} ({tenant.subdomain})
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<FormMessage />
+									</FormItem>
 								)}
 							/>
-							{errors.tenantId && (
-								<p className="text-sm text-destructive">{errors.tenantId.message}</p>
-							)}
-						</div>
-					)}
+						)}
 
-					<Button onClick={handleSubmit(onSubmit)} className="w-full">
-						Registrar Usuario
-					</Button>
-				</div>
+						<Button type="submit" className="w-full">
+							Registrar Usuario
+						</Button>
+					</form>
+				</Form>
 			</CardContent>
 		</Card>
 	);

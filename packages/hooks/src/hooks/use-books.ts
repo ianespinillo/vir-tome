@@ -53,10 +53,6 @@ export const useBooks = ({ searchTerm, page }: GenericHookProps) => {
 			client.refetchQueries({ queryKey: ['books', page, searchTerm] });
 		},
 	});
-	const fullBooks = useMutation({
-		mutationKey: ['fullBooks'],
-		mutationFn: async () => (await BookService.getAllBooks()).data,
-	});
 
 	return {
 		books,
@@ -64,6 +60,11 @@ export const useBooks = ({ searchTerm, page }: GenericHookProps) => {
 		findBook,
 		updateBook,
 		deleteBook,
-		fullBooks,
 	};
 };
+
+export const useFullBooks = () =>
+	useQuery({
+		queryKey: ['fullBooks'],
+		queryFn: async () => (await BookService.getAllBooks()).data,
+	});

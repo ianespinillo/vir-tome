@@ -2,7 +2,6 @@ import {
 	CreateBookDto,
 	IApiResponse,
 	IBook,
-	IBookResponse,
 	IPaginatedResponse,
 } from '@repo/common';
 import axios from 'axios';
@@ -12,7 +11,7 @@ export class BookService {
 		`${process.env.NODE_ENV === 'production' ? 'https://' : 'http://'}${process.env.NEXT_PUBLIC_API_URL}/book`;
 
 	public static async getBooks(page: number, searchTerm?: string) {
-		return await axios.get<IApiResponse<IPaginatedResponse<IBookResponse>>>(
+		return await axios.get<IApiResponse<IPaginatedResponse<IBook>>>(
 			`${BookService.baseUrl}?page=${page}${searchTerm ? `&search=${searchTerm}` : ''}`,
 			{
 				withCredentials: true,

@@ -72,7 +72,6 @@ export class UsersService {
 					tenant_id: tenantId,
 				},
 			},
-			relations: ['userTenants.tenant', 'loan'],
 		});
 		return user;
 	}
@@ -406,7 +405,7 @@ export class UsersService {
 		}
 		if (user.roleName === ROLES.ADMIN) {
 			qb.andWhere('ut.tenant_id = :tenantId', { tenantId: user.tenantId });
-			qb.andWhere('ut.role.name NOT IN (:superAdminRole)', {
+			qb.andWhere('role.name NOT IN (:...superAdminRole)', {
 				superAdminRole: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
 			});
 		}
