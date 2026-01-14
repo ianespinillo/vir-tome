@@ -1,7 +1,6 @@
-import 'reflect-metadata';
+import { NuqsAdapter } from '@repo/ui';
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
-import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import '@repo/ui/globals.css';
 
 const geistSans = localFont({

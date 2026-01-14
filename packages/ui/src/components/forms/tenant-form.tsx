@@ -44,6 +44,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/tabs';
 import { useTenants } from '@repo/hooks';
 import { Loader2 } from 'lucide-react';
 import { Toaster, toast } from 'sonner'; // O tu librería de toast
+import { FormSelect } from '../select/form-select';
 
 // --- TIPOS ---
 interface TenantFormProps {
@@ -215,27 +216,25 @@ const GeneralTabContent = ({ isEdit }: { isEdit: boolean }) => {
 			/>
 
 			{/* Plan */}
-			<FormField
+			<FormSelect<CreateTenantDto>
 				control={control}
+				label="Plan"
+				selectPlaceholder="Seleccione un plan"
 				name="plan"
-				render={({ field }) => (
-					<FormItem>
-						<FormLabel>Plan de Suscripción</FormLabel>
-						<Select onValueChange={field.onChange} defaultValue={field.value}>
-							<FormControl>
-								<SelectTrigger>
-									<SelectValue placeholder="Selecciona un plan" />
-								</SelectTrigger>
-							</FormControl>
-							<SelectContent>
-								<SelectItem value="basic">Básico</SelectItem>
-								<SelectItem value="premium">Premium</SelectItem>
-								<SelectItem value="enterprise">Enterprise</SelectItem>
-							</SelectContent>
-						</Select>
-						<FormMessage />
-					</FormItem>
-				)}
+				options={[
+					{
+						label: 'Basico',
+						value: 'basic',
+					},
+					{
+						label: 'Premiun',
+						value: 'premiun',
+					},
+					{
+						label: 'Enterprise',
+						value: 'enterprise',
+					},
+				]}
 			/>
 
 			{/* Expiración */}

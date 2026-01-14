@@ -1,14 +1,14 @@
 import { Button } from '@/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/dialog';
 import { DialogTrigger } from '@radix-ui/react-dialog';
-import { ILoanResponse } from '@repo/common';
+import { ILoan } from '@repo/common';
 import { format } from 'date-fns';
 import { Eye } from 'lucide-react';
 
 export function SeeLoan({
 	loan,
 }: Readonly<{
-	loan: ILoanResponse | null;
+	loan: ILoan | null;
 }>) {
 	if (!loan) return null;
 
@@ -29,11 +29,11 @@ export function SeeLoan({
 					<div className="grid grid-cols-2 gap-4">
 						<div>
 							<h4 className="text-sm font-medium text-gray-500">Docente</h4>
-							<p>{loan.borrowerName}</p>
+							<p>{loan.user.email}</p>
 						</div>
 						<div>
 							<h4 className="text-sm font-medium text-gray-500">Libro</h4>
-							<p>{loan.book || 'N/A'}</p>
+							<p>{loan.book.title || 'N/A'}</p>
 						</div>
 					</div>
 
@@ -41,9 +41,9 @@ export function SeeLoan({
 						<div>
 							<h4 className="text-sm font-medium text-gray-500">Fecha Préstamo</h4>
 							<p>
-								{loan.loanDate
+								{loan.loan_date
 									? format(
-											new Date(String(loan.loanDate).replace(' ', 'T')),
+											new Date(String(loan.loan_date).replace(' ', 'T')),
 											'dd/MM/yyyy HH:mm',
 										)
 									: 'No registrada'}
@@ -52,9 +52,9 @@ export function SeeLoan({
 						<div>
 							<h4 className="text-sm font-medium text-gray-500">Fecha Devolución</h4>
 							<p>
-								{loan.returnDate
+								{loan.return_date
 									? format(
-											new Date(loan.returnDate.toString().replace(' ', 'T')),
+											new Date(loan.return_date.toString().replace(' ', 'T')),
 											'dd/MM/yyyy HH:mm',
 										)
 									: 'Pendiente'}

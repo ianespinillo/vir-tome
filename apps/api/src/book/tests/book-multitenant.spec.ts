@@ -1,19 +1,9 @@
 import { getTestDatabaseConfig } from '@/__tests__/database-test.config';
-import { LoanEntity } from '@/loan/entities/loan.entity';
-import { SuperAdminEntity } from '@/super-admin/entities/super-admin.entity';
-import { TokenEntity } from '@/tokens/entities/tokens.entity';
-import { RoleEntity } from '@/users/entities/role.entity';
-import { UserTenantEntity } from '@/users/entities/user-tenant.entity';
-import { UserEntity } from '@/users/entities/user.entity';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CreateBookDto } from '@repo/common'; // Asumo que esto viene de tu monorepo/librería
-import {
-	PostgreSqlContainer,
-	StartedPostgreSqlContainer,
-} from '@testcontainers/postgresql';
-import { Wait } from 'testcontainers';
+import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { DataSource } from 'typeorm';
 import { TenantEntity } from '../../tenants/entities/tenant.entity';
 import { BookEntity } from '../entities/book.entity';
@@ -98,95 +88,6 @@ describe('Books Multi-tenant Integration (with Testcontainers)', () => {
 		await publisherRepo.delete({}); // Al final los padres (excepto tenants)
 	});
 
-	// -------------------------------------------------------------------------
-	// A partir de aquí, tus tests son IDÉNTICOS (solo copié tu lógica)
-	// -------------------------------------------------------------------------
-
-	describe('Publisher Isolation', () => {
-		test('should create publishers isolated by tenant', async () => {
-			const publisher1 = await publisherService.create(tenant1.id, {
-				name: 'Santillana',
-			});
-
-			const publisher2 = await publisherService.create(tenant2.id, {
-				name: 'Santillana',
-			});
-
-			expect(publisher1.name).toBe('Santillana');
-			expect(publisher1.tenant_id).toBe(tenant1.id);
-
-			expect(publisher2.name).toBe('Santillana');
-			expect(publisher2.tenant_id).toBe(tenant2.id);
-		});
-
-		test('should find publishers only from specific tenant', async () => {
-			await publisherService.create(tenant1.id, { name: 'Editorial Alpha' });
-			await publisherService.create(tenant1.id, { name: 'Kapelusz' });
-			await publisherService.create(tenant2.id, { name: 'Editorial Beta' });
-
-			const tenant1Publishers = await publisherService.findAll(tenant1.id);
-			const tenant2Publishers = await publisherService.findAll(tenant2.id);
-
-			expect(tenant1Publishers).toHaveLength(2);
-			expect(tenant1Publishers.every((p) => p.tenant_id === tenant1.id)).toBe(
-				true,
-			);
-
-			expect(tenant2Publishers).toHaveLength(1);
-			expect(tenant2Publishers[0].tenant_id).toBe(tenant2.id);
-		});
-	});
-
-	describe('Category Isolation', () => {
-		test('should create categories isolated by tenant', async () => {
-			const category1 = await categoryService.create(tenant1.id, {
-				name: 'Literatura Infantil',
-			});
-
-			const category2 = await categoryService.create(tenant2.id, {
-				name: 'Literatura Infantil',
-			});
-
-			expect(category1.tenant_id).toBe(tenant1.id);
-			expect(category2.tenant_id).toBe(tenant2.id);
-		});
-
-		test('should find categories only from specific tenant', async () => {
-			await categoryService.create(tenant1.id, { name: 'Matemáticas' });
-			await categoryService.create(tenant1.id, { name: 'Ciencias' });
-			await categoryService.create(tenant2.id, { name: 'Historia' });
-
-			const tenant1Categories = await categoryService.findAll(tenant1.id);
-			const tenant2Categories = await categoryService.findAll(tenant2.id);
-
-			expect(tenant1Categories).toHaveLength(2);
-			expect(tenant1Categories.every((c) => c.tenant_id === tenant1.id)).toBe(
-				true,
-			);
-
-			expect(tenant2Categories).toHaveLength(1);
-			expect(tenant2Categories[0].tenant_id).toBe(tenant2.id);
-		});
-
-		test('should only find categories of specific tenant by IDs', async () => {
-			const cat1 = await categoryService.create(tenant1.id, { name: 'Cat1' });
-			const cat2 = await categoryService.create(tenant1.id, { name: 'Cat2' });
-			const cat3 = await categoryService.create(tenant2.id, { name: 'Cat3' });
-
-			const foundCategories = await categoryService.findAllOfBook(tenant1.id, [
-				cat1.id,
-				cat2.id,
-				cat3.id,
-			]);
-
-			expect(foundCategories).toHaveLength(2);
-			expect(foundCategories.every((c) => c.tenant_id === tenant1.id)).toBe(true);
-			expect(foundCategories.map((c) => c.id).sort()).toEqual(
-				[cat1.id, cat2.id].sort(),
-			);
-		});
-	});
-
 	describe('Book Isolation', () => {
 		let publisher1: PublisherEntity;
 		let publisher2: PublisherEntity;
@@ -194,16 +95,16 @@ describe('Books Multi-tenant Integration (with Testcontainers)', () => {
 		let category2: CategoryEntity;
 
 		beforeEach(async () => {
-			publisher1 = await publisherService.create(tenant1.id, {
+			publisher1 = await publisherService.create({
 				name: 'Publisher T1',
 			});
-			publisher2 = await publisherService.create(tenant2.id, {
+			publisher2 = await publisherService.create({
 				name: 'Publisher T2',
 			});
-			category1 = await categoryService.create(tenant1.id, {
+			category1 = await categoryService.create({
 				name: 'Category T1',
 			});
-			category2 = await categoryService.create(tenant2.id, {
+			category2 = await categoryService.create({
 				name: 'Category T2',
 			});
 		});
@@ -235,34 +136,6 @@ describe('Books Multi-tenant Integration (with Testcontainers)', () => {
 			expect(book2.title).toBe('Matemática 4to');
 			expect(book2.tenant_id).toBe(tenant2.id);
 			expect(book2.availableQuantity).toBe(5);
-		});
-
-		test('should prevent creating book with publisher from different tenant', async () => {
-			const bookDto: CreateBookDto = {
-				title: 'Hacked Book',
-				publicationYear: 2023,
-				availableQuantity: 1,
-				publisherId: publisher2.id, // Publisher de tenant2
-				categoryIds: [category1.id],
-			};
-
-			await expect(bookService.createBook(tenant1.id, bookDto)).rejects.toThrow(
-				NotFoundException,
-			);
-		});
-
-		test('should prevent creating book with categories from different tenant', async () => {
-			const bookDto: CreateBookDto = {
-				title: 'Hacked Book',
-				publicationYear: 2023,
-				availableQuantity: 1,
-				publisherId: publisher1.id,
-				categoryIds: [category2.id], // Category de tenant2
-			};
-
-			await expect(bookService.createBook(tenant1.id, bookDto)).rejects.toThrow(
-				BadRequestException,
-			);
 		});
 
 		test('should find books only from specific tenant', async () => {
@@ -373,13 +246,13 @@ describe('Books Multi-tenant Integration (with Testcontainers)', () => {
 				1,
 			);
 
-			expect(tenant1Page1.data).toHaveLength(6);
-			expect(tenant1Page1.total).toBe(10);
-			expect(tenant1Page1.last_page).toBe(2);
+			expect(tenant1Page1.items).toHaveLength(6);
+			expect(tenant1Page1.meta.total).toBe(10);
+			expect(tenant1Page1.meta.last_page).toBe(2);
 
-			expect(tenant2Page1.data).toHaveLength(3);
-			expect(tenant2Page1.total).toBe(3);
-			expect(tenant2Page1.last_page).toBe(1);
+			expect(tenant2Page1.items).toHaveLength(3);
+			expect(tenant2Page1.meta.total).toBe(3);
+			expect(tenant2Page1.meta.last_page).toBe(1);
 		});
 
 		test('should search books by name with tenant isolation', async () => {
@@ -425,6 +298,7 @@ describe('Books Multi-tenant Integration (with Testcontainers)', () => {
 			});
 
 			const updated = await bookService.updateBook(tenant1.id, book.id, {
+				id: book.id,
 				title: 'Updated Title',
 				publicationYear: 2024,
 				availableQuantity: 10,
@@ -439,12 +313,12 @@ describe('Books Multi-tenant Integration (with Testcontainers)', () => {
 
 	describe('Complex Relationships', () => {
 		test('should maintain referential integrity within tenant', async () => {
-			const publisher = await publisherService.create(tenant1.id, {
+			const publisher = await publisherService.create({
 				name: 'Test Publisher',
 			});
 
-			const cat1 = await categoryService.create(tenant1.id, { name: 'Cat 1' });
-			const cat2 = await categoryService.create(tenant1.id, { name: 'Cat 2' });
+			const cat1 = await categoryService.create({ name: 'Cat 1' });
+			const cat2 = await categoryService.create({ name: 'Cat 2' });
 
 			const book = await bookService.createBook(tenant1.id, {
 				title: 'Complex Book',
@@ -456,9 +330,9 @@ describe('Books Multi-tenant Integration (with Testcontainers)', () => {
 
 			const foundBook = await bookService.findOneBook(tenant1.id, book.id);
 
-			expect(foundBook.publisherId).toBe(publisher.id);
-			expect(foundBook.categoriesIds).toHaveLength(2);
-			expect(foundBook.categoriesIds.sort()).toEqual([cat1.id, cat2.id].sort());
+			expect(foundBook.publisher.id).toBe(publisher.id);
+			expect(foundBook.categories).toHaveLength(2);
+			expect(foundBook.categories.sort()).toEqual([cat1, cat2].sort());
 		});
 	});
 });

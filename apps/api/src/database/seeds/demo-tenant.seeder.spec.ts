@@ -168,8 +168,8 @@ describe('DemoSeeder', () => {
 				deleted_at: expect.any(Object),
 			});
 			expect(bookRepo.delete).toHaveBeenCalledWith({ tenant_id: 1 });
-			expect(categoryRepo.delete).toHaveBeenCalledWith({ tenant_id: 1 });
-			expect(publisherRepo.delete).toHaveBeenCalledWith({ tenant_id: 1 });
+			expect(categoryRepo.delete).toHaveBeenCalled();
+			expect(publisherRepo.delete).toHaveBeenCalled();
 			expect(userRepo.delete).toHaveBeenCalledWith({
 				userTenants: { tenant_id: 1 },
 			});

@@ -1,5 +1,9 @@
+'use client';
 import { useModalCrud } from '@/contexts/modal-crud-context';
-import { toTitleCase } from '@/helpers/to-title-case';
+import {
+	getRolesLabel,
+	getRolesManagables,
+} from '@/helpers/get-roles-managable';
 import {
 	Select,
 	SelectContent,
@@ -8,9 +12,9 @@ import {
 	SelectValue,
 } from '@/ui/select';
 import { ROLES as BASEROLES, IUser } from '@repo/common';
-import { useUsers } from '@repo/hooks';
+import { useAuth, useUsers } from '@repo/hooks';
 import { parseAsInteger, useQueryState } from 'nuqs';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { userColumns } from '../cells/users-columns';
 import { PaginableTable } from './paginable-table';
 
@@ -20,13 +24,7 @@ export const UsersTable = () => {
 	} = useModalCrud<IUser, ReturnType<typeof useUsers>>();
 	const [role, setRole] = useState<BASEROLES | undefined>(undefined);
 	const [_, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
-	useEffect(() => {
-		// Reset to first page when role changes
-	}, [role]);
-	const ROLES = Object.values(BASEROLES).map((role) => {
-		if (role === BASEROLES.SUPER_ADMIN) return null;
-		return role;
-	});
+	const { session } = useAuth();
 	return (
 		<div className="p-5">
 			<div className="flex justify-end py-2">
@@ -44,11 +42,14 @@ export const UsersTable = () => {
 						<SelectValue placeholder="Filtrar por rol" />
 					</SelectTrigger>
 					<SelectContent>
-						{Object.values(ROLES).map((roleOption) => (
-							<SelectItem key={roleOption as string} value={roleOption as string}>
-								{toTitleCase(roleOption as string) || 'Todos'}
-							</SelectItem>
-						))}
+						<SelectItem value="ALL">Todos</SelectItem>
+						{getRolesLabel(getRolesManagables(session.data?.data?.roleName)).map(
+							(op) => (
+								<SelectItem key={op.label} value={op.value}>
+									{op.label}
+								</SelectItem>
+							),
+						)}
 					</SelectContent>
 				</Select>
 			</div>

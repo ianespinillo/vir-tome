@@ -1,5 +1,12 @@
 'use client';
-import { LoansTable, NewLoan } from '@repo/ui';
+import { ILoan } from '@repo/common';
+import { useLoans } from '@repo/hooks';
+import {
+	LoanDetailsDialog,
+	LoansTable,
+	ModalCrudProvider,
+	NewLoan,
+} from '@repo/ui';
 import React, { useEffect, useState } from 'react';
 export default function BooksPage() {
 	const [isClient, setIsClient] = useState(false);
@@ -8,7 +15,7 @@ export default function BooksPage() {
 	}, []);
 
 	return isClient ? (
-		<div>
+		<ModalCrudProvider<ILoan, ReturnType<typeof useLoans>> useHook={useLoans}>
 			<div className="px-8 py-5">
 				<h1 className="text-5xl font-bold text-primary">Prestamos</h1>
 				<span className="text-muted-foreground text-xl">
@@ -19,6 +26,7 @@ export default function BooksPage() {
 				<NewLoan />
 			</div>
 			<LoansTable />
-		</div>
+			<LoanDetailsDialog />
+		</ModalCrudProvider>
 	) : null;
 }

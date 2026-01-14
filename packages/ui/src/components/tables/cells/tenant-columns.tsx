@@ -1,6 +1,8 @@
 // src/app/super-admin/dashboard/components/columns.tsx
 'use client';
 
+import { GenericActions } from '@/components/dropdown/generic-actions';
+import { copyId } from '@/helpers/clipboard-helper';
 import { Badge } from '@/ui/badge'; // Ajusta según tu estructura de imports
 import { Button } from '@/ui/button';
 import {
@@ -13,6 +15,7 @@ import {
 import { ITenant } from '@repo/common';
 import { ColumnDef } from '@tanstack/react-table';
 import { MoreHorizontal } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const Tenantcolumns: ColumnDef<ITenant>[] = [
 	{
@@ -55,25 +58,19 @@ export const Tenantcolumns: ColumnDef<ITenant>[] = [
 		id: 'actions',
 		cell: ({ row }) => {
 			return (
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button variant="ghost" className="h-6 w-6 p-0">
-							<span className="sr-only">Menú</span>
-							<MoreHorizontal className="h-4 w-4" />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
-						<DropdownMenuLabel>Acciones</DropdownMenuLabel>
-						<DropdownMenuItem
-							onClick={() =>
-								navigator.clipboard.writeText(row.original.id.toLocaleString())
-							}
-						>
-							Copiar ID
-						</DropdownMenuItem>
-						<DropdownMenuItem>Ver detalles</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
+				<GenericActions
+					nodes={[
+						{
+							id: 1,
+							children: 'Copiar ID',
+							onClick() {
+								toast.promise(copyId(row.original.id), {
+									success: 'ID copiado al portapapeles',
+								});
+							},
+						},
+					]}
+				/>
 			);
 		},
 	},

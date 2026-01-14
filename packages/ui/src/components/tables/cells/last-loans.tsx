@@ -1,4 +1,4 @@
-import { ILoan } from '@repo/common';
+import { ILoan, LoanBorrowerType } from '@repo/common';
 import { ColumnDef } from '@tanstack/react-table';
 
 export const LastLoansColumns: ColumnDef<ILoan>[] = [
@@ -16,7 +16,10 @@ export const LastLoansColumns: ColumnDef<ILoan>[] = [
 		accessorFn: (row) => row.user,
 		accessorKey: 'email',
 		header: 'Email de usuario',
-		cell: ({ row }) => `${row.original.user.name} ${row.original.user.surname}`,
+		cell: ({ row }) =>
+			row.original.borrower_type === LoanBorrowerType.REGISTERED_USER
+				? row.original.user?.email
+				: row.original.borrower_email,
 	},
 	{
 		accessorKey: 'return_date',

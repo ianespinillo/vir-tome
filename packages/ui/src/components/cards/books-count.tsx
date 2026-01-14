@@ -16,7 +16,7 @@ export const BooksCount = () => {
 	return (
 		<GenericCountCard
 			title="Total Libros"
-			value={countBooks.data.data}
+			value={countBooks.data.data ?? 0}
 			icon={<BookOpen className="h-10 w-10" />}
 			color="indigo"
 		/>

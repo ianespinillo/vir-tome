@@ -1,5 +1,14 @@
 import { Transform } from 'class-transformer';
-import { IsDate, IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
+import {
+	IsDate,
+	IsEnum,
+	IsNotEmpty,
+	IsNumber,
+	IsOptional,
+	IsString,
+	Min,
+} from 'class-validator';
+import { LoanBorrowerType } from '../../enum/loan-borrower-type.enum';
 export class CreateLoanDto {
 	@IsNotEmpty({
 		message: 'El nombre del responsable es requerido',
@@ -24,4 +33,30 @@ export class CreateLoanDto {
 	})
 	@IsDate()
 	returnDate!: Date;
+
+	@IsOptional()
+	@IsNumber()
+	user_id?: number;
+
+	@IsOptional()
+	@IsString()
+	borrower_name?: string;
+
+	@IsOptional()
+	@IsString()
+	borrower_email?: string;
+
+	@IsOptional()
+	@IsString()
+	borrower_phone?: string;
+
+	@IsOptional()
+	@IsString()
+	borrower_national_id?: string;
+
+	@IsNotEmpty()
+	@IsEnum(LoanBorrowerType, {
+		message: 'El tipo de prestamo provisto es incompatible',
+	})
+	borrower_type!: LoanBorrowerType;
 }

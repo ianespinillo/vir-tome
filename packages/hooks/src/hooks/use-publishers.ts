@@ -1,14 +1,31 @@
-import { IPublisher } from '@repo/common';
-import { useQuery } from '@tanstack/react-query';
+import { GenericHookProps, IPublisher } from '@repo/common';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
+import { PublisherService } from '../services/publisher.service';
 
-export const usePublishers = () => {
+export const usePublishers = ({ page, searchTerm }: GenericHookProps) => {
 	const publishers = useQuery({
-		queryKey: ['publishers'],
-		queryFn: () =>
-			fetch(`${process.env.NEXT_PUBLIC_API_URL}/publisher`).then(
-				(res) => res.json() as Promise<IPublisher[]>,
-			),
+		queryKey: ['publishers', page, searchTerm],
+		queryFn: async () =>
+			(await PublisherService.getPublishers(page, searchTerm)).data,
 		staleTime: 5000,
+		placeholderData: keepPreviousData,
+		refetchOnWindowFocus: false,
+		refetchOnMount: false,
 	});
-	return { publishers };
+	const getPublisherById = useMutation({
+		mutationKey: ['publisger'],
+		mutationFn: async (id: number) =>
+			(await PublisherService.getPublisher(id)).data,
+	});
+	return { publishers, getPublisherById };
 };
+
+export const useAllPublishers = () =>
+	useQuery({
+		queryKey: ['publishers'],
+		queryFn: async () => (await PublisherService.getAllPublishers()).data,
+		staleTime: 5000,
+		placeholderData: keepPreviousData,
+		refetchOnWindowFocus: false,
+		refetchOnMount: false,
+	});

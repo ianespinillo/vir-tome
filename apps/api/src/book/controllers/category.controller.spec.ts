@@ -17,29 +17,12 @@ describe('CategoryController', () => {
 	let controller: CategoryController;
 	let categoryService: CategoryService;
 
-	const mockTenant: TenantEntity = {
-		id: 1,
-		name: 'Test Tenant',
-		subdomain: 'test.com',
-		contact_email: 'abc@tenant.com',
-		created_at: new Date(),
-		updated_at: new Date(),
-		is_active: true,
-		is_demo: false,
-		settings: {},
-		plan: 'basic',
-		canAddResource: () => true,
-		isActiveAndValid: () => true,
-	};
-
 	const mockCategory: CategoryEntity = {
 		id: 1,
 		name: 'Mathematics',
-		tenant_id: 1,
 		created_at: new Date(),
 		updated_at: new Date(),
 		books: [],
-		tenant: mockTenant,
 	};
 	const controllerResponse: IApiResponse<any> = {
 		message: expect.any(String),
@@ -53,8 +36,12 @@ describe('CategoryController', () => {
 		findAll: jest.fn(),
 		findByPage: jest.fn(),
 		findById: jest.fn(),
+		createCategory: jest.fn(),
+		getPaginated: jest.fn(),
+		updateCategory: jest.fn(),
 		update: jest.fn(),
-		delete: jest.fn(),
+		deleteCategory: jest.fn(),
+		findAllCategories: jest.fn(),
 	};
 
 	beforeEach(async () => {
@@ -83,11 +70,13 @@ describe('CategoryController', () => {
 				name: 'Science',
 			};
 
-			mockCategoryService.create.mockResolvedValue(mockCategory);
+			mockCategoryService.createCategory.mockResolvedValue(mockCategory);
 
-			const result = await controller.create(mockTenant, createCategoryDto);
+			const result = await controller.create(createCategoryDto);
 			controllerResponse.data = mockCategory;
-			expect(categoryService.create).toHaveBeenCalledWith(1, createCategoryDto);
+			expect(categoryService.createCategory).toHaveBeenCalledWith(
+				createCategoryDto,
+			);
 			expect(result).toEqual(controllerResponse);
 		});
 
@@ -96,11 +85,13 @@ describe('CategoryController', () => {
 				name: '',
 			};
 
-			mockCategoryService.create.mockRejectedValue(new BadRequestException());
+			mockCategoryService.createCategory.mockRejectedValue(
+				new BadRequestException(),
+			);
 
-			await expect(
-				controller.create(mockTenant, createCategoryDto),
-			).rejects.toThrow(BadRequestException);
+			await expect(controller.create(createCategoryDto)).rejects.toThrow(
+				BadRequestException,
+			);
 		});
 	});
 
@@ -110,31 +101,22 @@ describe('CategoryController', () => {
 				items: [mockCategory],
 				meta: { total: 1, current_page: 1, last_page: 1, per_page: 10 },
 			};
-			const serviceResult = {
-				data: [mockCategory],
-				total: 1,
-				current_page: 1,
-				last_page: 1,
-				per_page: 1,
-				skip: 0,
-				to: 1,
-			};
-			mockCategoryService.findByPage.mockResolvedValue(serviceResult);
+			mockCategoryService.getPaginated.mockResolvedValue(paginatedResult);
 
 			controllerResponse.data = paginatedResult;
-			const result = await controller.findAll(mockTenant, 1, false);
-			expect(categoryService.findByPage).toHaveBeenCalledWith(1, 1);
+			const result = await controller.findAll(1, false);
+			expect(categoryService.getPaginated).toHaveBeenCalledWith(1, undefined);
 			expect(result.data).toEqual(controllerResponse.data);
 		});
 
 		it('should return all categories when full=true', async () => {
 			const allCategories = [mockCategory];
 
-			mockCategoryService.findAll.mockResolvedValue(allCategories);
+			mockCategoryService.findAllCategories.mockResolvedValue(allCategories);
 
-			const result = await controller.findAll(mockTenant, 1, true);
+			const result = await controller.findAll(1, true);
 			controllerResponse.data = allCategories;
-			expect(categoryService.findAll).toHaveBeenCalledWith(1);
+			expect(categoryService.findAllCategories).toHaveBeenCalled();
 			expect(result).toEqual(controllerResponse);
 		});
 	});
@@ -143,18 +125,16 @@ describe('CategoryController', () => {
 		it('should return category by id', async () => {
 			mockCategoryService.findById.mockResolvedValue(mockCategory);
 
-			const result = await controller.findOne(mockTenant, 1);
+			const result = await controller.findOne(1);
 			controllerResponse.data = mockCategory;
-			expect(categoryService.findById).toHaveBeenCalledWith(1, 1);
+			expect(categoryService.findById).toHaveBeenCalledWith(1);
 			expect(result).toEqual(controllerResponse);
 		});
 
 		it('should throw NotFoundException for non-existent category', async () => {
 			mockCategoryService.findById.mockRejectedValue(new NotFoundException());
 
-			await expect(controller.findOne(mockTenant, 999)).rejects.toThrow(
-				NotFoundException,
-			);
+			await expect(controller.findOne(999)).rejects.toThrow(NotFoundException);
 		});
 	});
 
@@ -165,41 +145,44 @@ describe('CategoryController', () => {
 				name: 'Updated Category',
 			};
 
-			mockCategoryService.update.mockResolvedValue(undefined);
+			mockCategoryService.updateCategory.mockResolvedValue(undefined);
 
-			await controller.update(mockTenant, 1, updateCategoryDto);
+			await controller.update(1, updateCategoryDto);
 
-			expect(categoryService.update).toHaveBeenCalledWith(1, 1, updateCategoryDto);
+			expect(categoryService.updateCategory).toHaveBeenCalledWith(
+				1,
+				updateCategoryDto,
+			);
 		});
 
 		it('should throw NotFoundException when updating non-existent category', async () => {
 			const updateCategoryDto: UpdateCategoryDto = { name: 'Updated', id: 999 };
 
-			mockCategoryService.update.mockRejectedValue(new NotFoundException());
+			mockCategoryService.updateCategory.mockRejectedValue(
+				new NotFoundException(),
+			);
 
-			await expect(
-				controller.update(mockTenant, 999, updateCategoryDto),
-			).rejects.toThrow(NotFoundException);
+			await expect(controller.update(999, updateCategoryDto)).rejects.toThrow(
+				NotFoundException,
+			);
 		});
 	});
 
 	describe('remove', () => {
-		it('should delete category successfully', async () => {
-			mockCategoryService.delete.mockResolvedValue(undefined);
+		it('should deleteCategory category successfully', async () => {
+			mockCategoryService.deleteCategory.mockResolvedValue(undefined);
 
-			await controller.remove(mockTenant, 1);
+			await controller.remove(1);
 
-			expect(categoryService.delete).toHaveBeenCalledWith(1, 1);
+			expect(categoryService.deleteCategory).toHaveBeenCalledWith(1);
 		});
 
 		it('should throw BadRequestException when category has books', async () => {
-			mockCategoryService.delete.mockRejectedValue(
+			mockCategoryService.deleteCategory.mockRejectedValue(
 				new BadRequestException('Category has books'),
 			);
 
-			await expect(controller.remove(mockTenant, 1)).rejects.toThrow(
-				BadRequestException,
-			);
+			await expect(controller.remove(1)).rejects.toThrow(BadRequestException);
 		});
 	});
 });

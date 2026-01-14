@@ -7,7 +7,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { LoanEntity } from './entities/loan.entity';
 
 import { BookEntity } from '@/book/entities/book.entity';
-import { CreateLoanDto, LoanStatus, MostLoanedBooks } from '@repo/common';
+import { UsersService } from '@/users/services/users.service';
+import {
+	CreateLoanDto,
+	LoanBorrowerType,
+	LoanStatus,
+	MostLoanedBooks,
+} from '@repo/common';
 import { IsNull, Repository, UpdateResult } from 'typeorm';
 import { BookService } from '../book/services/book.service';
 import { GenericService } from '../core/generic.service';
@@ -18,6 +24,7 @@ export class LoanService extends GenericService {
 		@InjectRepository(LoanEntity)
 		private readonly loanRepository: Repository<LoanEntity>,
 		private readonly bookService: BookService,
+		private readonly usersService: UsersService,
 	) {
 		super(loanRepository);
 	}
@@ -28,7 +35,7 @@ export class LoanService extends GenericService {
 		});
 	}
 
-	async createLoan(tenantId: number, data: CreateLoanDto, userId: number) {
+	async createLoan(tenantId: number, data: CreateLoanDto) {
 		const book = await this.bookService.findById(tenantId, data.bookId);
 		if (!book) throw new NotFoundException('Book not found');
 		if (data.quantity <= 0)
@@ -37,14 +44,43 @@ export class LoanService extends GenericService {
 			throw new BadRequestException('Return date cannot be in the past');
 		if (book.availableQuantity < data.quantity)
 			throw new BadRequestException('Not enough books available');
-		const loan = this.loanRepository.create({
-			...data,
-			loan_date: new Date(Date.now()),
-			book: {
-				id: data.bookId,
-			},
-			user_id: userId,
-		});
+		let loan: LoanEntity;
+		switch (data.borrower_type) {
+			case LoanBorrowerType.REGISTERED_USER:
+				{
+					if (!data.user_id)
+						throw new BadRequestException('Invalid payload provided');
+					const user = await this.usersService.findById(data.user_id);
+					if (!user)
+						throw new NotFoundException(`User with id ${data.user_id} not founded`);
+					loan = this.loanRepository.create({
+						loan_date: new Date(Date.now()),
+						book: {
+							id: data.bookId,
+						},
+						quantity: data.quantity,
+						borrower_type: data.borrower_type,
+						user_id: user.id,
+					});
+				}
+				break;
+			case LoanBorrowerType.EXTERNAL_BORROWER: {
+				if (
+					!data.borrower_email ||
+					!data.borrower_name ||
+					!data.borrower_national_id ||
+					!data.borrower_phone
+				)
+					throw new BadRequestException('Invalid payload provided');
+				const { user_id, ...rest } = data;
+				loan = this.loanRepository.create({
+					...rest,
+					loan_date: new Date(Date.now()),
+				});
+				break;
+			}
+		}
+
 		await this.loanRepository.manager.transaction(
 			async (transactionalEntityManager) => {
 				await this.bookService.removeStock(tenantId, data.bookId, data.quantity);
@@ -91,7 +127,7 @@ export class LoanService extends GenericService {
 				book: loan.book.title,
 			})),
 			total,
-			current_page: page,
+			current_page: Number(page),
 			last_page: Math.ceil(total / 6),
 		};
 	}

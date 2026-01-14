@@ -56,7 +56,7 @@ export class CategoryController {
 
 	@Post()
 	@UseGuards(RolesGuard)
-	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN)
+	@Roles(ROLES.ADMIN)
 	@ApiOperation({
 		summary: 'Crear nueva categoría (Admin, Librarian)',
 		description:
@@ -74,10 +74,9 @@ export class CategoryController {
 		description: 'Datos inválidos o categoría padre no existe',
 	})
 	async create(
-		@CurrentTenant() tenant: TenantEntity,
 		@Body() createDto: CreateCategoryDto,
 	): Promise<IApiResponse<CategoryEntity>> {
-		const data = await this.categoryService.create(tenant.id, createDto);
+		const data = await this.categoryService.createCategory(createDto);
 		return {
 			message: 'Categoría creada exitosamente',
 			data,
@@ -110,15 +109,15 @@ export class CategoryController {
 		description: 'Listado de categorías',
 	})
 	async findAll(
-		@CurrentTenant() tenant: TenantEntity,
 		@Query('page', new ParseIntPipe({ optional: true })) page = 1,
 		@Query('full', new ParseBoolPipe({ optional: true })) full = false,
+		@Query('q') q?: string,
 	): Promise<
 		| IApiResponse<CategoryEntity[]>
 		| IApiResponse<IPaginatedResponse<CategoryEntity>>
 	> {
 		if (full) {
-			const data = await this.categoryService.findAll(tenant.id);
+			const data = await this.categoryService.findAllCategories();
 			return {
 				message: 'Categorías obtenidas exitosamente',
 				data,
@@ -126,18 +125,10 @@ export class CategoryController {
 				timestamp: new Date().toISOString(),
 			};
 		}
-		const data = await this.categoryService.findByPage(tenant.id, page);
+		const data = await this.categoryService.getPaginated(page, q);
 		return {
 			message: 'Categorías obtenidas exitosamente',
-			data: {
-				items: data.data,
-				meta: {
-					total: data.total,
-					current_page: data.current_page,
-					last_page: data.last_page,
-					per_page: 10,
-				},
-			},
+			data,
 			status: HttpStatus.OK,
 			timestamp: new Date().toISOString(),
 		};
@@ -160,10 +151,9 @@ export class CategoryController {
 	})
 	@ApiNotFoundResponse({ description: 'Categoría no encontrada' })
 	async findOne(
-		@CurrentTenant() tenant: TenantEntity,
 		@Param('id', ParseIntPipe) id: number,
 	): Promise<IApiResponse<CategoryEntity | null>> {
-		const data = await this.categoryService.findById(tenant.id, id);
+		const data = await this.categoryService.findById(id);
 		return {
 			message: 'Categoría obtenida exitosamente',
 			data,
@@ -174,7 +164,7 @@ export class CategoryController {
 
 	@Patch(':id')
 	@UseGuards(RolesGuard)
-	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN)
+	@Roles(ROLES.ADMIN)
 	@ApiOperation({
 		summary: 'Actualizar categoría (Admin, Librarian)',
 		description:
@@ -193,11 +183,10 @@ export class CategoryController {
 	@ApiNoContentResponse({ description: 'Categoría actualizada exitosamente' })
 	@ApiNotFoundResponse({ description: 'Categoría no encontrada' })
 	async update(
-		@CurrentTenant() tenant: TenantEntity,
 		@Param('id') id: number,
 		@Body() updateDto: UpdateCategoryDto,
 	): Promise<IApiResponse<void>> {
-		await this.categoryService.update(tenant.id, id, updateDto);
+		await this.categoryService.updateCategory(id, updateDto);
 		return {
 			message: 'Categoría actualizada exitosamente',
 			status: HttpStatus.OK,
@@ -225,11 +214,8 @@ export class CategoryController {
 	@ApiBadRequestResponse({
 		description: 'No se puede eliminar - La categoría tiene libros asociados',
 	})
-	async remove(
-		@CurrentTenant() tenant: TenantEntity,
-		@Param('id') id: number,
-	): Promise<IApiResponse<void>> {
-		await this.categoryService.delete(tenant.id, id);
+	async remove(@Param('id') id: number): Promise<IApiResponse<void>> {
+		await this.categoryService.deleteCategory(id);
 		return {
 			message: 'Categoría eliminada exitosamente',
 			data: null,

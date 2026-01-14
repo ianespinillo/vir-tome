@@ -1,4 +1,3 @@
-import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 // src/publishers/controllers/publisher.controller.spec.ts
@@ -6,6 +5,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import {
 	CreatePublisherDto,
 	IApiResponse,
+	IPaginatedResponse,
 	UpdatePublisherDto,
 } from '@repo/common';
 import { PublisherEntity } from '../entities/publisher.entity';
@@ -16,29 +16,12 @@ describe('PublisherController', () => {
 	let controller: PublisherController;
 	let publisherService: PublisherService;
 
-	const mockTenant: TenantEntity = {
-		id: 1,
-		name: 'Test Tenant',
-		subdomain: 'test.com',
-		contact_email: 'aaa@ex.com',
-		is_active: true,
-		is_demo: false,
-		settings: {},
-		plan: 'basic',
-		created_at: new Date(),
-		updated_at: new Date(),
-		canAddResource: () => true,
-		isActiveAndValid: () => true,
-	};
-
 	const mockPublisher: PublisherEntity = {
 		id: 1,
 		name: 'Test Publisher',
-		tenant_id: 1,
 		created_at: new Date(),
 		updated_at: new Date(),
 		books: [],
-		tenant: mockTenant,
 	};
 
 	const mockPublisherService = {
@@ -46,6 +29,8 @@ describe('PublisherController', () => {
 		findAll: jest.fn(),
 		findById: jest.fn(),
 		update: jest.fn(),
+		createPublisher: jest.fn(),
+		getPaginated: jest.fn(),
 		delete: jest.fn(),
 	};
 	const controllerResponse: IApiResponse<any> = {
@@ -81,11 +66,13 @@ describe('PublisherController', () => {
 				name: 'New Publisher',
 			};
 
-			mockPublisherService.create.mockResolvedValue(mockPublisher);
+			mockPublisherService.createPublisher.mockResolvedValue(mockPublisher);
 
-			const result = await controller.create(mockTenant, createPublisherDto);
+			const result = await controller.create(createPublisherDto);
 			controllerResponse.data = mockPublisher;
-			expect(publisherService.create).toHaveBeenCalledWith(1, createPublisherDto);
+			expect(publisherService.createPublisher).toHaveBeenCalledWith(
+				createPublisherDto,
+			);
 			expect(result).toEqual(controllerResponse);
 		});
 
@@ -94,33 +81,40 @@ describe('PublisherController', () => {
 				name: 'Duplicate Publisher',
 			};
 
-			mockPublisherService.create.mockRejectedValue(
+			mockPublisherService.createPublisher.mockRejectedValue(
 				new BadRequestException('Publisher already exists'),
 			);
 
-			await expect(
-				controller.create(mockTenant, createPublisherDto),
-			).rejects.toThrow(BadRequestException);
+			await expect(controller.create(createPublisherDto)).rejects.toThrow(
+				BadRequestException,
+			);
 		});
 	});
 
 	describe('findAll', () => {
 		it('should return all publishers', async () => {
-			const publishers = [mockPublisher];
+			const publishers: IPaginatedResponse<Partial<PublisherEntity>> = {
+				items: [mockPublisher],
+				meta: { per_page: 1, current_page: 1, total: 1, last_page: 1 },
+			};
 
-			mockPublisherService.findAll.mockResolvedValue(publishers);
+			mockPublisherService.getPaginated.mockResolvedValue(publishers);
 
-			const result = await controller.findAll(mockTenant);
+			const result = await controller.findAll();
 			controllerResponse.data = publishers;
-			expect(publisherService.findAll).toHaveBeenCalledWith(1);
+			expect(publisherService.getPaginated).toHaveBeenCalled();
 			expect(result).toEqual(controllerResponse);
 		});
 
 		it('should return empty array when no publishers', async () => {
-			mockPublisherService.findAll.mockResolvedValue([]);
+			const publishers: IPaginatedResponse<Partial<PublisherEntity>> = {
+				items: [],
+				meta: { per_page: 1, current_page: 1, total: 0, last_page: 1 },
+			};
+			mockPublisherService.getPaginated.mockResolvedValue(publishers);
 
-			const result = await controller.findAll(mockTenant);
-			controllerResponse.data = [];
+			const result = await controller.findAll();
+			controllerResponse.data = publishers;
 			expect(result).toEqual(controllerResponse);
 		});
 	});
@@ -129,18 +123,16 @@ describe('PublisherController', () => {
 		it('should return publisher by id', async () => {
 			mockPublisherService.findById.mockResolvedValue(mockPublisher);
 
-			const result = await controller.findOne(mockTenant, 1);
+			const result = await controller.findOne(1);
 			controllerResponse.data = mockPublisher;
-			expect(publisherService.findById).toHaveBeenCalledWith(1, 1);
+			expect(publisherService.findById).toHaveBeenCalledWith(1);
 			expect(result).toEqual(controllerResponse);
 		});
 
 		it('should throw NotFoundException for non-existent publisher', async () => {
 			mockPublisherService.findById.mockRejectedValue(new NotFoundException());
 
-			await expect(controller.findOne(mockTenant, 999)).rejects.toThrow(
-				NotFoundException,
-			);
+			await expect(controller.findOne(999)).rejects.toThrow(NotFoundException);
 		});
 	});
 
@@ -153,13 +145,9 @@ describe('PublisherController', () => {
 
 			mockPublisherService.update.mockResolvedValue(undefined);
 
-			await controller.update(mockTenant, 1, updatePublisherDto);
+			await controller.update(1, updatePublisherDto);
 
-			expect(publisherService.update).toHaveBeenCalledWith(
-				1,
-				1,
-				updatePublisherDto,
-			);
+			expect(publisherService.update).toHaveBeenCalledWith(1, updatePublisherDto);
 		});
 
 		it('should throw NotFoundException when updating non-existent publisher', async () => {
@@ -170,9 +158,9 @@ describe('PublisherController', () => {
 
 			mockPublisherService.update.mockRejectedValue(new NotFoundException());
 
-			await expect(
-				controller.update(mockTenant, 999, updatePublisherDto),
-			).rejects.toThrow(NotFoundException);
+			await expect(controller.update(999, updatePublisherDto)).rejects.toThrow(
+				NotFoundException,
+			);
 		});
 	});
 
@@ -180,9 +168,9 @@ describe('PublisherController', () => {
 		it('should delete publisher successfully', async () => {
 			mockPublisherService.delete.mockResolvedValue(undefined);
 
-			await controller.remove(mockTenant, 1);
+			await controller.remove(1);
 
-			expect(publisherService.delete).toHaveBeenCalledWith(1, 1);
+			expect(publisherService.delete).toHaveBeenCalledWith(1);
 		});
 
 		it('should throw BadRequestException when publisher has books', async () => {
@@ -190,9 +178,7 @@ describe('PublisherController', () => {
 				new BadRequestException('Publisher has books'),
 			);
 
-			await expect(controller.remove(mockTenant, 1)).rejects.toThrow(
-				BadRequestException,
-			);
+			await expect(controller.remove(1)).rejects.toThrow(BadRequestException);
 		});
 	});
 });

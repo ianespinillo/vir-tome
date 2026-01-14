@@ -107,6 +107,13 @@ const ALL_MENU_ITEMS: MenuLink[] = [
 		icon: BookCopy,
 		roles: [ROLES.ADMIN, ROLES.LIBRARIAN],
 	},
+	{
+		title: 'Mis usuarios',
+		href: '/dashboard/my-users',
+		tooltip: 'Usuarios',
+		icon: User,
+		roles: [ROLES.ADMIN],
+	},
 ];
 
 const FOOTER_LINKS: MenuLink[] = [

@@ -1,7 +1,7 @@
 import { IBook } from './book.type';
-import { IMultitenant } from './multitenant.type';
+import { IGeneric } from './generic.type';
 
-export interface IPublisher extends IMultitenant {
+export interface IPublisher extends IGeneric {
 	name: string;
 	books: IBook[];
 }

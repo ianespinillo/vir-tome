@@ -1,72 +1,44 @@
-import { CreateLoanDto, ILoanResponse, IPaginatedResponse } from '@repo/common';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { CreateLoanDto, GenericHookProps } from '@repo/common';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { LoanService } from '../services/loan.service';
 
-export const useLoans = () => {
-	const [page, setPage] = useState(1);
-	const client = useQueryClient();
-	const loans = useQuery<IPaginatedResponse<ILoanResponse>>({
+export const useLoans = ({ page, searchTerm }: GenericHookProps) => {
+	const loans = useQuery({
 		queryKey: ['loans', page],
-		queryFn: () =>
-			fetch(`${process.env.NEXT_PUBLIC_API_URL}/loan?page=${page}`).then((res) =>
-				res.json(),
-			),
+		queryFn: async () => (await LoanService.listLoans(page)).data,
 		staleTime: 5000,
 		refetchOnWindowFocus: false,
 	});
 	const createLoan = useMutation({
-		mutationFn: async (data: CreateLoanDto) => {
-			const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/loan`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				credentials: 'include',
-				body: JSON.stringify(data),
-			});
-			return response.json();
-		},
+		mutationFn: async (data: CreateLoanDto) =>
+			(await LoanService.createLoan(data)).data,
 		onSuccess: () => {
-			client.refetchQueries();
+			loans.refetch();
 		},
 	});
 	const finishLoan = useMutation({
-		mutationFn: async (id: string | number) => {
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/loan/return/${id}`,
-				{
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					credentials: 'include',
-				},
-			);
-			return response.json();
-		},
+		mutationFn: async (id: number) => (await LoanService.returnLoan(id)).data,
 		onSuccess: () => {
-			client.refetchQueries();
+			loans.refetch();
 		},
 	});
 	const findLoan = useMutation({
-		mutationFn: async (id: string | number) => {
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/loan/${id}`,
-				{
-					method: 'GET',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					credentials: 'include',
-				},
-			);
-			return response.json();
-		},
+		mutationFn: async (id: number) => (await LoanService.getLoan(id)).data,
 	});
 	return {
 		loans,
 		createLoan,
 		finishLoan,
 		findLoan,
+	};
+};
+
+export const useMyLoans = () => {
+	const getMyLoans = useQuery({
+		queryKey: ['my-loans'],
+		queryFn: async () => (await LoanService.myLoans()).data,
+	});
+	return {
+		getMyLoans,
 	};
 };
