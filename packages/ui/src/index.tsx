@@ -22,7 +22,7 @@ export { KpiGrid } from './components/kpi/kpi-grid';
 export { TenantsTable } from './components/tables/table/tenants-table';
 export { UsersTable } from './components/tables/table/user-table';
 export { CreateTenantDialog } from './components/dialogs/tenants/create-tenant-dialog';
-export { EditTenantDialog } from './components/dialogs/edit-tenant-dialog';
+export { EditTenantDialog } from './components/dialogs/tenants/edit-tenant-dialog';
 export { TenantDetailsDialog } from './components/dialogs/tenants/tenant-details-dialog';
 export { CreateUserDialog } from './components/dialogs/users/create-user-dialog';
 export { UserDetailsDialog } from './components/dialogs/users/user-details-dialog';
@@ -31,6 +31,8 @@ export { LastUsersTable } from './components/tables/table/last-users';
 export { EditBook } from './components/dialogs/books/edit-book';
 export { BookDetailDialog } from './components/dialogs/books/book-details';
 export { LoanDetailsDialog } from './components/dialogs/loan/loan-details';
+export { MyLoansTable } from './components/tables/table/my-loans-table';
+export { RequestLoanDialog } from './components/dialogs/loan/request-loan';
 export * from './ui/scroll-area';
 
 // toaster

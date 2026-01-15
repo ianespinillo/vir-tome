@@ -2,40 +2,15 @@ import {
 	ActionNode,
 	GenericActions,
 } from '@/components/dropdown/generic-actions';
-import { FinalizeLoanPopover } from '@/components/popovers/finalize-loan';
 import { useModalCrud } from '@/contexts/modal-crud-context';
 import { Button } from '@/ui/button';
-import { ILoan, LoanStatus } from '@repo/common';
-import { useLoans } from '@repo/hooks';
+import { ILoan } from '@repo/common';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import {
-	AlertTriangle,
-	ArrowUpDown,
-	Check,
-	Clock,
-	Eye,
-	EyeIcon,
-	X,
-} from 'lucide-react';
+import { AlertTriangle, ArrowUpDown, Check, Clock, X } from 'lucide-react';
+import { useMyLoans } from '../../../../../hooks/src/hooks/use-loans';
 
-export const loanColumn: ColumnDef<ILoan>[] = [
-	{
-		accessorKey: 'id',
-		header: 'ID',
-	},
-	{
-		accessorKey: 'borrowerName',
-		header: ({ column }) => (
-			<Button
-				variant="ghost"
-				onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-				className="flex items-center gap-2"
-			>
-				<ArrowUpDown className="ml-2 h-4 w-4" />
-			</Button>
-		),
-	},
+export const MyLoansColumns: ColumnDef<ILoan>[] = [
 	{
 		accessorKey: 'book',
 		header: 'Libro prestado',
@@ -115,34 +90,30 @@ export const loanColumn: ColumnDef<ILoan>[] = [
 	{
 		id: 'actions',
 		header: 'Acciones',
-		cell: ({ row }) => {
+		cell({ row }) {
 			const loan = row.original;
-			const { setEntity, setDetailsOpen } = useModalCrud<
+			const { setDetailsOpen, setEntity, setCreateOpen } = useModalCrud<
 				ILoan,
-				ReturnType<typeof useLoans>
+				ReturnType<typeof useMyLoans>
 			>();
 			const nodes: ActionNode[] = [
 				{
 					id: 1,
-					children: (
-						<>
-							<EyeIcon className="h-2 w-2 mr-2" />
-							Ver detalle
-						</>
-					),
-					className: 'cursor-pointer',
+					children: 'Ver detalles',
 					onClick() {
 						setEntity(loan);
 						setDetailsOpen(true);
 					},
 				},
+				{
+					id: 1,
+					children: 'Crear una copia',
+					onClick() {
+						setEntity(loan);
+						setCreateOpen(true);
+					},
+				},
 			];
-			if (loan.status === LoanStatus.ACTIVE) {
-				nodes.push({
-					id: 2,
-					children: <FinalizeLoanPopover loanId={loan.id} />,
-				});
-			}
 			return <GenericActions nodes={nodes} />;
 		},
 	},
