@@ -220,9 +220,9 @@ export class LoanController {
 	})
 	async getMyLoans(
 		@User() user: IAuthUser,
-		@CurrentUserId() userId: number,
-	): Promise<IApiResponse<LoanEntity[]>> {
-		const res = await this.loanService.findByUser(user.tenantId, userId);
+		@Param('page') page = 1,
+	): Promise<IApiResponse<IPaginatedResponse<LoanEntity>>> {
+		const res = await this.loanService.getMyLoansByPage(user.tenantId, page);
 		return {
 			message: 'Préstamos obtenidos exitosamente',
 			data: res,

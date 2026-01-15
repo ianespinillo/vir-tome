@@ -66,7 +66,7 @@ export class LoanEntity extends GenericEntity implements ILoan {
 	@Column()
 	quantity!: number;
 
-	@Column({ type: 'date' })
+	@Column({ type: 'date', default: new Date() })
 	loan_date!: Date;
 
 	@Column({ type: 'date', nullable: true })
