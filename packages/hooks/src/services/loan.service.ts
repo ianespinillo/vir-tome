@@ -3,6 +3,7 @@ import {
 	IApiResponse,
 	ILoan,
 	IPaginatedResponse,
+	RequestLoanDTO,
 } from '@repo/common';
 import axios, { AxiosRequestConfig } from 'axios';
 
@@ -35,13 +36,20 @@ export class LoanService {
 			LoanService.config,
 		);
 	}
-	public static async myLoans() {
-		return axios.get<IApiResponse<ILoan[]>>(
-			`${LoanService.baseUrl}/my`,
+	public static async myLoans(page: number) {
+		return axios.get<IApiResponse<IPaginatedResponse<ILoan>>>(
+			`${LoanService.baseUrl}/my?page=${page}`,
 			LoanService.config,
 		);
 	}
 	public static async getLoan(id: number) {
 		return axios.get<IApiResponse<ILoan>>(`${LoanService.baseUrl}/${id}`);
+	}
+	public static async requestLoan(dto: RequestLoanDTO) {
+		return axios.post<IApiResponse<ILoan>>(
+			`${LoanService.baseUrl}/request`,
+			dto,
+			LoanService.config,
+		);
 	}
 }

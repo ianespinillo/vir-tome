@@ -1,4 +1,4 @@
-import { CreateLoanDto, GenericHookProps } from '@repo/common';
+import { CreateLoanDto, GenericHookProps, RequestLoanDTO } from '@repo/common';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { LoanService } from '../services/loan.service';
 
@@ -33,12 +33,18 @@ export const useLoans = ({ page, searchTerm }: GenericHookProps) => {
 	};
 };
 
-export const useMyLoans = () => {
+export const useMyLoans = ({ page, searchTerm }: GenericHookProps) => {
 	const getMyLoans = useQuery({
-		queryKey: ['my-loans'],
-		queryFn: async () => (await LoanService.myLoans()).data,
+		queryKey: ['my-loans', page],
+		queryFn: async () => (await LoanService.myLoans(page)).data,
+	});
+	const requestLoan = useMutation({
+		mutationKey: ['request-loan'],
+		mutationFn: async (data: RequestLoanDTO) =>
+			(await LoanService.requestLoan(data)).data,
 	});
 	return {
 		getMyLoans,
+		requestLoan,
 	};
 };

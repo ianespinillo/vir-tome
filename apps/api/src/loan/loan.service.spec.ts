@@ -8,6 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import {
 	CreateLoanDto,
+	IPaginatedResponse,
 	LoanBorrowerType,
 	LoanStatus,
 	RequestLoanDTO,
@@ -693,25 +694,65 @@ describe('LoanService', () => {
 		});
 	});
 	describe('requestLoan', () => {
+		const mock = {
+			...mockLoan,
+			status: LoanStatus.REQUESTED,
+		};
+		const user = {
+			id: mockUser.id,
+			tenantId: mockBook.tenant_id,
+		} as IAuthUser;
+		const futureDate = new Date(Date.now() + 86400000);
+		const dto: RequestLoanDTO = {
+			bookId: mockLoan.book_id,
+			quantity: mockLoan.quantity,
+			returnDate: futureDate,
+		};
 		it('should submit a loan request succesfully', async () => {
-			const mock = {
-				...mockLoan,
-				status: LoanStatus.REQUESTED,
-			};
-			const futureDate = new Date(Date.now() + 86400000);
-			const dto: RequestLoanDTO = {
-				bookId: mockLoan.book_id,
-				quantity: mockLoan.quantity,
-				returnDate: futureDate,
-			};
 			mockBookService.findById.mockResolvedValue(mockBook);
 			mockLoanRepository.save.mockResolvedValue(mock);
-			const data = await loanService.requestLoan(dto, {
-				id: mockUser.id,
-				tenantId: mockBook.tenant_id,
-			} as IAuthUser);
+			const data = await loanService.requestLoan(dto, user);
 			expect(data).toEqual(mock);
 			expect(data.status).toEqual(LoanStatus.REQUESTED);
+		});
+		it('should throw error if book doesnt exist', async () => {
+			mockBookService.findById.mockResolvedValue(null);
+			await expect(loanService.requestLoan(dto, user)).rejects.toThrow(
+				NotFoundException,
+			);
+		});
+		it('should throw error if the returnDate is older than todeay', async () => {
+			const oldDate = new Date(Date.now() - 86400000);
+			mockBookService.findById.mockResolvedValue(mockBook);
+			await expect(
+				loanService.requestLoan({ ...dto, returnDate: oldDate }, user),
+			).rejects.toThrow(BadRequestException);
+		});
+		it('should throw error if there is not many books available', async () => {
+			mockBookService.findById.mockResolvedValue({
+				...mockBook,
+				availableQuantity: 1,
+			});
+			await expect(
+				loanService.requestLoan({ ...dto, quantity: 2 }, user),
+			).rejects.toThrow(BadRequestException);
+		});
+	});
+	describe('getMyLoansByPage', () => {
+		it('should return paginated loans', async () => {
+			const myLoans = [mockLoan];
+			mockLoanRepository.findAndCount.mockResolvedValue([myLoans, 1]);
+			const result: IPaginatedResponse<LoanEntity> = {
+				items: myLoans,
+				meta: {
+					per_page: 6,
+					total: 1,
+					current_page: 1,
+					last_page: 1,
+				},
+			};
+			const res = await loanService.getMyLoansByPage(1, 1);
+			expect(res).toEqual(result);
 		});
 	});
 });

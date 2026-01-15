@@ -94,6 +94,13 @@ const ALL_MENU_ITEMS: MenuLink[] = [
 		roles: [ROLES.ADMIN, ROLES.LIBRARIAN, ROLES.STUDENT],
 	},
 	{
+		title: 'Mis préstamos',
+		href: '/dashboard/my-loans',
+		tooltip: 'Mis préstamos',
+		icon: BookCopy,
+		roles: [ROLES.STUDENT, ROLES.TEACHER],
+	},
+	{
 		title: 'Libros',
 		href: '/dashboard/books',
 		tooltip: 'Libros',

@@ -11,6 +11,7 @@ import { IAuthUser } from '@/core/core.types';
 import { UsersService } from '@/users/services/users.service';
 import {
 	CreateLoanDto,
+	IPaginatedResponse,
 	LoanBorrowerType,
 	LoanStatus,
 	MostLoanedBooks,
@@ -149,6 +150,33 @@ export class LoanService extends GenericService {
 				loan_date: 'DESC',
 			},
 		});
+	}
+
+	async getMyLoansByPage(
+		userId: number,
+		page: number,
+	): Promise<IPaginatedResponse<LoanEntity>> {
+		const skip = (page - 1) * 6;
+		const [data, total] = await this.loanRepository.findAndCount({
+			where: {
+				user_id: userId,
+			},
+			order: {
+				loan_date: 'DESC',
+			},
+			take: 6,
+			skip,
+			relations: ['book'],
+		});
+		return {
+			items: data,
+			meta: {
+				per_page: 6,
+				last_page: Math.ceil(total / 6),
+				total,
+				current_page: page,
+			},
+		};
 	}
 	async mostLoanedBooks(
 		limit: number,

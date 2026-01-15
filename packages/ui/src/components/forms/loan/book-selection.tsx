@@ -1,12 +1,3 @@
-import { cn } from '@/lib/utils';
-import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from '@/ui/command';
 import {
 	FormControl,
 	FormField,
@@ -17,7 +8,7 @@ import {
 import { CreateLoanDto, IBook } from '@repo/common';
 import React, { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { BookSelectionModal } from './book-selectione-modal';
+import { BookSelectionModal } from './book-selection-modal';
 
 export function BookSelection() {
 	const form = useFormContext<CreateLoanDto>();
