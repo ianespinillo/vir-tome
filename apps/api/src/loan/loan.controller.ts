@@ -40,6 +40,7 @@ import {
 	IApiResponse,
 	IPaginatedResponse,
 	ROLES,
+	RequestLoanDTO,
 } from '@repo/common';
 import { UpdateResult } from 'typeorm';
 import { LoanEntity } from './entities/loan.entity';
@@ -59,7 +60,6 @@ export class LoanController {
 	constructor(private readonly loanService: LoanService) {}
 
 	@Post()
-	@UseGuards(RolesGuard)
 	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN)
 	@ApiOperation({
 		summary: 'Registrar nuevo préstamo (Admin, Librarian)',
@@ -93,6 +93,42 @@ export class LoanController {
 			data: res,
 			status: HttpStatus.CREATED,
 			timestamp: new Date().toISOString(),
+		};
+	}
+	@Post('/request')
+	@Roles(ROLES.STUDENT, ROLES.TEACHER)
+	@ApiOperation({
+		summary: 'Registrar nuevo pedido de préstamo (Student, Teacher)',
+		description:
+			'Crea una nueva solicitus de préstamo de libro(s). Requiere permisos de estudiante o profesor.',
+	})
+	@ApiBody({
+		type: RequestLoanDTO,
+		description: 'Datos del préstamo',
+	})
+	@ApiCreatedResponse({
+		description: 'Préstamo registrado exitosamente',
+		type: LoanEntity,
+	})
+	@ApiBadRequestResponse({
+		description: 'Datos inválidos o faltantes',
+	})
+	@ApiNotFoundResponse({
+		description: 'Libro no encontrado',
+	})
+	@ApiConflictResponse({
+		description: 'No hay suficientes ejemplares disponibles',
+	})
+	async requestLoan(
+		@Body() dto: RequestLoanDTO,
+		@User() user: IAuthUser,
+	): Promise<IApiResponse<LoanEntity>> {
+		const data = await this.loanService.requestLoan(dto, user);
+		return {
+			data,
+			message: 'Loan reequest submitted succesfully',
+			status: HttpStatus.CREATED,
+			timestamp: new Date().toLocaleDateString(),
 		};
 	}
 

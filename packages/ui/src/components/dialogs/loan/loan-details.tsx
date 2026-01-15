@@ -30,12 +30,16 @@ const statusColors: Record<LoanStatus, string> = {
 	[LoanStatus.ACTIVE]: 'bg-blue-500/10 text-blue-600 border-blue-200',
 	[LoanStatus.RETURNED]: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
 	[LoanStatus.OVERDUE]: 'bg-red-500/10 text-red-600 border-red-200',
+	[LoanStatus.REQUESTED]: 'bg-yellow-500/10 text-yellow-700 border-yellow-300',
+	[LoanStatus.DENIED]: 'bg-gray-500/10 text-gray-600 border-gray-300',
 };
 
 const statusLabels: Record<LoanStatus, string> = {
 	[LoanStatus.ACTIVE]: 'Activo',
 	[LoanStatus.RETURNED]: 'Devuelto',
 	[LoanStatus.OVERDUE]: 'Vencido',
+	[LoanStatus.REQUESTED]: 'Solicitado',
+	[LoanStatus.DENIED]: 'Rechazado',
 };
 
 const borrowerTypeLabels: Record<string, string> = {

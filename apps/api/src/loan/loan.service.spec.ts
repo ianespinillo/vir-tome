@@ -1,11 +1,17 @@
 import { PublisherEntity } from '@/book/entities/publisher.entity';
+import { IAuthUser } from '@/core/core.types';
 import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import { UserEntity } from '@/users/entities/user.entity';
 import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { CreateLoanDto, LoanBorrowerType, LoanStatus } from '@repo/common';
+import {
+	CreateLoanDto,
+	LoanBorrowerType,
+	LoanStatus,
+	RequestLoanDTO,
+} from '@repo/common';
 import { Repository, UpdateResult } from 'typeorm';
 import { BookEntity } from '../book/entities/book.entity';
 import { BookService } from '../book/services/book.service';
@@ -70,8 +76,8 @@ describe('LoanService', () => {
 		book: mockBook,
 		book_id: mockBook.id,
 		quantity: 2,
-		loan_date: new Date('2024-01-01'),
-		return_date: new Date('2024-01-15'),
+		loan_date: new Date('2026-01-01'),
+		return_date: new Date('2026-01-15'),
 		status: LoanStatus.ACTIVE,
 		borrower_type: LoanBorrowerType.REGISTERED_USER,
 		created_at: new Date(),
@@ -172,6 +178,7 @@ describe('LoanService', () => {
 					quantity: createLoanDto.quantity,
 					borrower_type: LoanBorrowerType.REGISTERED_USER,
 					user_id: mockUser.id,
+					status: LoanStatus.ACTIVE,
 				});
 				expect(result).toEqual(mockLoan);
 			});
@@ -257,6 +264,7 @@ describe('LoanService', () => {
 					borrower_phone: createExternalLoanDto.borrower_phone,
 					borrower_national_id: createExternalLoanDto.borrower_national_id,
 					loan_date: expect.any(Date),
+					status: LoanStatus.ACTIVE,
 				});
 				expect(result).toEqual(externalLoan);
 			});
@@ -682,6 +690,28 @@ describe('LoanService', () => {
 			await loanService.getLoansByMonth();
 
 			expect(mockQueryBuilder.andWhere).not.toHaveBeenCalled();
+		});
+	});
+	describe('requestLoan', () => {
+		it('should submit a loan request succesfully', async () => {
+			const mock = {
+				...mockLoan,
+				status: LoanStatus.REQUESTED,
+			};
+			const futureDate = new Date(Date.now() + 86400000);
+			const dto: RequestLoanDTO = {
+				bookId: mockLoan.book_id,
+				quantity: mockLoan.quantity,
+				returnDate: futureDate,
+			};
+			mockBookService.findById.mockResolvedValue(mockBook);
+			mockLoanRepository.save.mockResolvedValue(mock);
+			const data = await loanService.requestLoan(dto, {
+				id: mockUser.id,
+				tenantId: mockBook.tenant_id,
+			} as IAuthUser);
+			expect(data).toEqual(mock);
+			expect(data.status).toEqual(LoanStatus.REQUESTED);
 		});
 	});
 });
