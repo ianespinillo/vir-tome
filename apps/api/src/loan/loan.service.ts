@@ -7,12 +7,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { LoanEntity } from './entities/loan.entity';
 
 import { BookEntity } from '@/book/entities/book.entity';
+import { IAuthUser } from '@/core/core.types';
 import { UsersService } from '@/users/services/users.service';
 import {
 	CreateLoanDto,
 	LoanBorrowerType,
 	LoanStatus,
 	MostLoanedBooks,
+	RequestLoanDTO,
 } from '@repo/common';
 import { IsNull, Repository, UpdateResult } from 'typeorm';
 import { BookService } from '../book/services/book.service';
@@ -61,6 +63,7 @@ export class LoanService extends GenericService {
 						quantity: data.quantity,
 						borrower_type: data.borrower_type,
 						user_id: user.id,
+						status: LoanStatus.ACTIVE,
 					});
 				}
 				break;
@@ -75,6 +78,7 @@ export class LoanService extends GenericService {
 				const { user_id, ...rest } = data;
 				loan = this.loanRepository.create({
 					...rest,
+					status: LoanStatus.ACTIVE,
 					loan_date: new Date(Date.now()),
 				});
 				break;
@@ -201,5 +205,22 @@ export class LoanService extends GenericService {
 		if (tenantId)
 			qb.andWhere('book.tenant_id = :tenantId', { tenantId: tenantId });
 		return qb.getRawMany();
+	}
+
+	async requestLoan(dto: RequestLoanDTO, user: IAuthUser): Promise<LoanEntity> {
+		const book = await this.bookService.findById(user.tenantId, dto.bookId);
+		if (!book) throw new NotFoundException('Book not found');
+		if (dto.quantity <= 0)
+			throw new BadRequestException('Quantity must be greater than zero');
+		if (new Date(Date.now()) > dto.returnDate)
+			throw new BadRequestException('Return date cannot be in the past');
+		if (book.availableQuantity < dto.quantity)
+			throw new BadRequestException('Not enough books available');
+		return this.loanRepository.save({
+			...dto,
+			user_id: user.id,
+			borrower_type: LoanBorrowerType.REGISTERED_USER,
+			status: LoanStatus.REQUESTED,
+		});
 	}
 }
