@@ -7,7 +7,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/ui/select';
-import { useAuth, useUsers } from '@repo/hooks';
+import { useAuth, useUserTenants, useUsers } from '@repo/hooks';
 
 interface SwitchTenantProps {
 	userId: number;
@@ -16,8 +16,7 @@ interface SwitchTenantProps {
 export const SwitchTenant = ({ userId }: SwitchTenantProps) => {
 	const { navigate } = useUINav();
 	const { switchTenant } = useAuth();
-	const { getUserTenants } = useUsers({ page: 1, searchTerm: '' });
-	const { data } = getUserTenants(userId);
+	const { data } = useUserTenants(userId);
 
 	return (
 		<Select

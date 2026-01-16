@@ -30,23 +30,26 @@ export const useUsers = ({ page, searchTerm }: GenericHookProps) => {
 		mutationFn: async ({
 			dto,
 			userId,
-		}: { dto: AddUserToTenantDto; userId: number }) =>
-			(await UsersService.attachUserToTenant(dto, userId)).data,
+		}: {
+			dto: AddUserToTenantDto;
+			userId: number;
+		}) => (await UsersService.attachUserToTenant(dto, userId)).data,
 	});
 	const getUserById = useMutation({
 		mutationKey: ['user'],
 		mutationFn: async (id: number) => (await UsersService.getUser(id)).data,
 	});
-	const getUserTenants = (userId: number) =>
-		useQuery({
-			queryKey: ['user-tenants', userId],
-			queryFn: async () => (await UsersService.getUserTenants(userId)).data,
-		});
+
 	return {
 		getUsersByRole,
 		getLastRegisters,
 		attachUserToTenant,
-		getUserTenants,
 		getUserById,
 	};
 };
+
+export const useUserTenants = (userId: number) =>
+	useQuery({
+		queryKey: ['user-tenants', userId],
+		queryFn: async () => (await UsersService.getUserTenants(userId)).data,
+	});

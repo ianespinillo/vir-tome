@@ -6,7 +6,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { LoanEntity } from './entities/loan.entity';
 
-import { BookEntity } from '@/book/entities/book.entity';
 import { IAuthUser } from '@/core/core.types';
 import { UsersService } from '@/users/services/users.service';
 import {
@@ -221,6 +220,29 @@ export class LoanService extends GenericService {
 			take: 3,
 		});
 	}
+	async getLastRequests(page: number): Promise<IPaginatedResponse<LoanEntity>> {
+		const skip = (page - 1) * 6;
+		const [data, total] = await this.loanRepository.findAndCount({
+			where: {
+				status: LoanStatus.REQUESTED,
+			},
+			order: {
+				loan_date: 'DESC',
+			},
+			take: 6,
+			skip,
+			relations: ['book', 'user'],
+		});
+		return {
+			items: data,
+			meta: {
+				per_page: 6,
+				last_page: Math.ceil(total / 6),
+				total,
+				current_page: page,
+			},
+		};
+	}
 	async getLoansByMonth(tenantId?: number) {
 		const qb = this.loanRepository
 			.createQueryBuilder('loan')
@@ -250,5 +272,15 @@ export class LoanService extends GenericService {
 			borrower_type: LoanBorrowerType.REGISTERED_USER,
 			status: LoanStatus.REQUESTED,
 		});
+	}
+	async updateLoanStatus(
+		status: LoanStatus,
+		loanId: number,
+	): Promise<LoanEntity> {
+		const loan = (await this.findById(loanId)) as LoanEntity;
+		if (!loan) throw new NotFoundException('Loan not founded');
+		loan.status = status;
+		await this.update(loanId, loan);
+		return loan;
 	}
 }

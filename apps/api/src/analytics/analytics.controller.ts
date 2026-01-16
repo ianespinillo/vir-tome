@@ -1,9 +1,8 @@
-import { Roles as RolesDecorator } from '@/auth/decorators/roles.decorator';
+import { Roles } from '@/auth/decorators/roles.decorator';
 import { User } from '@/auth/decorators/user.decorator';
 import { IAuthUser } from '@/core/core.types';
 import { LoanEntity } from '@/loan/entities/loan.entity';
-import { CurrentTenant } from '@/tenants/decorators/current-tenant.decorator';
-import { TenantEntity } from '@/tenants/entities/tenant.entity';
+
 import {
 	Controller,
 	Get,
@@ -22,7 +21,7 @@ import { IApiResponse, MostLoanedBooks, ROLES } from '@repo/common';
 import { AnalyticsService } from './analytics.service';
 
 @ApiTags('Analytics') // Agrupa los endpoints en Swagger UI.
-@RolesDecorator(ROLES.ADMIN, ROLES.SUPER_ADMIN)
+@Roles(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.LIBRARIAN)
 @Controller('analytics')
 export class AnalyticsController {
 	constructor(private readonly analyticsService: AnalyticsService) {}

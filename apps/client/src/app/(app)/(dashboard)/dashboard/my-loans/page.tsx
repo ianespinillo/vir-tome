@@ -1,3 +1,5 @@
+'use client';
+
 import { ILoan } from '@repo/common';
 import { useMyLoans } from '@repo/hooks';
 import {

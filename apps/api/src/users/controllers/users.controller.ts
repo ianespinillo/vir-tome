@@ -1,3 +1,4 @@
+import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
 import { Roles as RolesDecorator } from '@/auth/decorators/roles.decorator';
 import { User } from '@/auth/decorators/user.decorator';
 import { IAuthUser } from '@/core/core.types';
@@ -39,7 +40,7 @@ import { UsersService } from '../services/users.service';
 export class UsersController {
 	constructor(private readonly service: UsersService) {}
 
-	@RolesDecorator(ROLES.ADMIN, ROLES.SUPER_ADMIN)
+	@RolesDecorator(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.LIBRARIAN)
 	@Get('')
 	@ApiOperation({ summary: 'Obtener usuarios por rol' })
 	@ApiQuery({
@@ -117,7 +118,7 @@ export class UsersController {
 		};
 	}
 	@Get(':id')
-	@RolesDecorator(ROLES.ADMIN, ROLES.SUPER_ADMIN)
+	@AuthBearer()
 	@ApiOperation({ summary: 'Obtener un usuario por ID' })
 	@ApiParam({
 		name: 'id',
@@ -168,7 +169,7 @@ export class UsersController {
 		};
 	}
 	@Get(':id/tenants')
-	@RolesDecorator(ROLES.ADMIN, ROLES.SUPER_ADMIN)
+	@AuthBearer()
 	@ApiOperation({ summary: 'Obtener los tenants de un usuario' })
 	@ApiParam({
 		name: 'id',

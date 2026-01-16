@@ -12,19 +12,11 @@ import {
 } from '@/ui/command';
 import { FormField, FormItem, FormLabel, FormMessage } from '@/ui/form';
 import { Input } from '@/ui/input';
-import { ScrollArea } from '@/ui/scroll-area';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/ui/select';
-import { IUser, ROLES } from '@repo/common';
+import { CreateLoanDto, IUser, ROLES } from '@repo/common';
 import { useUsers } from '@repo/hooks';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { CreateLoanDto } from 'packages/common/dist';
+
 import React, { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 

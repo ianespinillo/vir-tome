@@ -5,6 +5,7 @@ import {
 	BarChart3,
 	BookCopy,
 	BookOpen,
+	BookText,
 	Building2,
 	Home,
 	LayoutDashboard,
@@ -31,13 +32,7 @@ import {
 	SidebarRail,
 } from '@/ui/sidebar';
 
-import {
-	IApiResponse,
-	IRequestUser,
-	MenuLinkBase,
-	PAYLOAD_TYPE,
-	ROLES,
-} from '@repo/common';
+import { MenuLinkBase, PAYLOAD_TYPE, ROLES } from '@repo/common';
 import { useAuth } from '@repo/hooks';
 import { SwitchTenant } from '../select/switch-tenant';
 
@@ -113,6 +108,13 @@ const ALL_MENU_ITEMS: MenuLink[] = [
 		tooltip: 'Préstamos',
 		icon: BookCopy,
 		roles: [ROLES.ADMIN, ROLES.LIBRARIAN],
+	},
+	{
+		title: 'Solicitudes de prestamo',
+		href: '/dashboard/requests',
+		tooltip: 'Solicitudes',
+		icon: BookText,
+		roles: [ROLES.LIBRARIAN],
 	},
 	{
 		title: 'Mis usuarios',

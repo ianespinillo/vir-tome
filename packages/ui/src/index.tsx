@@ -33,6 +33,7 @@ export { BookDetailDialog } from './components/dialogs/books/book-details';
 export { LoanDetailsDialog } from './components/dialogs/loan/loan-details';
 export { MyLoansTable } from './components/tables/table/my-loans-table';
 export { RequestLoanDialog } from './components/dialogs/loan/request-loan';
+export { RequestTable } from './components/tables/table/requests-table';
 export * from './ui/scroll-area';
 
 // toaster
