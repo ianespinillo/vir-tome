@@ -14,11 +14,13 @@ export class AnalyticsService {
 		let data: MostLoanedBooks[];
 		switch (user.roleName) {
 			case ROLES.SUPER_ADMIN:
-				data = await this.loanService.mostLoanedBooks(limit);
-				return data;
+				return await this.loanService.mostLoanedBooks(limit);
+
 			case ROLES.ADMIN:
-				data = await this.loanService.mostLoanedBooks(limit, user.tenantId);
-				return data;
+				return await this.loanService.mostLoanedBooks(limit, user.tenantId);
+
+			case ROLES.LIBRARIAN:
+				return this.loanService.mostLoanedBooks(limit, user.tenantId);
 			default:
 				throw new UnauthorizedException('Role level without permissions');
 		}
@@ -28,6 +30,8 @@ export class AnalyticsService {
 			case ROLES.SUPER_ADMIN:
 				return this.loanService.lastsLoans();
 			case ROLES.ADMIN:
+				return this.loanService.lastsLoans(user.tenantId);
+			case ROLES.LIBRARIAN:
 				return this.loanService.lastsLoans(user.tenantId);
 			default:
 				throw new UnauthorizedException('Role level without permissions');
@@ -39,6 +43,8 @@ export class AnalyticsService {
 				return this.bookService.globalBooksCount();
 			case ROLES.ADMIN:
 				return this.bookService.count(user.tenantId);
+			case ROLES.LIBRARIAN:
+				return this.bookService.count(user.tenantId);
 			default:
 				throw new UnauthorizedException('Role level without permissions');
 		}
@@ -49,6 +55,8 @@ export class AnalyticsService {
 				return this.loanService.countLoans();
 			case ROLES.ADMIN:
 				return this.loanService.countLoans(user.tenantId);
+			case ROLES.LIBRARIAN:
+				return this.loanService.countLoans(user.tenantId);
 			default:
 				throw new UnauthorizedException('Role level without permissions');
 		}
@@ -58,6 +66,8 @@ export class AnalyticsService {
 			case ROLES.SUPER_ADMIN:
 				return this.loanService.getLastReturnedLoans();
 			case ROLES.ADMIN:
+				return this.loanService.lastsLoans(user.tenantId);
+			case ROLES.LIBRARIAN:
 				return this.loanService.lastsLoans(user.tenantId);
 			default:
 				throw new UnauthorizedException('Role level without permissions');

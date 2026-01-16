@@ -5,6 +5,7 @@ import {
 	ROLES,
 	argPublishers,
 } from '@repo/common';
+import * as bcrypt from 'bcryptjs';
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { BookEntity } from '../src/book/entities/book.entity';
@@ -63,9 +64,9 @@ async function seed() {
 	await AppDataSource.query(
 		`TRUNCATE TABLE "publisher" RESTART IDENTITY CASCADE`,
 	);
-	await AppDataSource.query(`TRUNCATE TABLE "roles" RESTART IDENTITY CASCADE`);
-	await AppDataSource.query(`TRUNCATE TABLE "tenant" RESTART IDENTITY CASCADE`);
 	await AppDataSource.query(`TRUNCATE TABLE "users" RESTART IDENTITY CASCADE`);
+	await AppDataSource.query(`TRUNCATE TABLE "tenant" RESTART IDENTITY CASCADE`);
+	await AppDataSource.query(`TRUNCATE TABLE "roles" RESTART IDENTITY CASCADE`);
 	// await AppDataSource.query(`TRUNCATE TABLE "super-admin" CASCADE`);
 	// 2. SETTINGS
 	faker.seed(123); // ¡Importante! Hace que los datos sean siempre iguales
@@ -102,21 +103,11 @@ async function seed() {
 	const roleRepo = AppDataSource.getRepository(RoleEntity);
 
 	// Roles para Demo
-	const adminRole = await roleRepo.save({
-		name: ROLES.ADMIN,
-		tenant_id: demoTenant.id,
-		description: 'Jefe total',
-	});
-	const libRole = await roleRepo.save({
-		name: ROLES.LIBRARIAN,
-		tenant_id: demoTenant.id,
-		description: 'Bibliotecario',
-	});
-	const studentRole = await roleRepo.save({
-		name: ROLES.STUDENT,
-		tenant_id: demoTenant.id,
-		description: 'Estudiante',
-	});
+	for (const role of Object.keys(ROLES)) {
+		await roleRepo.save({
+			name: role as ROLES,
+		});
+	}
 
 	// Roles para Vecina
 	const adminRoleVecina = await roleRepo.save({
@@ -132,7 +123,8 @@ async function seed() {
 	const userTenantRepo = AppDataSource.getRepository(UserTenantEntity);
 
 	// Password hash mock (en realidad deberías usar bcrypt aquí si tu entidad no lo hace automáticamente)
-	const mockPass = '123456';
+	const pass = '12345678';
+	const mockPass = await bcrypt.hash(pass, 10);
 
 	// Usuario 1: Admin del Tenant Demo
 	const uAdmin = await userRepo.save({
@@ -144,7 +136,7 @@ async function seed() {
 	await userTenantRepo.save({
 		user: uAdmin,
 		tenant: demoTenant,
-		role: adminRole,
+		role_id: 2,
 		is_active: true,
 	});
 
@@ -158,7 +150,7 @@ async function seed() {
 	await userTenantRepo.save({
 		user: uStudent,
 		tenant: demoTenant,
-		role: studentRole,
+		role_id: 4,
 		is_active: true,
 	});
 
@@ -174,7 +166,7 @@ async function seed() {
 	await userTenantRepo.save({
 		user: uTraveler,
 		tenant: demoTenant,
-		role: libRole,
+		role_id: 3,
 		is_active: true,
 	});
 	// Es Admin en Vecina
@@ -187,7 +179,7 @@ async function seed() {
 	// ==========================================
 	// CREAR SUPER ADMIN (TÚ)
 	// ==========================================
-	console.log('👑 Creando Super Admin...');
+	/* console.log('👑 Creando Super Admin...');
 	const superAdminRepo = AppDataSource.getRepository(SuperAdminEntity);
 	const { password, hashedPassword } =
 		await PasswordAdapter.generateHashedPassword(8);
@@ -197,7 +189,7 @@ async function seed() {
 		name: 'Ian',
 		password: hashedPassword,
 		isActive: true,
-	});
+	}); */
 	// ==========================================
 	// CREAR DATOS DEL DOMINIO (Solo para Demo Tenant)
 	// ==========================================

@@ -1,5 +1,10 @@
-import { CreateLoanDto, GenericHookProps, RequestLoanDTO } from '@repo/common';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+	CreateLoanDto,
+	GenericHookProps,
+	RequestLoanDTO,
+	UpdateLoanStatusDTO,
+} from '@repo/common';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import { LoanService } from '../services/loan.service';
 
 export const useLoans = ({ page, searchTerm }: GenericHookProps) => {
@@ -46,5 +51,26 @@ export const useMyLoans = ({ page, searchTerm }: GenericHookProps) => {
 	return {
 		getMyLoans,
 		requestLoan,
+	};
+};
+
+export const useLoansRequest = ({ page }: GenericHookProps) => {
+	const lastRequests = useQuery({
+		queryKey: ['last-request', page],
+		queryFn: async () => (await LoanService.getLastRequests(page)).data,
+		refetchOnMount: false,
+		refetchOnWindowFocus: false,
+		placeholderData: keepPreviousData,
+		refetchInterval: 5000,
+	});
+	const updateLoanStatus = useMutation({
+		mutationKey: ['loan-status'],
+		mutationFn: async (dto: UpdateLoanStatusDTO) =>
+			(await LoanService.updateLoanStatus(dto)).data,
+		onSuccess: () => lastRequests.refetch(),
+	});
+	return {
+		lastRequests,
+		updateLoanStatus,
 	};
 };

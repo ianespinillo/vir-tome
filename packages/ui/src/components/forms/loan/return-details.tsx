@@ -1,3 +1,4 @@
+'use client';
 import { CalendarPicker } from '@/components/calendar/calendar-picker';
 import { FormField, FormItem, FormLabel, FormMessage } from '@/ui/form';
 import { Label } from '@/ui/label';

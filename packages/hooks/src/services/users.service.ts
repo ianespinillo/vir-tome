@@ -3,10 +3,10 @@ import {
 	IApiResponse,
 	IPaginatedResponse,
 	IUser,
+	IUserTenant,
 	ROLES,
 } from '@repo/common';
 import axios from 'axios';
-import { IUserTenant } from 'packages/common/dist';
 
 export class UsersService {
 	private static readonly baseUrl =

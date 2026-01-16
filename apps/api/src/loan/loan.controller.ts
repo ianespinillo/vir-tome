@@ -1,12 +1,10 @@
 // src/loan/loan.controller.ts
 import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
 import { Roles } from '@/auth/decorators/roles.decorator';
+import { User } from '@/auth/decorators/user.decorator';
 import { RolesGuard } from '@/auth/guard/role.guard';
-
-import { CurrentUserId, User } from '@/auth/decorators/user.decorator';
 import { IAuthUser } from '@/core/core.types';
-import { CurrentTenant } from '@/tenants/decorators/current-tenant.decorator';
-import { TenantEntity } from '@/tenants/entities/tenant.entity';
+
 import {
 	Body,
 	Controller,
@@ -41,6 +39,7 @@ import {
 	IPaginatedResponse,
 	ROLES,
 	RequestLoanDTO,
+	UpdateLoanStatusDTO,
 } from '@repo/common';
 import { UpdateResult } from 'typeorm';
 import { LoanEntity } from './entities/loan.entity';
@@ -170,7 +169,7 @@ export class LoanController {
 
 	@Get()
 	@UseGuards(RolesGuard)
-	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN, ROLES.TEACHER)
+	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN)
 	@ApiOperation({
 		summary: 'Listar préstamos (Admin, Librarian, Teacher)',
 		description:
@@ -209,11 +208,11 @@ export class LoanController {
 
 	@Get('my')
 	@UseGuards(RolesGuard)
-	@Roles(ROLES.STUDENT)
+	@Roles(ROLES.STUDENT, ROLES.TEACHER)
 	@ApiOperation({
-		summary: 'Mis préstamos (Student only)',
+		summary: 'Mis préstamos (Student, Teacher only)',
 		description:
-			'Obtiene los préstamos del estudiante autenticado. Solo para estudiantes.',
+			'Obtiene los préstamos del estudiante o profesor autenticado. Solo para estudiantes o profesores.',
 	})
 	@ApiOkResponse({
 		description: 'Préstamos del estudiante',
@@ -230,7 +229,26 @@ export class LoanController {
 			timestamp: new Date().toISOString(),
 		};
 	}
-
+	@Get('requests')
+	@Roles(ROLES.LIBRARIAN)
+	@ApiOperation({
+		summary: 'Ultimas solicitudes de prestamos',
+		description: 'Obtiene las ultimas solicitudes de prestamos',
+	})
+	@ApiOkResponse({
+		description: 'Prestamos del estudiante',
+	})
+	async getLastRequests(
+		@Param('page', ParseIntPipe) page = 1,
+	): Promise<IApiResponse<IPaginatedResponse<LoanEntity>>> {
+		const data = await this.loanService.getLastRequests(page);
+		return {
+			message: 'Lasts requests retrieved succesfully',
+			data,
+			status: HttpStatus.OK,
+			timestamp: new Date().toLocaleDateString(),
+		};
+	}
 	@Get(':id')
 	@UseGuards(RolesGuard)
 	@Roles(ROLES.ADMIN, ROLES.LIBRARIAN, ROLES.TEACHER)
@@ -260,6 +278,24 @@ export class LoanController {
 			data: res,
 			status: HttpStatus.OK,
 			timestamp: new Date().toISOString(),
+		};
+	}
+	@Put(':id')
+	@ApiOperation({
+		summary: 'Actualizar estado de préstamo',
+		description: 'Permite actualizar el estado del prestamo (Librarian only)',
+	})
+	@Roles(ROLES.LIBRARIAN)
+	async updateLoanStatus(
+		@Body() dto: UpdateLoanStatusDTO,
+		@Param('id', ParseIntPipe) id: number,
+	): Promise<IApiResponse<LoanEntity>> {
+		const data = await this.loanService.updateLoanStatus(dto.status, id);
+		return {
+			message: 'Loan status updated succesfully',
+			data,
+			status: HttpStatus.OK,
+			timestamp: new Date().toLocaleDateString(),
 		};
 	}
 }
