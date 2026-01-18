@@ -8,6 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import {
 	CreateLoanDto,
+	ILoansQueries,
 	IPaginatedResponse,
 	LoanBorrowerType,
 	LoanStatus,
@@ -462,42 +463,75 @@ describe('LoanService', () => {
 	});
 
 	describe('paginatedLoans', () => {
-		it('should return paginated loans', async () => {
+		const total = 10;
+		const defaultLimit = 5;
+
+		it('should return loans with correct metadata structure', async () => {
 			const page = 1;
 			const loans = [mockLoan];
-			const total = 10;
+			const queries = { page, limit: defaultLimit } as ILoansQueries;
 
 			mockLoanRepository.findAndCount.mockResolvedValue([loans, total]);
 
-			const result = await loanService.paginatedLoans(page, tenantId);
-
-			expect(loanRepository.findAndCount).toHaveBeenCalledWith({
-				relations: ['book'],
-				where: { book: { tenant_id: tenantId } },
-				order: { id: 'ASC' },
-				take: 6,
-				skip: 0,
-			});
-			expect(result).toEqual({
-				data: loans.map((loan) => ({
-					...loan,
-					book: loan.book.title,
-				})),
-				total,
-				current_page: page,
-				last_page: Math.ceil(total / 6),
-			});
-		});
-
-		it('should handle second page correctly', async () => {
-			const page = 2;
-			mockLoanRepository.findAndCount.mockResolvedValue([[], 10]);
-
-			await loanService.paginatedLoans(page, tenantId);
+			const result = await loanService.paginatedLoans(queries, tenantId);
 
 			expect(loanRepository.findAndCount).toHaveBeenCalledWith(
 				expect.objectContaining({
-					skip: 6,
+					where: { book: { tenant_id: tenantId } },
+					take: defaultLimit,
+					skip: 0,
+					order: { id: 'DESC' },
+				}),
+			);
+
+			expect(result).toEqual({
+				items: loans,
+				meta: {
+					per_page: defaultLimit,
+					last_page: 2,
+					total: total,
+					current_page: page,
+				},
+			});
+		});
+
+		it('should apply correct skip for page 2', async () => {
+			const page = 2;
+			const queries = { page, limit: defaultLimit } as ILoansQueries;
+
+			mockLoanRepository.findAndCount.mockResolvedValue([[], total]);
+
+			await loanService.paginatedLoans(queries, tenantId);
+
+			expect(loanRepository.findAndCount).toHaveBeenCalledWith(
+				expect.objectContaining({
+					skip: 5,
+					take: defaultLimit,
+				}),
+			);
+		});
+
+		it('should include filters in the repository call', async () => {
+			const queries = {
+				search: 'Don Quijote',
+				status: 'ACTIVE',
+				limit: 10,
+			} as ILoansQueries;
+
+			mockLoanRepository.findAndCount.mockResolvedValue([[], 0]);
+
+			await loanService.paginatedLoans(queries, tenantId);
+
+			expect(loanRepository.findAndCount).toHaveBeenCalledWith(
+				expect.objectContaining({
+					where: expect.objectContaining({
+						status: 'ACTIVE',
+						book: expect.objectContaining({
+							tenant_id: tenantId,
+							title: expect.anything(),
+						}),
+					}),
+					take: 10,
 				}),
 			);
 		});

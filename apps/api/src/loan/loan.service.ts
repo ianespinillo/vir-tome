@@ -10,13 +10,26 @@ import { IAuthUser } from '@/core/core.types';
 import { UsersService } from '@/users/services/users.service';
 import {
 	CreateLoanDto,
+	ILoansQueries,
 	IPaginatedResponse,
 	LoanBorrowerType,
 	LoanStatus,
 	MostLoanedBooks,
 	RequestLoanDTO,
 } from '@repo/common';
-import { IsNull, Repository, UpdateResult } from 'typeorm';
+import {
+	Between,
+	FindOptionsRelations,
+	FindOptionsWhere,
+	ILike,
+	In,
+	IsNull,
+	LessThanOrEqual,
+	MoreThanOrEqual,
+	Not,
+	Repository,
+	UpdateResult,
+} from 'typeorm';
 import { BookService } from '../book/services/book.service';
 import { GenericService } from '../core/generic.service';
 
@@ -117,22 +130,73 @@ export class LoanService extends GenericService {
 		return { count };
 	}
 
-	async paginatedLoans(page: number, tenantId: number) {
+	async paginatedLoans(
+		queries: ILoansQueries,
+		tenantId: number,
+	): Promise<IPaginatedResponse<LoanEntity>> {
+		const {
+			borrowerType,
+			status,
+			page = 1,
+			fields,
+			fromDate,
+			toDate,
+			ids,
+			isActive,
+			limit = 5,
+			orderBy,
+			orderDir,
+			relations,
+			search,
+			withDeleted,
+		} = queries;
+
+		const skip = (page - 1) * limit;
+
+		const whereOptions: FindOptionsWhere<LoanEntity> = {
+			book: {
+				tenant_id: tenantId,
+			},
+		};
+
+		if (borrowerType) whereOptions.borrower_type = borrowerType;
+		if (status) whereOptions.status = status;
+		if (ids) whereOptions.id = In(ids);
+
+		if (search) {
+			(whereOptions.book as any).title = ILike(`%${search}%`);
+		}
+
+		if (fromDate && toDate) {
+			whereOptions.loan_date = Between(fromDate, toDate);
+		} else if (fromDate) {
+			whereOptions.loan_date = MoreThanOrEqual(fromDate);
+		} else if (toDate) {
+			whereOptions.loan_date = LessThanOrEqual(toDate);
+		}
+
+		if (isActive !== undefined) {
+			whereOptions.deleted_at = isActive ? IsNull() : Not(IsNull());
+		}
+
 		const [data, total] = await this.loanRepository.findAndCount({
-			relations: ['book'],
-			where: { book: { tenant_id: tenantId } },
-			order: { id: 'ASC' },
-			take: 6,
-			skip: (page - 1) * 6,
+			where: whereOptions,
+			relations: relations as any,
+			skip,
+			take: limit,
+			order: orderBy ? { [orderBy]: orderDir || 'DESC' } : { id: 'DESC' },
+			select: fields as any,
+			withDeleted: withDeleted || false,
 		});
+
 		return {
-			data: data.map((loan) => ({
-				...loan,
-				book: loan.book.title,
-			})),
-			total,
-			current_page: Number(page),
-			last_page: Math.ceil(total / 6),
+			items: data,
+			meta: {
+				per_page: limit,
+				last_page: Math.ceil(total / limit),
+				total,
+				current_page: page,
+			},
 		};
 	}
 	async findByUser(tenantId: number, userId: number) {

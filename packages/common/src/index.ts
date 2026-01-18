@@ -1,10 +1,10 @@
+//dto
 export * from './dto/books/category.dto';
 export * from './dto/books/publisher.dto';
 export * from './dto/books/book.dto';
 export * from './dto/loan/loan.dto';
 export * from './dto/auth/sign-up.dto';
 export * from './dto/auth/sign-in.dto';
-export * from './enum/loan-status.enum';
 export * from './dto/auth/user.dto';
 export * from './dto/auth/forgot-password.dto';
 export * from './dto/auth/reset-password.dto';
@@ -13,15 +13,23 @@ export * from './dto/tenants/update-tenant.dto';
 export * from './dto/tenants/add-user-to-tenant.dto';
 export * from './dto/loan/request-loan.dto';
 export * from './dto/loan/update-status.dto';
+export * from './dto/loan/loan-queries.dto';
+
+//enums
+export * from './enum/loan-status.enum';
 export * from './enum/roles.enum';
 export * from './enum/tokens-type.enum';
 export * from './enum/payload-type.enum';
 export * from './enum/loan-borrower-type.enum';
+
+//constants
 export * from './constants/index';
 export * from './constants/demo-seed.constants';
 export * from './constants/public-routes.constant';
 export * from './constants/publishers.constant';
 export * from './constants/role-level';
+
+//types
 export type * from './types/auth/requests.types';
 export type * from './types/auth/payloads.types';
 export type * from './types/books/book-forms';
@@ -36,6 +44,8 @@ export type * from './types/common/api-response.type';
 export type * from './types/common/pagination.type';
 export type * from './types/common/enum.types';
 export type * from './types/hooks/generic-hooy.type';
+export type * from './types/common/api-queries.type';
+export type * from './types/loans/loan-queries.type';
 
 export type * from '@tanstack/react-query';
 

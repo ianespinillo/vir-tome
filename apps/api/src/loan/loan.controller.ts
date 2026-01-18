@@ -37,6 +37,7 @@ import {
 	CreateLoanDto,
 	IApiResponse,
 	IPaginatedResponse,
+	LoanQueriesDTO,
 	ROLES,
 	RequestLoanDTO,
 	UpdateLoanStatusDTO,
@@ -187,20 +188,12 @@ export class LoanController {
 	})
 	async findAll(
 		@User() user: IAuthUser,
-		@Query('page') page = 1,
-	): Promise<IApiResponse<IPaginatedResponse<{ book: string } & LoanEntity>>> {
-		const res = await this.loanService.paginatedLoans(page, user.tenantId);
+		@Query() queries: LoanQueriesDTO,
+	): Promise<IApiResponse<IPaginatedResponse<LoanEntity>>> {
+		const res = await this.loanService.paginatedLoans(queries, user.tenantId);
 		return {
 			message: 'Préstamos obtenidos exitosamente',
-			data: {
-				items: res.data,
-				meta: {
-					total: res.total,
-					current_page: res.current_page,
-					last_page: res.last_page,
-					per_page: 10,
-				},
-			} as IPaginatedResponse<{ book: string } & LoanEntity>,
+			data: res,
 			status: HttpStatus.OK,
 			timestamp: new Date().toISOString(),
 		};
