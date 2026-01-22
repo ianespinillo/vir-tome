@@ -1,4 +1,5 @@
 'use client';
+import { useModalCrud } from '@/contexts/modal-crud-context';
 import { Input } from '@/ui/input';
 import { useDebounceValue } from '@repo/hooks';
 import { parseAsString, useQueryState } from 'nuqs';
@@ -11,17 +12,15 @@ interface InputFilterProps {
 }
 
 export const InputFilter = ({ text }: Readonly<InputFilterProps>) => {
-	const [q, setQ] = useQueryState(
-		'q',
-		parseAsString
-			.withDefault('')
-			.withOptions({ shallow: true, history: 'replace' }),
-	);
-	const [localVal, setLocalVal] = useState(q);
+	const { setQueryParams, queryParams} = useModalCrud();
+	const [localVal, setLocalVal] = useState(queryParams.search || '');
 	const value = useDebounceValue(localVal, 800);
 	useEffect(() => {
-		setQ(value);
-	}, [value, setQ]);
+		setQueryParams((prev) => ({
+			...prev,
+			search: value || undefined,
+		}));
+	}, [value, setQueryParams]);
 	return (
 		<Input
 			placeholder={text}

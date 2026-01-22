@@ -11,7 +11,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/ui/select';
-import { ROLES as BASEROLES, IUser } from '@repo/common';
+import { BaseQueriesDto, ROLES as BASEROLES, IUser, UsersQueriesDto } from '@repo/common';
 import { useAuth, useUsers } from '@repo/hooks';
 import { parseAsInteger, useQueryState } from 'nuqs';
 import React, { useState } from 'react';
@@ -21,8 +21,8 @@ import { PaginableTable } from './paginable-table';
 export const UsersTable = () => {
 	const {
 		hook: { getUsersByRole },
-	} = useModalCrud<IUser, ReturnType<typeof useUsers>>();
-	const [role, setRole] = useState<BASEROLES | undefined>(undefined);
+		setQueryParams
+	} = useModalCrud<IUser, UsersQueriesDto, ReturnType<typeof useUsers>>();
 	const [_, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
 	const { session } = useAuth();
 	return (
@@ -31,9 +31,15 @@ export const UsersTable = () => {
 				<Select
 					onValueChange={(value) => {
 						if (value === 'ALL') {
-							setRole(undefined);
+							setQueryParams((prev) => ({
+								...prev,
+								role: undefined,
+							}));
 						} else {
-							setRole(value as BASEROLES);
+							setQueryParams((prev) => ({
+								...prev,
+								role: value as BASEROLES,
+							}));
 						}
 						setPage(1);
 					}}
@@ -53,7 +59,7 @@ export const UsersTable = () => {
 					</SelectContent>
 				</Select>
 			</div>
-			<PaginableTable columns={userColumns} query={getUsersByRole(role)} />
+			<PaginableTable columns={userColumns} query={getUsersByRole} />
 		</div>
 	);
 };

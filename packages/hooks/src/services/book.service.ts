@@ -1,4 +1,5 @@
 import {
+	BooksQueriesDto,
 	CreateBookDto,
 	IApiResponse,
 	IBook,
@@ -10,9 +11,15 @@ export class BookService {
 	private static readonly baseUrl =
 		`${process.env.NODE_ENV === 'production' ? 'https://' : 'http://'}${process.env.NEXT_PUBLIC_API_URL}/book`;
 
-	public static async getBooks(page: number, searchTerm?: string) {
+	public static async getBooks(queries: BooksQueriesDto) {
+		const params = new URLSearchParams();
+		for (const [key, value] of Object.entries(queries)) {
+			if (value) {
+				params.append(key, value.toString());
+			}
+		}
 		return await axios.get<IApiResponse<IPaginatedResponse<IBook>>>(
-			`${BookService.baseUrl}?page=${page}${searchTerm ? `&search=${searchTerm}` : ''}`,
+			`${BookService.baseUrl}?${params.toString()}`,
 			{
 				withCredentials: true,
 				headers: {

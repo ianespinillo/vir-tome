@@ -4,16 +4,6 @@
 	"sourceRoot": "src",
 	"monorepo": false,
 	"compilerOptions": {
-		"deleteOutDir": true,
-		"plugins": [
-			{
-				"name": "@nestjs/swagger",
-				"options": {
-					"classValidatorShim": true,
-					"introspectComments": true,
-					"dtoKeyOfComment": true
-				}
-			}
-		]
+		"deleteOutDir": true
 	}
 }

@@ -8,7 +8,7 @@ import {
 } from '@repo/ui';
 import React from 'react';
 
-export default function DashPage() {
+export default function AdminsDashPage() {
 	return (
 		<section className="min-h-screen flex flex-col p-4 px-6 bg-background">
 			<div className="mb-8 space-y-2">

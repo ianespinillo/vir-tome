@@ -46,6 +46,7 @@
 		"class-transformer": "^0.5.1",
 		"cookie-parser": "^1.4.7",
 		"crypto": "^1.0.1",
+		"date-fns": "^4.1.0",
 		"dotenv": "^16.4.7",
 		"passport-jwt": "^4.0.1",
 		"pg": "^8.14.1",
@@ -87,8 +88,14 @@
 		"typescript-eslint": "^8.20.0"
 	},
 	"jest": {
-		"setupFiles": ["<rootDir>/../jest.setup.ts"],
-		"moduleFileExtensions": ["js", "json", "ts"],
+		"setupFiles": [
+			"<rootDir>/../jest.setup.ts"
+		],
+		"moduleFileExtensions": [
+			"js",
+			"json",
+			"ts"
+		],
 		"rootDir": "src",
 		"testRegex": ".*\\.spec\\.ts$",
 		"transform": {
@@ -97,7 +104,9 @@
 		"moduleNameMapper": {
 			"^@/(.*)$": "<rootDir>/$1"
 		},
-		"collectCoverageFrom": ["**/*.(t|j)s"],
+		"collectCoverageFrom": [
+			"**/*.(t|j)s"
+		],
 		"testTimeout": 60000,
 		"coverageDirectory": "../coverage",
 		"testEnvironment": "node"

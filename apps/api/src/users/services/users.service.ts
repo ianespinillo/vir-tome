@@ -16,6 +16,7 @@ import {
 	Roles,
 	SignInDto,
 	SignUpDto,
+	UsersQueriesDto,
 } from '@repo/common';
 import * as bcrypt from 'bcrypt';
 import { IsNull, Repository } from 'typeorm';
@@ -23,6 +24,7 @@ import { RoleEntity } from '../entities/role.entity';
 import { UserTenantEntity } from '../entities/user-tenant.entity';
 import { UserEntity } from '../entities/user.entity';
 import { RoleService } from './role.service';
+import { QueryHelper } from '@/core/query-helper';
 
 @Injectable()
 export class UsersService {
@@ -386,52 +388,46 @@ export class UsersService {
 
 		return stats;
 	}
-	async filterInTenantByRole(
-		page: number,
-		user: IAuthUser,
-		role?: ROLES,
-		q?: string,
-	): Promise<IPaginatedResponse<IUser>> {
-		const take = 6;
-		const skip = (page - 1) * take;
-		const qb = this.usersRepo
-			.createQueryBuilder('user')
-			.leftJoinAndSelect('user.userTenants', 'ut')
-			.leftJoinAndSelect('ut.role', 'role')
-			.leftJoinAndSelect('ut.tenant', 'tenant')
-			.where('user.deleted_at IS NULL');
-		if (role) {
-			qb.andWhere('role.name = :role', { role });
-		}
-		if (user.roleName === ROLES.ADMIN) {
-			qb.andWhere('ut.tenant_id = :tenantId', { tenantId: user.tenantId });
-			qb.andWhere('role.name NOT IN (:...superAdminRole)', {
-				superAdminRole: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
-			});
-		}
-		if (q) {
-			qb.andWhere('(user.name ILIKE :q OR user.email ILIKE :q)', {
-				q: `%${q}%`,
-			});
-		}
+	async getUsers(
+    user: IAuthUser,
+    queries: UsersQueriesDto
+): Promise<IPaginatedResponse<IUser>> {
+    const qb = this.usersRepo.createQueryBuilder('user')
+        .leftJoinAndSelect('user.userTenants', 'ut')
+        .leftJoinAndSelect('ut.role', 'role')
+        .leftJoinAndSelect('ut.tenant', 'tenant');
 
-		qb.take(take).skip(skip);
+    // 1. Filtros de Integridad y Seguridad
+    qb.where('user.deleted_at IS NULL');
 
-		const [rows, count] = await qb.getManyAndCount();
+    if (user.roleName === ROLES.ADMIN) {
+        qb.andWhere('ut.tenant_id = :tenantId', { tenantId: user.tenantId })
+          .andWhere('role.name NOT IN (:...restricted)', {
+              restricted: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
+          });
+    }
 
-		return {
-			items: rows.map((u) => {
-				const { password, ...rest } = u;
-				return rest as unknown as IUser;
-			}),
-			meta: {
-				current_page: page,
-				last_page: Math.ceil(count / take),
-				per_page: take,
-				total: count,
-			},
-		};
-	}
+    // 2. Filtros Dinámicos del DTO
+    if (queries.search) {
+        qb.andWhere('(user.name ILIKE :q OR user.email ILIKE :q)', { q: `%${queries.search}%` });
+    }
+
+    if (queries.roleName) {
+        qb.andWhere('role.name = :roleName', { roleName: queries.roleName });
+    }
+
+    if (queries.isActive !== undefined) {
+        qb.andWhere('user.isActive = :isActive', { isActive: queries.isActive });
+    }
+
+    // 3. Aplicar Paginación y Retornar
+    QueryHelper.applyBasePagination(qb, queries, 'user');
+
+    return QueryHelper.getPaginatedResponse(qb, queries, (u) => {
+        const { password, ...rest } = u;
+        return rest as UserEntity;
+    });
+}
 	async findLastsRegistered(user: IAuthUser): Promise<UserEntity[]> {
 		if (user.roleName === ROLES.ADMIN) {
 			return this.usersRepo.find({

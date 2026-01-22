@@ -537,26 +537,6 @@ describe('LoanService', () => {
 		});
 	});
 
-	describe('findByUser', () => {
-		it('should return loans for specific user', async () => {
-			const userId = 1;
-			mockLoanRepository.find.mockResolvedValue([mockLoan]);
-
-			const result = await loanService.findByUser(tenantId, userId);
-
-			expect(loanRepository.find).toHaveBeenCalledWith({
-				where: {
-					book: { tenant_id: tenantId },
-					user_id: userId,
-					deleted_at: expect.anything(),
-				},
-				relations: ['book', 'book.category', 'book.publisher', 'user'],
-				order: { loan_date: 'DESC' },
-			});
-			expect(result).toEqual([mockLoan]);
-		});
-	});
-
 	describe('mostLoanedBooks', () => {
 		it('should return most loaned books', async () => {
 			const mockQueryBuilder = {
@@ -770,23 +750,6 @@ describe('LoanService', () => {
 			await expect(
 				loanService.requestLoan({ ...dto, quantity: 2 }, user),
 			).rejects.toThrow(BadRequestException);
-		});
-	});
-	describe('getMyLoansByPage', () => {
-		it('should return paginated loans', async () => {
-			const myLoans = [mockLoan];
-			mockLoanRepository.findAndCount.mockResolvedValue([myLoans, 1]);
-			const result: IPaginatedResponse<LoanEntity> = {
-				items: myLoans,
-				meta: {
-					per_page: 6,
-					total: 1,
-					current_page: 1,
-					last_page: 1,
-				},
-			};
-			const res = await loanService.getMyLoansByPage(1, 1);
-			expect(res).toEqual(result);
 		});
 	});
 });

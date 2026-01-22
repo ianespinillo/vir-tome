@@ -21,7 +21,7 @@ import {
 import { Button } from '@/ui/button';
 import { Skeleton } from '@/ui/skeleton';
 import { IApiResponse, IPaginatedResponse, UseQueryResult } from '@repo/common';
-import { parseAsInteger, useQueryState } from 'nuqs';
+import { useModalCrud } from '@/contexts/modal-crud-context';
 // components/GenericTable.tsx
 interface PaginableTableProps<T> {
 	query: UseQueryResult<IApiResponse<IPaginatedResponse<T>>>;
@@ -34,8 +34,8 @@ export const PaginableTable = <T,>({
 	columns,
 }: Readonly<PaginableTableProps<T>>) => {
 	const [sorting, setSorting] = useState<SortingState>([]);
-	const [_, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
 	const paginatedData = query.data?.data as IPaginatedResponse<T>;
+	const {setQueryParams} = useModalCrud();
 
 	const table = useReactTable<T>({
 		data: paginatedData?.items,
@@ -101,7 +101,10 @@ export const PaginableTable = <T,>({
 							<div className="flex items-center justify-between">
 								<Button
 									onClick={() =>
-										setPage(Math.max(paginatedData?.meta.current_page - 1, 1))
+										setQueryParams((prev)=> ({
+											...prev,
+											page:Math.max(paginatedData?.meta.current_page - 1, 1)
+										}))
 									}
 									disabled={paginatedData?.meta.current_page <= 1 || query.isFetching}
 								>
@@ -117,11 +120,12 @@ export const PaginableTable = <T,>({
 
 								<Button
 									onClick={() =>
-										setPage(
-											Math.min(
+										setQueryParams((prev)=> ({
+											...prev,
+											page:Math.min(
 												paginatedData?.meta.current_page + 1,
 												paginatedData?.meta.last_page,
-											),
+											),})
 										)
 									}
 									disabled={

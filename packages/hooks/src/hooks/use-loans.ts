@@ -1,16 +1,17 @@
 import {
 	CreateLoanDto,
 	GenericHookProps,
+	LoanQueriesDTO,
 	RequestLoanDTO,
 	UpdateLoanStatusDTO,
 } from '@repo/common';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import { LoanService } from '../services/loan.service';
 
-export const useLoans = ({ page, searchTerm }: GenericHookProps) => {
+export const useLoans = (queries: LoanQueriesDTO) => {
 	const loans = useQuery({
-		queryKey: ['loans', page],
-		queryFn: async () => (await LoanService.listLoans(page)).data,
+		queryKey: ['loans', queries],
+		queryFn: async () => (await LoanService.listLoans(queries)).data,
 		staleTime: 5000,
 		refetchOnWindowFocus: false,
 	});
@@ -38,10 +39,11 @@ export const useLoans = ({ page, searchTerm }: GenericHookProps) => {
 	};
 };
 
-export const useMyLoans = ({ page, searchTerm }: GenericHookProps) => {
+export const useMyLoans = (queries: LoanQueriesDTO) => {
+	queries.onlyMyLoans = true;
 	const getMyLoans = useQuery({
-		queryKey: ['my-loans', page],
-		queryFn: async () => (await LoanService.myLoans(page)).data,
+		queryKey: ['my-loans', queries],
+		queryFn: async () => (await LoanService.myLoans(queries)).data,
 	});
 	const requestLoan = useMutation({
 		mutationKey: ['request-loan'],
@@ -54,10 +56,10 @@ export const useMyLoans = ({ page, searchTerm }: GenericHookProps) => {
 	};
 };
 
-export const useLoansRequest = ({ page }: GenericHookProps) => {
+export const useLoansRequest = (queries: LoanQueriesDTO) => {
 	const lastRequests = useQuery({
-		queryKey: ['last-request', page],
-		queryFn: async () => (await LoanService.getLastRequests(page)).data,
+		queryKey: ['last-request', queries],
+		queryFn: async () => (await LoanService.getLastRequests(queries)).data,
 		refetchOnMount: false,
 		refetchOnWindowFocus: false,
 		placeholderData: keepPreviousData,
@@ -72,5 +74,43 @@ export const useLoansRequest = ({ page }: GenericHookProps) => {
 	return {
 		lastRequests,
 		updateLoanStatus,
+	};
+};
+
+
+export const useMyStats = () => {
+	const myStats = useQuery({
+		queryKey: ['my-loans-stats'],
+		queryFn: async () => (await LoanService.getStatistics()).data,
+		refetchOnMount: false,
+		refetchOnWindowFocus: false,
+		placeholderData: keepPreviousData,
+		refetchInterval: 5000,
+	});
+	const myAlerts = useQuery({
+		queryKey: ['my-loans-alerts'],
+		queryFn: async () => (await LoanService.getAlerts()).data,
+		refetchOnMount: false,
+		refetchOnWindowFocus: false,
+		placeholderData: keepPreviousData,
+		refetchInterval: 5000,
+	});
+	const myLastLoans = useQuery({
+		queryKey: ['my-last-loans'],
+		queryFn: async () => (await LoanService.myLoans({
+			page: 1,
+			limit: 5,
+			onlyMyLoans: true,
+			relations: ['book', 'book.publisher'],
+		})).data,	
+		refetchOnMount: false,
+		refetchOnWindowFocus: false,
+		placeholderData: keepPreviousData,
+		refetchInterval: 5000,
+	});
+	return {
+		myStats,
+		myAlerts,
+		myLastLoans,
 	};
 };

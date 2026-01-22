@@ -11,12 +11,10 @@ export const BooksCount = () => {
 		countBooks.refetch();
 	}, []);
 
-	if (!countBooks.data) return null;
-
 	return (
 		<GenericCountCard
 			title="Total Libros"
-			value={countBooks.data.data ?? 0}
+			value={countBooks.data?.data ?? 0}
 			icon={<BookOpen className="h-10 w-10" />}
 			color="indigo"
 		/>

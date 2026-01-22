@@ -2,7 +2,10 @@ import {
 	CreateLoanDto,
 	IApiResponse,
 	ILoan,
+	ILoanAlert,
+	ILoanStatistics,
 	IPaginatedResponse,
+	LoanQueriesDTO,
 	RequestLoanDTO,
 	UpdateLoanStatusDTO,
 } from '@repo/common';
@@ -24,9 +27,19 @@ export class LoanService {
 			LoanService.config,
 		);
 	}
-	public static async listLoans(page: number) {
+	public static async listLoans(queries: LoanQueriesDTO) {
+		const params = new URLSearchParams();
+		for (const [key, value] of Object.entries(queries)) {
+			if(Array.isArray(value)) {
+				value.forEach(v => params.append(key, v.toString()));
+				continue;
+			}
+			if (value) {
+				params.append(key, value.toString());
+			}
+		}
 		return axios.get<IApiResponse<IPaginatedResponse<ILoan>>>(
-			`${LoanService.baseUrl}?page=${page}`,
+			`${LoanService.baseUrl}?${params.toString()}`,
 			LoanService.config,
 		);
 	}
@@ -37,11 +50,8 @@ export class LoanService {
 			LoanService.config,
 		);
 	}
-	public static async myLoans(page: number) {
-		return axios.get<IApiResponse<IPaginatedResponse<ILoan>>>(
-			`${LoanService.baseUrl}/my?page=${page}`,
-			LoanService.config,
-		);
+	public static async myLoans(queries: LoanQueriesDTO) {
+		return this.listLoans(queries);
 	}
 	public static async getLoan(id: number) {
 		return axios.get<IApiResponse<ILoan>>(`${LoanService.baseUrl}/${id}`);
@@ -53,9 +63,15 @@ export class LoanService {
 			LoanService.config,
 		);
 	}
-	public static async getLastRequests(page: number) {
+	public static async getLastRequests(queries: LoanQueriesDTO) {
+		const params = new URLSearchParams();
+		for (const [key, value] of Object.entries(queries)) {
+			if (value) {
+				params.append(key, value.toString());
+			}
+		}
 		return axios.get<IApiResponse<IPaginatedResponse<ILoan>>>(
-			`${LoanService.baseUrl}/requests?page=${page}`,
+			`${LoanService.baseUrl}/requests?${params.toString()}`,
 			LoanService.config,
 		);
 	}
@@ -66,4 +82,17 @@ export class LoanService {
 			LoanService.config,
 		);
 	}
+	public static async getStatistics() {
+		return axios.get<IApiResponse<ILoanStatistics>>(
+			`${LoanService.baseUrl}/statistics`,
+			LoanService.config,
+		);
+	}
+	public static async getAlerts() {
+		return axios.get<IApiResponse<ILoanAlert[]>>(
+			`${LoanService.baseUrl}/alerts`,
+			LoanService.config,
+		);
+	}
+
 }

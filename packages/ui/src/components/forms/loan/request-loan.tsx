@@ -10,7 +10,7 @@ import {
 } from '@/ui/form';
 import { Input } from '@/ui/input';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
-import { ILoan, RequestLoanDTO } from '@repo/common';
+import { BaseQueriesDto, ILoan, RequestLoanDTO } from '@repo/common';
 import { useMyLoans } from '@repo/hooks';
 import React from 'react';
 import { useForm } from 'react-hook-form';
@@ -23,8 +23,7 @@ export const RequestLoan = () => {
 		setCreateOpen,
 		hook: { requestLoan },
 		entity,
-		setEntity,
-	} = useModalCrud<ILoan, ReturnType<typeof useMyLoans>>();
+	} = useModalCrud<ILoan, BaseQueriesDto<ILoan>, ReturnType<typeof useMyLoans>>();
 	const form = useForm<RequestLoanDTO>({
 		defaultValues: {
 			bookId: entity?.id || 0,

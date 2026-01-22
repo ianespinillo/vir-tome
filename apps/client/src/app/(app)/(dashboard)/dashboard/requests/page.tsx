@@ -14,7 +14,7 @@ export default function RequestsPage() {
 				</span>
 			</div>
 			<div className="flex flex-col space-y-4 p-2">
-				<ModalCrudProvider<ILoan, ReturnType<typeof useLoansRequest>>
+				<ModalCrudProvider<ReturnType<typeof useLoansRequest>, ILoan>
 					useHook={useLoansRequest}
 				>
 					<div className="flex flex-col gap-6 p-6 h-full w-full">

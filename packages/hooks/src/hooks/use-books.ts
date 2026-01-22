@@ -1,5 +1,6 @@
 // Hook useBooks actualizado para recibir searchTerm
 import {
+	BooksQueriesDto,
 	CreateBookDto,
 	GenericHookProps,
 	IBooKForm,
@@ -14,12 +15,12 @@ import {
 import { useEffect, useState } from 'react';
 import { BookService } from '../services/book.service';
 
-export const useBooks = ({ searchTerm, page }: GenericHookProps) => {
+export const useBooks = (queries: BooksQueriesDto) => {
 	const client = useQueryClient();
 
 	const books = useQuery({
-		queryKey: ['books', page, searchTerm],
-		queryFn: async () => (await BookService.getBooks(page, searchTerm)).data,
+		queryKey: ['books', queries],
+		queryFn: async () => (await BookService.getBooks(queries)).data,
 		placeholderData: keepPreviousData,
 		staleTime: 5000,
 		refetchOnWindowFocus: false,
@@ -29,7 +30,7 @@ export const useBooks = ({ searchTerm, page }: GenericHookProps) => {
 		mutationFn: async (data: CreateBookDto) =>
 			(await BookService.createBook(data)).data,
 		onSuccess: () => {
-			client.refetchQueries({ queryKey: ['books', page, searchTerm] });
+			client.refetchQueries({ queryKey: ['books', queries] });
 		},
 	});
 
@@ -42,7 +43,7 @@ export const useBooks = ({ searchTerm, page }: GenericHookProps) => {
 		mutationFn: async (data: UpdateBookDto) =>
 			(await BookService.updateBook(data.id, data)).data,
 		onSuccess: () => {
-			client.refetchQueries({ queryKey: ['books', page, searchTerm] });
+			client.refetchQueries({ queryKey: ['books', queries] });
 		},
 	});
 
@@ -50,7 +51,7 @@ export const useBooks = ({ searchTerm, page }: GenericHookProps) => {
 		mutationFn: async (id: string | number) =>
 			(await BookService.deleteBook(id)).data,
 		onSuccess: () => {
-			client.refetchQueries({ queryKey: ['books', page, searchTerm] });
+			client.refetchQueries({ queryKey: ['books', queries] });
 		},
 	});
 

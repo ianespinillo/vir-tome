@@ -30,7 +30,7 @@ import {
 	IUser,
 	IUserTenant,
 	ROLES,
-	Roles,
+	UsersQueriesDto,
 } from '@repo/common';
 import { InyectRoleidPipe } from '../pipes/inyect-roleid.pipe';
 import { UsersService } from '../services/users.service';
@@ -75,12 +75,10 @@ export class UsersController {
 	})
 	async getUsersByRole(
 		@User() user: IAuthUser,
-		@Query('q') q?: string,
-		@Query('role', ValidRolePipe) role?: ROLES,
-		@Query('page', new ParseIntPipe({ optional: true })) page = 1,
+		@Query() queries: UsersQueriesDto,
 	): Promise<IApiResponse<IPaginatedResponse<IUser>>> {
 		const data: IPaginatedResponse<IUser> =
-			await this.service.filterInTenantByRole(page, user, role, q);
+			await this.service.getUsers(user, queries);
 		return {
 			message: 'Users list retrived succesfully',
 			data,
@@ -89,34 +87,6 @@ export class UsersController {
 		};
 	}
 
-	@Get('lasts')
-	@RolesDecorator(ROLES.ADMIN, ROLES.SUPER_ADMIN)
-	@ApiOperation({ summary: 'Obtener los ultimos usuarios registrados' })
-	@ApiResponse({
-		status: HttpStatus.OK,
-		description: 'Usuario obtenido exitosamente',
-	})
-	@ApiResponse({
-		status: HttpStatus.NOT_FOUND,
-		description: 'Usuario no encontrado',
-	})
-	@ApiResponse({
-		status: HttpStatus.UNAUTHORIZED,
-		description: 'No se proporcionó sesión',
-	})
-	@ApiResponse({
-		status: HttpStatus.BAD_REQUEST,
-		description: 'Solicitud incorrecta',
-	})
-	async getLasts(@User() user: IAuthUser): Promise<IApiResponse<IUser[]>> {
-		const data = await this.service.findLastsRegistered(user);
-		return {
-			message: 'Last Users registeres retrieved succesfully',
-			data,
-			status: HttpStatus.OK,
-			timestamp: new Date().toISOString(),
-		};
-	}
 	@Get(':id')
 	@AuthBearer()
 	@ApiOperation({ summary: 'Obtener un usuario por ID' })

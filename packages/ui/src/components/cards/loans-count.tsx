@@ -9,7 +9,6 @@ export const LoansCount = () => {
 	useEffect(() => {
 		countLoans.refetch();
 	}, []);
-	if (!countLoans.data) return null;
 	return (
 		<GenericCountCard
 			title="Total de prestamos"

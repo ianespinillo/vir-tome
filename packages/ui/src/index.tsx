@@ -34,6 +34,10 @@ export { LoanDetailsDialog } from './components/dialogs/loan/loan-details';
 export { MyLoansTable } from './components/tables/table/my-loans-table';
 export { RequestLoanDialog } from './components/dialogs/loan/request-loan';
 export { RequestTable } from './components/tables/table/requests-table';
+export { AlertsPanel } from './components/cards/alert-card';
+export { StatCard } from './components/cards/stat-card';
+export { LoansPanel } from './components/cards/last-loans-card';
+export { UpcomingCard } from './components/cards/upcoming-card';
 export * from './ui/scroll-area';
 
 // toaster
@@ -50,8 +54,6 @@ export { CTAButtons } from './components/buttons/cta-buttons';
 export { FeatureCard } from './components/cards/feature-card';
 export { NavigationMenu } from './components/menus/navigation-menu';
 export { Logo } from './components/icons/logo';
-export { StatCard } from './components/cards/stat-card';
-
 // Shadcn
 export { Button } from './ui/button';
 export { AddButton } from './components/buttons/add-button';
@@ -66,6 +68,8 @@ export {
 	Clock,
 	Smartphone,
 	Play,
+	AlertTriangle,
+	CheckCircle,
 } from 'lucide-react';
 // Input
 export { InputFilter } from './components/inputs/input-filter';

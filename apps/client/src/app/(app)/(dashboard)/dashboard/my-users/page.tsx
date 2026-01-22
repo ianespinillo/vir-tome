@@ -1,5 +1,5 @@
 'use client';
-import { IUser } from '@repo/common';
+import { BaseQueriesDto, IUser } from '@repo/common';
 import { useUsers } from '@repo/hooks';
 import {
 	AddButton,
@@ -14,7 +14,7 @@ import {
 import React from 'react';
 export default function MyUsersPage() {
 	return (
-		<ModalCrudProvider<IUser, ReturnType<typeof useUsers>> useHook={useUsers}>
+		<ModalCrudProvider<ReturnType<typeof useUsers>, IUser, BaseQueriesDto<IUser>> useHook={useUsers}>
 			<Toaster richColors position="top-right" />
 			<div className="flex flex-col gap-6 p-6 h-full w-full">
 				<div className="flex justify-end p-2 gap-2">

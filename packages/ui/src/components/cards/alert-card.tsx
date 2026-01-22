@@ -2,15 +2,12 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/ui/alert';
 import { Badge } from '@/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card';
+import { ILoanAlert } from '@repo/common';
 import { AlertTriangle, Info } from 'lucide-react';
 
-export interface AlertItem {
-	type: 'error' | 'warning' | 'info';
-	text: string;
-}
 
 interface AlertsPanelProps {
-	alerts: AlertItem[];
+	alerts: ILoanAlert[];
 	className?: string;
 }
 
@@ -43,13 +40,13 @@ export function AlertsPanel({ alerts, className }: Readonly<AlertsPanelProps>) {
 			</CardHeader>
 			<CardContent className="flex-1 space-y-1.5 overflow-auto p-2.5">
 				{alerts.map((alert) => (
-					<Alert key={alert.text} className={cn('py-2', alertStyles[alert.type])}>
+					<Alert key={alert.message} className={cn('py-2', alertStyles[alert.severity])}>
 						{alert.type === 'info' ? (
 							<Info className={cn('h-3 w-3', alertIconStyles[alert.type])} />
 						) : (
-							<AlertTriangle className={cn('h-3 w-3', alertIconStyles[alert.type])} />
+							<AlertTriangle className={cn('h-3 w-3', alertIconStyles[alert.severity])} />
 						)}
-						<AlertDescription className="text-xs">{alert.text}</AlertDescription>
+						<AlertDescription className="text-xs">{alert.message}</AlertDescription>
 					</Alert>
 				))}
 			</CardContent>
