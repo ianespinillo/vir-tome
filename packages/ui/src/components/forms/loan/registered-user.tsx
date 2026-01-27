@@ -19,6 +19,7 @@ import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 
 import React, { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
+import toast from 'react-hot-toast';
 
 export const RegisteredUser = () => {
 	const form = useFormContext<CreateLoanDto>();
@@ -27,50 +28,17 @@ export const RegisteredUser = () => {
 	const { selectedUser, setSelectedUser } = useLoanContext();
 	const [currentPage, setCurrentPage] = useState(1);
 	const [pageInput, setPageInput] = useState('1');
-	const [allUsers, setAllUsers] = useState<IUser[]>([]);
-	const [totalPages, setTotalPages] = useState(1);
-	const [isLoading, setIsLoading] = useState(false);
 
-	const { getUsersByRole } = useUsers({ page: currentPage, searchTerm });
-	const [studentsResponse, teachersResponse] = [
-		getUsersByRole(ROLES.STUDENT).data?.data,
-		getUsersByRole(ROLES.TEACHER).data?.data,
-	];
+	const {
+		getUsersByRole: { data: usersResponse, isLoading },
+	} = useUsers({
+		page: currentPage,
+		search: searchTerm,
+		rolesNames: [ROLES.STUDENT, ROLES.TEACHER],
+	});
 
-	// Fetch and merge users for current page
-	useEffect(() => {
-		const fetchUsers = async () => {
-			if (!open) return;
-
-			setIsLoading(true);
-			try {
-				const mergedUsers: IUser[] = [
-					...(studentsResponse?.items || []),
-					...(teachersResponse?.items || []),
-				];
-
-				// Remove duplicates
-				const uniqueUsers = mergedUsers.filter(
-					(user, index, self) => self.findIndex((u) => u.id === user.id) === index,
-				);
-
-				setAllUsers(uniqueUsers);
-
-				// Calculate total pages based on the max of both responses
-				const maxPages = Math.max(
-					studentsResponse?.meta?.last_page || 1,
-					teachersResponse?.meta?.last_page || 1,
-				);
-				setTotalPages(maxPages);
-			} catch (error) {
-				console.error('[v0] Error fetching users:', error);
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
-		fetchUsers();
-	}, [open, currentPage, searchTerm]);
+	const allUsers = usersResponse?.data?.items || [];
+	const totalPages = usersResponse?.data?.meta?.last_page || 1;
 
 	const handleSelectUser = (user: IUser) => {
 		setSelectedUser(user);
@@ -96,7 +64,6 @@ export const RegisteredUser = () => {
 	const getUserInitials = (user: IUser) => {
 		return `${user.name?.[0] || ''}${user.surname?.[0] || ''}`.toUpperCase();
 	};
-
 	return (
 		<motion.div
 			initial={{ opacity: 0, height: 0 }}

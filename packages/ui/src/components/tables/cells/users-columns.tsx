@@ -1,26 +1,13 @@
 'use client';
-import { LinkTenantDialog } from '@/components/dialogs/tenants/link-tenant-dialog';
 import { GenericActions } from '@/components/dropdown/generic-actions';
 import { useModalCrud } from '@/contexts/modal-crud-context';
 import { copyId } from '@/helpers/clipboard-helper';
 import { Button } from '@/ui/button';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuTrigger,
-} from '@/ui/dropdown-menu';
-import { IUser, ROLES } from '@repo/common';
+import { IUser, ROLES, UsersQueriesDto } from '@repo/common';
 import { useUsers } from '@repo/hooks';
-import { ColumnDef, Table, TableMeta } from '@tanstack/react-table';
+import { ColumnDef } from '@tanstack/react-table';
 
-declare module '@tanstack/react-table' {
-	interface TableMeta<TData> {
-		rol?: ROLES;
-	}
-}
-import { ArrowUpDown, MoreHorizontal, Trash } from 'lucide-react';
+import { ArrowUpDown, Trash } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const userColumns: ColumnDef<IUser>[] = [
@@ -76,6 +63,7 @@ export const userColumns: ColumnDef<IUser>[] = [
 function UserActions({ user }: Readonly<{ user: IUser }>) {
 	const { setEntity, setDetailsOpen } = useModalCrud<
 		IUser,
+		UsersQueriesDto,
 		ReturnType<typeof useUsers>
 	>();
 	return (

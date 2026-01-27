@@ -19,7 +19,10 @@ export default function BooksPage() {
 	}, []);
 
 	return isClient ? (
-		<ModalCrudProvider<ReturnType<typeof useBooks>, IBook, BooksQueriesDto> useHook={useBooks} queries={new BooksQueriesDto()}>
+		<ModalCrudProvider<ReturnType<typeof useBooks>, IBook, BooksQueriesDto>
+			useHook={useBooks}
+			queries={new BooksQueriesDto()}
+		>
 			<div className="px-8 pt-3">
 				<h1 className="text-5xl font-bold text-primary">Libros</h1>
 				<span className="text-muted-foreground text-xl">

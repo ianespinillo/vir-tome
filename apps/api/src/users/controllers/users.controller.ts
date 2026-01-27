@@ -77,8 +77,10 @@ export class UsersController {
 		@User() user: IAuthUser,
 		@Query() queries: UsersQueriesDto,
 	): Promise<IApiResponse<IPaginatedResponse<IUser>>> {
-		const data: IPaginatedResponse<IUser> =
-			await this.service.getUsers(user, queries);
+		const data: IPaginatedResponse<IUser> = await this.service.getUsers(
+			user,
+			queries,
+		);
 		return {
 			message: 'Users list retrived succesfully',
 			data,

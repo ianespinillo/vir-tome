@@ -1,20 +1,16 @@
-import {
-	AddUserToTenantDto,
-	UsersQueriesDto,
-} from '@repo/common';
+import { AddUserToTenantDto, UsersQueriesDto } from '@repo/common';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import { UsersService } from '../services/users.service';
 
 export const useUsers = (queries: UsersQueriesDto) => {
 	const getUsersByRole = useQuery({
-			queryKey: ['users', queries],
-			queryFn: async () =>
-				(await UsersService.getUsers(queries)).data,
-			staleTime: 5000,
-			placeholderData: keepPreviousData,
-			refetchOnWindowFocus: false,
-			refetchOnMount: false,
-		});
+		queryKey: ['users', queries],
+		queryFn: async () => (await UsersService.getUsers(queries)).data,
+		staleTime: 5000,
+		placeholderData: keepPreviousData,
+		refetchOnWindowFocus: false,
+		refetchOnMount: false,
+	});
 	const attachUserToTenant = useMutation({
 		mutationKey: ['attach-user-to-tenant'],
 		mutationFn: async ({
@@ -43,7 +39,8 @@ export const useUserTenants = (userId: number) =>
 		queryFn: async () => (await UsersService.getUserTenants(userId)).data,
 	});
 
-	export const useLastRegisters = () =>useQuery({
+export const useLastRegisters = () =>
+	useQuery({
 		queryKey: ['last-registers'],
 		refetchOnMount: false,
 		refetchOnWindowFocus: false,

@@ -3,18 +3,9 @@
 
 import { GenericActions } from '@/components/dropdown/generic-actions';
 import { copyId } from '@/helpers/clipboard-helper';
-import { Badge } from '@/ui/badge'; // Ajusta según tu estructura de imports
-import { Button } from '@/ui/button';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuTrigger,
-} from '@/ui/dropdown-menu';
+import { Badge } from '@/ui/badge';
 import { ITenant } from '@repo/common';
 import { ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const Tenantcolumns: ColumnDef<ITenant>[] = [

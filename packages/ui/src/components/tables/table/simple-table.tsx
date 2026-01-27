@@ -17,18 +17,19 @@ import {
 import React from 'react';
 
 interface SimpleTableProps<T> {
-	query: UseQueryResult<IApiResponse<T[]>, IApiResponse<Error>>;
+	data: T[];
 	columns: ColumnDef<T>[];
+	isLoading?: boolean;
 }
 
 export const SimpleTable = <T,>({
-	query,
+	data,
 	columns,
+	isLoading = false,
 }: Readonly<SimpleTableProps<T>>) => {
-	const rows = query.data?.data;
 	const table = useReactTable({
 		columns,
-		data: rows ?? [],
+		data,
 		getCoreRowModel: getCoreRowModel(),
 	});
 	return (
@@ -49,7 +50,7 @@ export const SimpleTable = <T,>({
 
 				{/* Cuerpo de la tabla */}
 				<TableBody>
-					{query.isLoading ? (
+					{isLoading ? (
 						<TableRow>
 							<TableCell colSpan={columns.length} className="h-24 text-center">
 								<Skeleton className="w-full" />

@@ -1,6 +1,6 @@
 import { useModalCrud } from '@/contexts/modal-crud-context';
 import { Button } from '@/ui/button';
-import { ILoan, LoanStatus } from '@repo/common';
+import { ILoan, LoanQueriesDTO, LoanStatus } from '@repo/common';
 import { useLoansRequest } from '@repo/hooks';
 import { ColumnDef } from '@tanstack/react-table';
 import { Check, Info, X } from 'lucide-react';
@@ -29,7 +29,11 @@ export const requestColumns: ColumnDef<ILoan>[] = [
 				setEntity,
 				setDetailsOpen,
 				hook: { updateLoanStatus },
-			} = useModalCrud<ILoan, ReturnType<typeof useLoansRequest>>();
+			} = useModalCrud<
+				ILoan,
+				LoanQueriesDTO,
+				ReturnType<typeof useLoansRequest>
+			>();
 			return (
 				<div className="flex gap-2 justify-center">
 					<Button

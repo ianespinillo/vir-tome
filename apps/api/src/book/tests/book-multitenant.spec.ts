@@ -239,11 +239,11 @@ describe('Books Multi-tenant Integration (with Testcontainers)', () => {
 
 			const tenant1Page1 = await bookService.findAllWithDetailsPaginated(
 				tenant1.id,
-				1,
+				{ page: 1 },
 			);
 			const tenant2Page1 = await bookService.findAllWithDetailsPaginated(
 				tenant2.id,
-				1,
+				{ page: 1 },
 			);
 
 			expect(tenant1Page1.items).toHaveLength(6);

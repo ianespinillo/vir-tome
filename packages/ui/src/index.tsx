@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 
 export { LoginForm } from './components/forms/login-form';
-export { CategoryTable } from './components/tables/table/category-table';
 export { DashSidebar } from './components/sidebars/dash-sidebar';
 export { SidebarProvider } from './ui/sidebar';
 export { BookForm } from './components/forms/book-form';

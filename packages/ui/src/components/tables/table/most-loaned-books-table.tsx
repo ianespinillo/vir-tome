@@ -15,7 +15,8 @@ export const MostLoanedBooksTable = () => {
 			<CardDescription>Los últimos 5 préstamos realizados</CardDescription>
 			<SimpleTable<MostLoanedBooks>
 				columns={MostLoanedBooksColumns}
-				query={mostLoanedBooks}
+				data={mostLoanedBooks.data?.data ?? []}
+				isLoading={mostLoanedBooks.isLoading}
 			/>
 		</Card>
 	);

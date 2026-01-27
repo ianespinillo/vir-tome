@@ -18,7 +18,7 @@ export class AuthService {
 
 	public static async getSession() {
 		return await axios.get<IApiResponse<IRequestUser>>(
-			`${AuthService.baseUrl}/user`,
+			`${AuthService.baseUrl}/session`,
 			{
 				withCredentials: true,
 				headers: {

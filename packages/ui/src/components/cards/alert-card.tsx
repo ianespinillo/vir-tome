@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card';
 import { ILoanAlert } from '@repo/common';
 import { AlertTriangle, Info } from 'lucide-react';
 
-
 interface AlertsPanelProps {
 	alerts: ILoanAlert[];
 	className?: string;
@@ -40,11 +39,16 @@ export function AlertsPanel({ alerts, className }: Readonly<AlertsPanelProps>) {
 			</CardHeader>
 			<CardContent className="flex-1 space-y-1.5 overflow-auto p-2.5">
 				{alerts.map((alert) => (
-					<Alert key={alert.message} className={cn('py-2', alertStyles[alert.severity])}>
+					<Alert
+						key={alert.message}
+						className={cn('py-2', alertStyles[alert.severity])}
+					>
 						{alert.type === 'info' ? (
 							<Info className={cn('h-3 w-3', alertIconStyles[alert.type])} />
 						) : (
-							<AlertTriangle className={cn('h-3 w-3', alertIconStyles[alert.severity])} />
+							<AlertTriangle
+								className={cn('h-3 w-3', alertIconStyles[alert.severity])}
+							/>
 						)}
 						<AlertDescription className="text-xs">{alert.message}</AlertDescription>
 					</Alert>

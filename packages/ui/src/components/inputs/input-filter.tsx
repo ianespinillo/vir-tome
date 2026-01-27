@@ -12,7 +12,7 @@ interface InputFilterProps {
 }
 
 export const InputFilter = ({ text }: Readonly<InputFilterProps>) => {
-	const { setQueryParams, queryParams} = useModalCrud();
+	const { setQueryParams, queryParams } = useModalCrud();
 	const [localVal, setLocalVal] = useState(queryParams.search || '');
 	const value = useDebounceValue(localVal, 800);
 	useEffect(() => {

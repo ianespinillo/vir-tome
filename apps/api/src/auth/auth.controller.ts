@@ -272,7 +272,7 @@ export class AuthController {
 	})
 	@ApiUnauthorizedResponse({ description: 'Not authenticated' })
 	@AuthBearer()
-	@Get('user')
+	@Get('session')
 	getProfile(@Request() req: IRequest): IApiResponse<IRequestUser> {
 		if (!req.user) throw new BadRequestException('Not authenticated');
 		return {

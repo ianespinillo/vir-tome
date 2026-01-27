@@ -38,7 +38,7 @@ export class UsersService {
 		});
 	}
 	public static async getLastRegisters() {
-		return this.getUsers({page:1, limit: 5, onlyRecent: true})
+		return UsersService.getUsers({ page: 1, limit: 5, onlyRecent: true });
 	}
 	public static async attachUserToTenant(dto: AddUserToTenantDto, id: number) {
 		return axios.post<IApiResponse<IUser>>(

@@ -30,8 +30,8 @@ export class LoanService {
 	public static async listLoans(queries: LoanQueriesDTO) {
 		const params = new URLSearchParams();
 		for (const [key, value] of Object.entries(queries)) {
-			if(Array.isArray(value)) {
-				value.forEach(v => params.append(key, v.toString()));
+			if (Array.isArray(value)) {
+				value.forEach((v) => params.append(key, v.toString()));
 				continue;
 			}
 			if (value) {
@@ -51,7 +51,7 @@ export class LoanService {
 		);
 	}
 	public static async myLoans(queries: LoanQueriesDTO) {
-		return this.listLoans(queries);
+		return LoanService.listLoans(queries);
 	}
 	public static async getLoan(id: number) {
 		return axios.get<IApiResponse<ILoan>>(`${LoanService.baseUrl}/${id}`);
@@ -94,5 +94,4 @@ export class LoanService {
 			LoanService.config,
 		);
 	}
-
 }

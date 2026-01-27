@@ -1,24 +1,28 @@
 import { Transform, Type } from 'class-transformer';
 import {
-	IsOptional,
-	IsInt,
-	Min,
-	Max,
-	IsString,
-	IsEnum,
-	IsBoolean,
 	IsArray,
+	IsBoolean,
+	IsEnum,
+	IsInt,
+	IsOptional,
+	IsString,
+	Max,
+	Min,
 } from 'class-validator';
-import { IQueriesDto, RelationKeys } from '../../types/common/api-queries.type';
+import {
+	type AllPaths,
+	IQueriesDto,
+	RelationKeys,
+} from '../../types/common/api-queries.type';
 import { IGeneric } from '../../types/entities/generic.type';
 
-export class BaseQueriesDto<T extends IGeneric> implements IQueriesDto<T>{
+export class BaseQueriesDto<T extends IGeneric> implements IQueriesDto<T> {
 	// Paginación
 	@IsOptional()
 	@Type(() => Number)
 	@IsInt()
 	@Min(1)
-	page?: number
+	page?: number;
 
 	@IsOptional()
 	@Type(() => Number)
@@ -35,7 +39,7 @@ export class BaseQueriesDto<T extends IGeneric> implements IQueriesDto<T>{
 	// Ordenamiento (debe ser sobrescrito en clases hijas)
 	@IsOptional()
 	@IsString()
-	orderBy?: keyof T;
+	orderBy?: AllPaths<T>;
 
 	@IsOptional()
 	@IsEnum(['ASC', 'DESC'])
@@ -69,7 +73,7 @@ export class BaseQueriesDto<T extends IGeneric> implements IQueriesDto<T>{
 	@IsOptional()
 	@IsArray()
 	@IsString({ each: true })
-	fields?: (keyof T)[];
+	fields?: AllPaths<T>[];
 
 	@IsOptional()
 	@Type(() => Boolean)

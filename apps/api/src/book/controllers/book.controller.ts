@@ -206,14 +206,13 @@ export class BookController {
 	})
 	async findAll(
 		@User() user: IAuthUser,
-		@Query() queries: BooksQueriesDto
+		@Query() queries: BooksQueriesDto,
 	): Promise<
 		IApiResponse<BookEntity[]> | IApiResponse<IPaginatedResponse<BookEntity>>
 	> {
-		
 		const data = await this.bookService.findAllWithDetailsPaginated(
 			user.tenantId,
-			queries
+			queries,
 		);
 		return {
 			message: 'Books retrieved successfully',

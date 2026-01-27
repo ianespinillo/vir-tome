@@ -21,7 +21,6 @@ export interface ILoanStatistics {
 	returned: number;
 }
 
-
 //TODO: revisar como consumir esto en las alertas y los ultimos prestamos
 export interface ILoanAlert {
 	type: 'overdue' | 'due_soon' | 'info';

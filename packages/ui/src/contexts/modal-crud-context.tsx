@@ -21,7 +21,7 @@ export interface GenericHookProps {
 interface ModalCrudContextValue<
 	TEntity extends IGeneric,
 	TQuery extends BaseQueriesDto<TEntity>,
-	THookResult
+	THookResult,
 > {
 	entity: TEntity | null;
 
@@ -48,7 +48,7 @@ interface ModalCrudContextValue<
 type UseDataHook<
 	TEntity extends IGeneric,
 	TQuery extends BaseQueriesDto<TEntity>,
-	THookResult
+	THookResult,
 > = (props: TQuery) => THookResult;
 
 /* ===================== PROVIDER PROPS ===================== */
@@ -56,7 +56,7 @@ type UseDataHook<
 interface ModalCrudProviderProps<
 	THookResult,
 	TEntity extends IGeneric = IGeneric,
-	TQuery extends BaseQueriesDto<TEntity> = BaseQueriesDto<TEntity>
+	TQuery extends BaseQueriesDto<TEntity> = BaseQueriesDto<TEntity>,
 > {
 	children: ReactNode;
 	useHook: UseDataHook<TEntity, TQuery, THookResult>;
@@ -65,16 +65,18 @@ interface ModalCrudProviderProps<
 
 /* ===================== CONTEXT ===================== */
 
-const ModalCrudContext = createContext<ModalCrudContextValue<any, any, any> | null>(
-	null,
-);
+const ModalCrudContext = createContext<ModalCrudContextValue<
+	any,
+	any,
+	any
+> | null>(null);
 
 /* ===================== PROVIDER ===================== */
 
 export const ModalCrudProvider = <
 	THookResult,
 	TEntity extends IGeneric,
-	TQuery extends BaseQueriesDto<TEntity> = BaseQueriesDto<TEntity>
+	TQuery extends BaseQueriesDto<TEntity> = BaseQueriesDto<TEntity>,
 >({
 	children,
 	useHook,
@@ -138,7 +140,7 @@ export const ModalCrudProvider = <
 export const useModalCrud = <
 	TEntity extends IGeneric,
 	TQuery extends BaseQueriesDto<TEntity>,
-	THookResult
+	THookResult,
 >(): ModalCrudContextValue<TEntity, TQuery, THookResult> => {
 	const context = useContext(ModalCrudContext);
 	if (!context) {

@@ -5,7 +5,7 @@ import {
 import { FinalizeLoanPopover } from '@/components/popovers/finalize-loan';
 import { useModalCrud } from '@/contexts/modal-crud-context';
 import { Button } from '@/ui/button';
-import { ILoan, LoanStatus } from '@repo/common';
+import { ILoan, LoanQueriesDTO, LoanStatus } from '@repo/common';
 import { useLoans } from '@repo/hooks';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
@@ -119,6 +119,7 @@ export const loanColumn: ColumnDef<ILoan>[] = [
 			const loan = row.original;
 			const { setEntity, setDetailsOpen } = useModalCrud<
 				ILoan,
+				LoanQueriesDTO,
 				ReturnType<typeof useLoans>
 			>();
 			const nodes: ActionNode[] = [

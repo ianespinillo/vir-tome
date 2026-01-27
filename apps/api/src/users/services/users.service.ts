@@ -1,5 +1,6 @@
 import { IAuthUser } from '@/core/core.types';
 import { PasswordAdapter } from '@/core/passport-adapter';
+import { QueryHelper } from '@/core/query-helper';
 // src/users/services/users.service.ts
 import {
 	BadRequestException,
@@ -24,7 +25,6 @@ import { RoleEntity } from '../entities/role.entity';
 import { UserTenantEntity } from '../entities/user-tenant.entity';
 import { UserEntity } from '../entities/user.entity';
 import { RoleService } from './role.service';
-import { QueryHelper } from '@/core/query-helper';
 
 @Injectable()
 export class UsersService {
@@ -389,45 +389,54 @@ export class UsersService {
 		return stats;
 	}
 	async getUsers(
-    user: IAuthUser,
-    queries: UsersQueriesDto
-): Promise<IPaginatedResponse<IUser>> {
-    const qb = this.usersRepo.createQueryBuilder('user')
-        .leftJoinAndSelect('user.userTenants', 'ut')
-        .leftJoinAndSelect('ut.role', 'role')
-        .leftJoinAndSelect('ut.tenant', 'tenant');
+		user: IAuthUser,
+		queries: UsersQueriesDto,
+	): Promise<IPaginatedResponse<IUser>> {
+		const qb = this.usersRepo
+			.createQueryBuilder('user')
+			.leftJoinAndSelect('user.userTenants', 'ut')
+			.leftJoinAndSelect('ut.role', 'role')
+			.leftJoinAndSelect('ut.tenant', 'tenant');
 
-    // 1. Filtros de Integridad y Seguridad
-    qb.where('user.deleted_at IS NULL');
+		// 1. Filtros de Integridad y Seguridad
+		qb.where('user.deleted_at IS NULL');
 
-    if (user.roleName === ROLES.ADMIN) {
-        qb.andWhere('ut.tenant_id = :tenantId', { tenantId: user.tenantId })
-          .andWhere('role.name NOT IN (:...restricted)', {
-              restricted: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
-          });
-    }
+		if (user.roleName === ROLES.ADMIN) {
+			qb
+				.andWhere('ut.tenant_id = :tenantId', { tenantId: user.tenantId })
+				.andWhere('role.name NOT IN (:...restricted)', {
+					restricted: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
+				});
+		}
 
-    // 2. Filtros Dinámicos del DTO
-    if (queries.search) {
-        qb.andWhere('(user.name ILIKE :q OR user.email ILIKE :q)', { q: `%${queries.search}%` });
-    }
+		// 2. Filtros Dinámicos del DTO
+		if (queries.search) {
+			qb.andWhere('(user.name ILIKE :q OR user.email ILIKE :q)', {
+				q: `%${queries.search}%`,
+			});
+		}
 
-    if (queries.roleName) {
-        qb.andWhere('role.name = :roleName', { roleName: queries.roleName });
-    }
+		if (queries.roleName) {
+			qb.andWhere('role.name = :roleName', { roleName: queries.roleName });
+		}
+		if (queries.rolesNames) {
+			qb.andWhere('role.name IN (:...rolesNames)', {
+				rolesNames: queries.rolesNames,
+			});
+		}
 
-    if (queries.isActive !== undefined) {
-        qb.andWhere('user.isActive = :isActive', { isActive: queries.isActive });
-    }
+		if (queries.isActive !== undefined) {
+			qb.andWhere('user.isActive = :isActive', { isActive: queries.isActive });
+		}
 
-    // 3. Aplicar Paginación y Retornar
-    QueryHelper.applyBasePagination(qb, queries, 'user');
+		// 3. Aplicar Paginación y Retornar
+		QueryHelper.applyBasePagination(qb, queries, 'user');
 
-    return QueryHelper.getPaginatedResponse(qb, queries, (u) => {
-        const { password, ...rest } = u;
-        return rest as UserEntity;
-    });
-}
+		return QueryHelper.getPaginatedResponse(qb, queries, (u) => {
+			const { password, ...rest } = u;
+			return rest as UserEntity;
+		});
+	}
 	async findLastsRegistered(user: IAuthUser): Promise<UserEntity[]> {
 		if (user.roleName === ROLES.ADMIN) {
 			return this.usersRepo.find({

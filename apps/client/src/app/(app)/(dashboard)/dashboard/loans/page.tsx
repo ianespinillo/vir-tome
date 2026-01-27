@@ -15,7 +15,10 @@ export default function BooksPage() {
 	}, []);
 
 	return isClient ? (
-		<ModalCrudProvider<ReturnType<typeof useLoans>, ILoan, LoanQueriesDTO> useHook={useLoans} queries={new LoanQueriesDTO()}>
+		<ModalCrudProvider<ReturnType<typeof useLoans>, ILoan, LoanQueriesDTO>
+			useHook={useLoans}
+			queries={new LoanQueriesDTO()}
+		>
 			<div className="px-8 py-5">
 				<h1 className="text-5xl font-bold text-primary">Prestamos</h1>
 				<span className="text-muted-foreground text-xl">

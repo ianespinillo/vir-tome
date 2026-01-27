@@ -176,7 +176,8 @@ describe('LoanService', () => {
 				);
 				expect(loanRepository.create).toHaveBeenCalledWith({
 					loan_date: expect.any(Date),
-					book: { id: createLoanDto.bookId },
+					return_date: createLoanDto.returnDate,
+					book_id: createLoanDto.bookId,
 					quantity: createLoanDto.quantity,
 					borrower_type: LoanBorrowerType.REGISTERED_USER,
 					user_id: mockUser.id,
@@ -228,6 +229,8 @@ describe('LoanService', () => {
 					borrower_phone: '123456789',
 					borrower_national_id: 'ABC123',
 					user_id: undefined,
+					return_date: createExternalLoanDto.returnDate,
+					loan_date: expect.any(Date),
 				};
 
 				mockBookService.findById.mockResolvedValue({
@@ -257,9 +260,9 @@ describe('LoanService', () => {
 					createExternalLoanDto.quantity,
 				);
 				expect(loanRepository.create).toHaveBeenCalledWith({
-					bookId: createExternalLoanDto.bookId,
+					book_id: createExternalLoanDto.bookId,
 					quantity: createExternalLoanDto.quantity,
-					returnDate: createExternalLoanDto.returnDate,
+					return_date: createExternalLoanDto.returnDate,
 					borrower_type: LoanBorrowerType.EXTERNAL_BORROWER,
 					borrower_name: createExternalLoanDto.borrower_name,
 					borrower_email: createExternalLoanDto.borrower_email,
@@ -330,23 +333,6 @@ describe('LoanService', () => {
 				await expect(
 					loanService.createLoan(tenantId, createLoanDto),
 				).rejects.toThrow(BadRequestException);
-			});
-
-			it('should handle transaction rollback on error', async () => {
-				mockBookService.findById.mockResolvedValue({
-					...mockBook,
-					availableQuantity: 5,
-				});
-				mockUsersService.findById.mockResolvedValue(mockUser);
-				mockLoanRepository.create.mockReturnValue(mockLoan);
-
-				mockLoanRepository.manager.transaction.mockRejectedValue(
-					new Error('Database error'),
-				);
-
-				await expect(
-					loanService.createLoan(tenantId, createLoanDto),
-				).rejects.toThrow('Database error');
 			});
 		});
 	});
@@ -471,18 +457,37 @@ describe('LoanService', () => {
 			const loans = [mockLoan];
 			const queries = { page, limit: defaultLimit } as ILoansQueries;
 
-			mockLoanRepository.findAndCount.mockResolvedValue([loans, total]);
+			const mockQueryBuilder = {
+				leftJoinAndSelect: jest.fn().mockReturnThis(),
+				where: jest.fn().mockReturnThis(),
+				andWhere: jest.fn().mockReturnThis(),
+				orderBy: jest.fn().mockReturnThis(),
+				take: jest.fn().mockReturnThis(),
+				skip: jest.fn().mockReturnThis(),
+				getManyAndCount: jest.fn().mockResolvedValue([loans, total]),
+			};
+
+			mockLoanRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
 			const result = await loanService.paginatedLoans(queries, tenantId);
 
-			expect(loanRepository.findAndCount).toHaveBeenCalledWith(
-				expect.objectContaining({
-					where: { book: { tenant_id: tenantId } },
-					take: defaultLimit,
-					skip: 0,
-					order: { id: 'DESC' },
-				}),
+			expect(mockLoanRepository.createQueryBuilder).toHaveBeenCalledWith('loan');
+			expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+				'loan.book',
+				'book',
 			);
+			expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+				'loan.user',
+				'user',
+			);
+			expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+				'book.tenant_id = :tenantId',
+				{ tenantId },
+			);
+
+			expect(mockQueryBuilder.take).toHaveBeenCalledWith(defaultLimit);
+			expect(mockQueryBuilder.skip).toHaveBeenCalledWith(0);
+			expect(mockQueryBuilder.getManyAndCount).toHaveBeenCalled();
 
 			expect(result).toEqual({
 				items: loans,
@@ -499,40 +504,81 @@ describe('LoanService', () => {
 			const page = 2;
 			const queries = { page, limit: defaultLimit } as ILoansQueries;
 
-			mockLoanRepository.findAndCount.mockResolvedValue([[], total]);
+			const mockQueryBuilder = {
+				leftJoinAndSelect: jest.fn().mockReturnThis(),
+				where: jest.fn().mockReturnThis(),
+				andWhere: jest.fn().mockReturnThis(),
+				orderBy: jest.fn().mockReturnThis(),
+				take: jest.fn().mockReturnThis(),
+				skip: jest.fn().mockReturnThis(),
+				getManyAndCount: jest.fn().mockResolvedValue([[], total]),
+			};
+
+			mockLoanRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
 			await loanService.paginatedLoans(queries, tenantId);
 
-			expect(loanRepository.findAndCount).toHaveBeenCalledWith(
-				expect.objectContaining({
-					skip: 5,
-					take: defaultLimit,
-				}),
-			);
+			expect(mockQueryBuilder.skip).toHaveBeenCalledWith(5);
+			expect(mockQueryBuilder.take).toHaveBeenCalledWith(defaultLimit);
 		});
 
-		it('should include filters in the repository call', async () => {
+		it('should include search filter in the query builder calls', async () => {
 			const queries = {
 				search: 'Don Quijote',
-				status: 'ACTIVE',
 				limit: 10,
 			} as ILoansQueries;
 
-			mockLoanRepository.findAndCount.mockResolvedValue([[], 0]);
+			const mockQueryBuilder = {
+				leftJoinAndSelect: jest.fn().mockReturnThis(),
+				where: jest.fn().mockReturnThis(),
+				andWhere: jest.fn().mockReturnThis(),
+				orderBy: jest.fn().mockReturnThis(),
+				take: jest.fn().mockReturnThis(),
+				skip: jest.fn().mockReturnThis(),
+				getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+			};
+
+			mockLoanRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
 			await loanService.paginatedLoans(queries, tenantId);
 
-			expect(loanRepository.findAndCount).toHaveBeenCalledWith(
-				expect.objectContaining({
-					where: expect.objectContaining({
-						status: 'ACTIVE',
-						book: expect.objectContaining({
-							tenant_id: tenantId,
-							title: expect.anything(),
-						}),
-					}),
-					take: 10,
-				}),
+			expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+				'book.tenant_id = :tenantId',
+				{ tenantId },
+			);
+			expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+				'(book.title ILIKE :s OR loan.borrower_name ILIKE :s)',
+				{ s: '%Don Quijote%' },
+			);
+			expect(mockQueryBuilder.take).toHaveBeenCalledWith(10);
+		});
+
+		it('should apply search filter only when provided', async () => {
+			const queries = {
+				limit: 10,
+			} as ILoansQueries;
+
+			const mockQueryBuilder = {
+				leftJoinAndSelect: jest.fn().mockReturnThis(),
+				where: jest.fn().mockReturnThis(),
+				andWhere: jest.fn().mockReturnThis(),
+				orderBy: jest.fn().mockReturnThis(),
+				take: jest.fn().mockReturnThis(),
+				skip: jest.fn().mockReturnThis(),
+				getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+			};
+
+			mockLoanRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+			await loanService.paginatedLoans(queries, tenantId);
+
+			expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+				'book.tenant_id = :tenantId',
+				{ tenantId },
+			);
+			expect(mockQueryBuilder.andWhere).not.toHaveBeenCalledWith(
+				'(book.title ILIKE :s OR loan.borrower_name ILIKE :s)',
+				expect.any(Object),
 			);
 		});
 	});

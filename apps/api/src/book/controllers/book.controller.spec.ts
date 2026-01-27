@@ -5,6 +5,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 // src/books/controllers/book.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import {
+	BooksQueriesDto,
 	CreateBookDto,
 	IApiResponse,
 	IPaginatedResponse,
@@ -185,27 +186,16 @@ describe('BookController', () => {
 				paginatedResult,
 			);
 
-			const result = await controller.findAll(mockRequest, 1, false);
+			const result = await controller.findAll(mockRequest, {});
 			controllerResponse.data = paginatedResult;
-			expect(bookService.findAllWithDetailsPaginated).toHaveBeenCalledWith(1, 1);
-			expect(result).toEqual(controllerResponse);
-		});
-
-		it('should return all books when full=true', async () => {
-			const allBooks = [mockBook];
-
-			mockBookService.findAll.mockResolvedValue(allBooks);
-
-			const result = await controller.findAll(mockRequest, 1, true);
-			controllerResponse.data = allBooks;
-			expect(bookService.findAll).toHaveBeenCalledWith(1);
+			expect(bookService.findAllWithDetailsPaginated).toHaveBeenCalledWith(1, {});
 			expect(result).toEqual(controllerResponse);
 		});
 
 		it('should search books when search parameter provided', async () => {
 			const searchResult: IPaginatedResponse<any> = {
 				items: [mockBook],
-				meta: { total: 1, current_page: 1, last_page: 1, per_page: 1 },
+				meta: { total: 1, current_page: 1, last_page: 1, per_page: 10 },
 			};
 
 			mockBookService.findBookByName.mockResolvedValue({
@@ -215,8 +205,10 @@ describe('BookController', () => {
 				last_page: 1,
 			});
 			controllerResponse.data = searchResult;
-			const result = await controller.findAll(mockRequest, 1, false, 'test');
-			expect(bookService.findBookByName).toHaveBeenCalledWith(1, 'test');
+			const result = await controller.findAll(mockRequest, { search: 'test' });
+			expect(bookService.findAllWithDetailsPaginated).toHaveBeenCalledWith(1, {
+				search: 'test',
+			});
 			expect(result).toEqual(controllerResponse);
 		});
 	});

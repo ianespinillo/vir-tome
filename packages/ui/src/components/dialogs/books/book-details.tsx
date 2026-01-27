@@ -1,13 +1,14 @@
 import { useModalCrud } from '@/contexts/modal-crud-context';
 import { Badge } from '@/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/dialog';
-import { IBook } from '@repo/common';
+import { BooksQueriesDto, IBook } from '@repo/common';
 import { useBooks } from '@repo/hooks';
 import { Building2, Calendar, Package } from 'lucide-react';
 
 export function BookDetailDialog() {
 	const { entity, detailsOpen, setDetailsOpen } = useModalCrud<
 		IBook,
+		BooksQueriesDto,
 		ReturnType<typeof useBooks>
 	>();
 	if (!entity) return null;

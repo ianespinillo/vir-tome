@@ -11,7 +11,14 @@ import {
 	IPaginatedResponse,
 	UpdateBookDto,
 } from '@repo/common';
-import { Between, FindOptionsWhere, ILike, In, MoreThan, Repository } from 'typeorm';
+import {
+	Between,
+	FindOptionsWhere,
+	ILike,
+	In,
+	MoreThan,
+	Repository,
+} from 'typeorm';
 import { BookEntity } from '../entities/book.entity';
 import { CategoryService } from '../services/category.service';
 import { PublisherService } from './publisher.service';
@@ -94,62 +101,55 @@ export class BookService extends MultiTenantService<BookEntity> {
 		return transformedBooks;
 	}
 	async findAllWithDetailsPaginated(
-    tenantId: number,
-    query: BooksQueriesDto,
-): Promise<IPaginatedResponse<BookEntity>> {
-    const {
-        page = 1,
-        limit = 6,
-        search,
-        categoryIds,
-        publisherId,
-        minYear,
-        maxYear,
-        hasAvailableStock,
-        minQuantity,
-        maxQuantity,
-    } = query;
+		tenantId: number,
+		query: BooksQueriesDto,
+	): Promise<IPaginatedResponse<BookEntity>> {
+		const {
+			page = 1,
+			limit = 6,
+			search,
+			categoryIds,
+			publisherId,
+			minYear,
+			maxYear,
+			hasAvailableStock,
+			minQuantity,
+			maxQuantity,
+		} = query;
 
-    const where: FindOptionsWhere<BookEntity> = {
-        ...(search && { title: ILike(`%${search}%`) }),
-        ...(publisherId && { publisher: { id: publisherId } }),
-        ...(categoryIds?.length && { categories: { id: In(categoryIds) } }),
-        ...((minYear || maxYear) && {
-            publicationYear: Between(
-                minYear ?? 0, 
-                maxYear ?? new Date().getFullYear() + 10
-            ),
-        }),
-        ...(hasAvailableStock && { availableQuantity: MoreThan(0) }),
-        ...((minQuantity !== undefined || maxQuantity !== undefined) && {
-            availableQuantity: Between(
-                minQuantity ?? 0, 
-                maxQuantity ?? 999999
-            ),
-        }),
-    };
+		const where: FindOptionsWhere<BookEntity> = {
+			...(search && { title: ILike(`%${search}%`) }),
+			...(publisherId && { publisher: { id: publisherId } }),
+			...(categoryIds?.length && { categories: { id: In(categoryIds) } }),
+			...((minYear || maxYear) && {
+				publicationYear: Between(
+					minYear ?? 0,
+					maxYear ?? new Date().getFullYear() + 10,
+				),
+			}),
+			...(hasAvailableStock && { availableQuantity: MoreThan(0) }),
+			...((minQuantity !== undefined || maxQuantity !== undefined) && {
+				availableQuantity: Between(minQuantity ?? 0, maxQuantity ?? 999999),
+			}),
+		};
 
-    const [data, total] = await this.findAndCount(
-        tenantId,
-        where,
-        {
-            relations: ['categories', 'publisher'],
-            order: { id: 'ASC' },
-            take: limit,
-            skip: (page - 1) * limit,
-        },
-    );
+		const [data, total] = await this.findAndCount(tenantId, where, {
+			relations: ['categories', 'publisher'],
+			order: { id: 'ASC' },
+			take: limit,
+			skip: (page - 1) * limit,
+		});
 
-    return {
-        items: data,
-        meta: {
-            current_page: page,
-            last_page: Math.ceil(total / limit),
-            per_page: limit,
-            total,
-        },
-    };
-}
+		return {
+			items: data,
+			meta: {
+				current_page: page,
+				last_page: Math.ceil(total / limit),
+				per_page: limit,
+				total,
+			},
+		};
+	}
 	async findOneBook(tenantId: number, id: number): Promise<BookEntity> {
 		const book = await this.findOne(
 			tenantId,

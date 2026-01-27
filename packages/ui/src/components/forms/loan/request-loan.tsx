@@ -23,7 +23,11 @@ export const RequestLoan = () => {
 		setCreateOpen,
 		hook: { requestLoan },
 		entity,
-	} = useModalCrud<ILoan, BaseQueriesDto<ILoan>, ReturnType<typeof useMyLoans>>();
+	} = useModalCrud<
+		ILoan,
+		BaseQueriesDto<ILoan>,
+		ReturnType<typeof useMyLoans>
+	>();
 	const form = useForm<RequestLoanDTO>({
 		defaultValues: {
 			bookId: entity?.id || 0,

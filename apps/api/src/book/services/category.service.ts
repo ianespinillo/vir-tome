@@ -27,8 +27,10 @@ export class CategoryService extends GenericService {
 	async createCategory(
 		createCategoryDto: CreateCategoryDto,
 	): Promise<CategoryEntity> {
-		const category = this.categoryRepository.create(createCategoryDto);
-		return this.categoryRepository.save(category);
+		const category = this.categoryRepository.create({
+			name: createCategoryDto.name,
+		});
+		return this.categoryRepository.save<CategoryEntity>(category);
 	}
 	async updateCategory(
 		id: number,

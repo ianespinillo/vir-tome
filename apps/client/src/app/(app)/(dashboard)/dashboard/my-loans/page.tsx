@@ -14,10 +14,22 @@ import {
 import React from 'react';
 export default function MyLoansPage() {
 	return (
-		<ModalCrudProvider<ReturnType<typeof useMyLoans>, ILoan, BaseQueriesDto<ILoan>> useHook={useMyLoans}>
+		<ModalCrudProvider<
+			ReturnType<typeof useMyLoans>,
+			ILoan,
+			BaseQueriesDto<ILoan>
+		>
+			useHook={useMyLoans}
+		>
 			<Toaster richColors position="top-right" />
 			<div className="flex flex-col gap-6 p-6 h-full w-full">
-				<div className="flex justify-end p-2 gap-2">
+				<div className="flex justify-between items-center p-2 gap-2">
+					<div>
+						<h1 className="text-5xl font-bold text-primary">Mis Préstamos</h1>
+						<span className="text-muted-foreground text-xl">
+							Estos son tus prestamos en curso o finalizados
+						</span>
+					</div>
 					<Button />
 				</div>
 				<div className="w-full">

@@ -1,19 +1,15 @@
-import {
-	IsBoolean,
-	IsEnum,
-	IsInt,
-	IsOptional,
-	Min,
-} from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsBoolean, IsEnum, IsInt, IsOptional, Min } from 'class-validator';
 import { LoanBorrowerType } from '../../enum/loan-borrower-type.enum';
 import { LoanStatus } from '../../enum/loan-status.enum';
+import { ILoan } from '../../types/entities/loan.type';
 import { ILoansQueries } from '../../types/loans/loan-queries.type';
 import { BaseQueriesDto } from '../common/base-queries.dto';
-import { ILoan } from '../../types/entities/loan.type';
-import { Type } from 'class-transformer';
 
-
-export class LoanQueriesDTO extends BaseQueriesDto<ILoan> implements ILoansQueries {
+export class LoanQueriesDTO
+	extends BaseQueriesDto<ILoan>
+	implements ILoansQueries
+{
 	@IsOptional()
 	@IsEnum(LoanStatus)
 	status?: LoanStatus;

@@ -24,10 +24,7 @@
 		"prepare": "husky",
 		"ts:check": "tsc --noEmit --skipLibCheck"
 	},
-	"workspaces": [
-		"packages/*",
-		"apps/*"
-	],
+	"workspaces": ["packages/*", "apps/*"],
 	"packageManager": "pnpm@9.8.0",
 	"dependencies": {
 		"husky": "^9.1.6"

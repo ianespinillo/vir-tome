@@ -7,6 +7,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/ui/card';
+import { ITenant } from '@repo/common';
 import { useTenants } from '@repo/hooks';
 import { Tenantcolumns } from '../cells/tenant-columns';
 import { SimpleTable } from './simple-table';
@@ -21,7 +22,11 @@ export function RecentTenantsTable() {
 			</CardHeader>
 
 			<CardContent className="flex-1 overflow-auto p-0 px-3 pb-3">
-				<SimpleTable columns={Tenantcolumns} query={getLastTenants} />
+				<SimpleTable<ITenant>
+					columns={Tenantcolumns}
+					data={getLastTenants.data?.data ?? []}
+					isLoading={getLastTenants.isLoading}
+				/>
 			</CardContent>
 		</Card>
 	);

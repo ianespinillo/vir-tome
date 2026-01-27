@@ -1,6 +1,6 @@
-import { ROLES } from "../../enum/roles.enum";
-import { IQueriesDto } from "../common/api-queries.type";
-import { IUser } from "../entities/user.type";
+import { ROLES } from '../../enum/roles.enum';
+import { IQueriesDto } from '../common/api-queries.type';
+import { IUser } from '../entities/user.type';
 
 // interfaces/users-queries.interface.ts
 export interface IUsersQueries extends IQueriesDto<IUser> {
@@ -19,6 +19,7 @@ export interface IUsersQueries extends IQueriesDto<IUser> {
 	roleId?: number;
 	roleIds?: number[];
 	roleName?: ROLES;
+	rolesNames?: ROLES[];
 
 	// Filtros por actividad de login
 	lastLoginAfter?: Date;

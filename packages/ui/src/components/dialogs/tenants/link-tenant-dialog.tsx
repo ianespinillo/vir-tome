@@ -46,10 +46,10 @@ export function LinkTenantDialog({
 	const [selectedRole, setSelectedRole] = useState<ROLES>(ROLES.ADMIN);
 
 	const { attachUserToTenant, getUsersByRole } = useUsers({
+		roleName: selectedRole,
 		page,
-		searchTerm: '',
 	});
-	const { data: usersData, isLoading, isFetching } = getUsersByRole();
+	const { data: usersData, isLoading, isFetching } = getUsersByRole;
 
 	// Infinite scroll observer
 	const handleObserver = useCallback(

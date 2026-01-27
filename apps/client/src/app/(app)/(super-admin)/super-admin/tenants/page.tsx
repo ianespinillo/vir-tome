@@ -1,5 +1,5 @@
 'use client';
-import { ITenant } from '@repo/common';
+import { BaseQueriesDto, ITenant } from '@repo/common';
 import { useTenants } from '@repo/hooks';
 import {
 	AddButton,
@@ -18,7 +18,11 @@ export default function TenantsPage() {
 	useEffect(() => setIsClient(true), []);
 	return (
 		isClient && (
-			<ModalCrudProvider<ITenant, ReturnType<typeof useTenants>>
+			<ModalCrudProvider<
+				ReturnType<typeof useTenants>,
+				ITenant,
+				BaseQueriesDto<ITenant>
+			>
 				useHook={useTenants}
 			>
 				<div className="flex flex-col gap-6 p-6 h-full w-full">

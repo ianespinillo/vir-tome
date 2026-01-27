@@ -30,7 +30,13 @@ import {
 	SelectValue,
 } from '@/ui/select';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
-import { ITenant, IUser, ROLES, SignUpDto } from '@repo/common';
+import {
+	ITenant,
+	IUser,
+	ROLES,
+	SignUpDto,
+	UsersQueriesDto,
+} from '@repo/common';
 import { useAuth, useTenants, useUsers } from '@repo/hooks';
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -40,6 +46,7 @@ import { FormSelect } from '../select/form-select';
 export const UserForm = () => {
 	const { entity, setCreateOpen } = useModalCrud<
 		IUser,
+		UsersQueriesDto,
 		ReturnType<typeof useUsers>
 	>();
 	const [showTenantField, setShowTenantField] = useState(false);

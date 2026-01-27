@@ -13,7 +13,9 @@ import { SuperAdminModule } from './super-admin/super-admin.module';
 import { TenantsModule } from './tenants/tenants.module';
 import { UsersModule } from './users/users.module';
 async function bootstrap() {
+	console.log('Starting Vir-tome API...');
 	const app = await NestFactory.create(AppModule);
+	console.log('Applying global configurations...');
 	app.useGlobalPipes(new ValidationPipe());
 	app.setGlobalPrefix('api');
 	app.use(cookieParser());
@@ -36,7 +38,6 @@ async function bootstrap() {
 
 			const isAllowedDomain =
 				hostname === baseDomain || hostname.endsWith(`.${baseDomain}`);
-
 			const isAllowedProtocol = isProd
 				? url.protocol === 'https:'
 				: url.protocol === 'http:';
@@ -71,5 +72,8 @@ async function bootstrap() {
 	});
 	SwaggerModule.setup('api/docs', app, document);
 	await app.listen(process.env.PORT ?? 3000);
+	console.log(
+		`API is running on http://localhost:${process.env.PORT ?? 3000}/api`,
+	);
 }
 bootstrap();

@@ -77,7 +77,6 @@ export const useLoansRequest = (queries: LoanQueriesDTO) => {
 	};
 };
 
-
 export const useMyStats = () => {
 	const myStats = useQuery({
 		queryKey: ['my-loans-stats'],
@@ -85,7 +84,6 @@ export const useMyStats = () => {
 		refetchOnMount: false,
 		refetchOnWindowFocus: false,
 		placeholderData: keepPreviousData,
-		refetchInterval: 5000,
 	});
 	const myAlerts = useQuery({
 		queryKey: ['my-loans-alerts'],
@@ -93,20 +91,28 @@ export const useMyStats = () => {
 		refetchOnMount: false,
 		refetchOnWindowFocus: false,
 		placeholderData: keepPreviousData,
-		refetchInterval: 5000,
 	});
 	const myLastLoans = useQuery({
 		queryKey: ['my-last-loans'],
-		queryFn: async () => (await LoanService.myLoans({
-			page: 1,
-			limit: 5,
-			onlyMyLoans: true,
-			relations: ['book', 'book.publisher'],
-		})).data,	
+		queryFn: async () =>
+			(
+				await LoanService.myLoans({
+					page: 1,
+					limit: 5,
+					onlyMyLoans: true,
+					relations: ['book', 'book.publisher'],
+					fields: [
+						'return_date',
+						'book.publisher.name',
+						'book.title',
+						'status',
+						'id',
+					],
+				})
+			).data,
 		refetchOnMount: false,
 		refetchOnWindowFocus: false,
 		placeholderData: keepPreviousData,
-		refetchInterval: 5000,
 	});
 	return {
 		myStats,

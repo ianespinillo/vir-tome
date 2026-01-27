@@ -11,7 +11,6 @@ export default function DashboardLayout({
 				<DashSidebar />
 				<div className="w-full">{children}</div>
 			</div>
-			;
 		</SidebarProvider>
 	);
 }

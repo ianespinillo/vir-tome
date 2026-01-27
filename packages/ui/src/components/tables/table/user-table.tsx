@@ -11,7 +11,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/ui/select';
-import { BaseQueriesDto, ROLES as BASEROLES, IUser, UsersQueriesDto } from '@repo/common';
+import { ROLES as BASEROLES, IUser, UsersQueriesDto } from '@repo/common';
 import { useAuth, useUsers } from '@repo/hooks';
 import { parseAsInteger, useQueryState } from 'nuqs';
 import React, { useState } from 'react';
@@ -21,7 +21,7 @@ import { PaginableTable } from './paginable-table';
 export const UsersTable = () => {
 	const {
 		hook: { getUsersByRole },
-		setQueryParams
+		setQueryParams,
 	} = useModalCrud<IUser, UsersQueriesDto, ReturnType<typeof useUsers>>();
 	const [_, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
 	const { session } = useAuth();

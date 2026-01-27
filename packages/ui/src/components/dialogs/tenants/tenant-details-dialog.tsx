@@ -5,7 +5,7 @@ import { Badge } from '@/ui/badge';
 import { Card, CardContent } from '@/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/dialog';
 import { Separator } from '@/ui/separator';
-import { ITenant } from '@repo/common';
+import { BaseQueriesDto, ITenant } from '@repo/common';
 import type { useTenants } from '@repo/hooks';
 import {
 	BookOpen,
@@ -50,7 +50,11 @@ export const TenantDetailsDialog = () => {
 		entity: school,
 		detailsOpen,
 		closeViewDetails,
-	} = useModalCrud<ITenant, ReturnType<typeof useTenants>>();
+	} = useModalCrud<
+		ITenant,
+		BaseQueriesDto<ITenant>,
+		ReturnType<typeof useTenants>
+	>();
 	if (detailsOpen && !school) {
 		closeViewDetails();
 		return <div>No entity found</div>;

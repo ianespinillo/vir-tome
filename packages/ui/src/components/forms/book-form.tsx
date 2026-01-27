@@ -21,7 +21,7 @@ import {
 } from '@/ui/form';
 import { Input } from '@/ui/input';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
-import { CreateBookDto, IBook } from '@repo/common';
+import { BooksQueriesDto, CreateBookDto, IBook } from '@repo/common';
 import { useBooks } from '@repo/hooks';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle } from 'lucide-react';
@@ -37,7 +37,7 @@ export function BookForm() {
 		hook: { createBook, updateBook },
 		closeEdit,
 		setCreateOpen,
-	} = useModalCrud<IBook, ReturnType<typeof useBooks>>();
+	} = useModalCrud<IBook, BooksQueriesDto, ReturnType<typeof useBooks>>();
 	if (!entity?.id) {
 		closeEdit();
 	}

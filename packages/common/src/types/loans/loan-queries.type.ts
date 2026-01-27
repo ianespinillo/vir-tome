@@ -6,21 +6,19 @@ import { ILoan } from '../entities/loan.type';
 export interface ILoansQueries extends IQueriesDto<ILoan> {
 	status?: LoanStatus;
 	borrowerType?: LoanBorrowerType;
-	
+
 	// Filtros de usuario
 	userId?: number;
 	bookId?: number;
-	
+
 	// Filtros de vencimiento
 	isOverdue?: boolean;
 	dueSoon?: boolean;
 	dueSoonDays?: number;
-	
+
 	// Filtros de fecha
 	loanDateFrom?: Date;
 	loanDateTo?: Date;
 	returnDateFrom?: Date;
 	returnDateTo?: Date;
-	
-	
 }

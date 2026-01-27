@@ -3,6 +3,7 @@
 
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import {
+	BaseQueriesDto,
 	CreateTenantDto,
 	ITenant,
 	UpdateTenantDto,
@@ -58,7 +59,11 @@ export const TenantForm = ({ onSuccess }: TenantFormProps) => {
 	const {
 		hook: { createTenant, updateTenant },
 		entity: tenant,
-	} = useModalCrud<ITenant, ReturnType<typeof useTenants>>();
+	} = useModalCrud<
+		ITenant,
+		BaseQueriesDto<ITenant>,
+		ReturnType<typeof useTenants>
+	>();
 
 	// Instanciamos el DTO correcto para la validación
 	const resolver = classValidatorResolver(
