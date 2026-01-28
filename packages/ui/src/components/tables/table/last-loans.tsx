@@ -11,7 +11,11 @@ export const LastLoansTable = () => {
 		<Card className="p-4 rounded-lg">
 			<CardTitle>Últimos préstamos</CardTitle>
 			<CardDescription>Los últimos préstamos realizados</CardDescription>
-			<SimpleTable<ILoan> columns={LastLoansColumns} query={lastLoans} />
+			<SimpleTable<ILoan>
+				columns={LastLoansColumns}
+				data={lastLoans.data?.data ?? []}
+				isLoading={lastLoans.isLoading}
+			/>
 		</Card>
 	);
 };

@@ -1,5 +1,5 @@
 'use client';
-import { ILoan } from '@repo/common';
+import { ILoan, LoanQueriesDTO } from '@repo/common';
 import { useLoans } from '@repo/hooks';
 import {
 	LoanDetailsDialog,
@@ -15,7 +15,10 @@ export default function BooksPage() {
 	}, []);
 
 	return isClient ? (
-		<ModalCrudProvider<ILoan, ReturnType<typeof useLoans>> useHook={useLoans}>
+		<ModalCrudProvider<ReturnType<typeof useLoans>, ILoan, LoanQueriesDTO>
+			useHook={useLoans}
+			queries={new LoanQueriesDTO()}
+		>
 			<div className="px-8 py-5">
 				<h1 className="text-5xl font-bold text-primary">Prestamos</h1>
 				<span className="text-muted-foreground text-xl">

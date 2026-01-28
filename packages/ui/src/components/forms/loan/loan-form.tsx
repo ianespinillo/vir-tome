@@ -21,7 +21,12 @@ import {
 import { Input } from '@/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/tabs';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
-import { CreateLoanDto, ILoan, LoanBorrowerType } from '@repo/common';
+import {
+	CreateLoanDto,
+	ILoan,
+	LoanBorrowerType,
+	LoanQueriesDTO,
+} from '@repo/common';
 import { useLoans } from '@repo/hooks';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowRight, BookOpen, CalendarIcon } from 'lucide-react';
@@ -40,7 +45,7 @@ export function LoanForm() {
 		setCreateOpen,
 		setEntity,
 		setDetailsOpen,
-	} = useModalCrud<ILoan, ReturnType<typeof useLoans>>();
+	} = useModalCrud<ILoan, LoanQueriesDTO, ReturnType<typeof useLoans>>();
 
 	const form = useForm<CreateLoanDto>({
 		defaultValues: {

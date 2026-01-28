@@ -1,5 +1,5 @@
 'use client';
-import { IBook } from '@repo/common';
+import { BooksQueriesDto, IBook } from '@repo/common';
 import { useBooks } from '@repo/hooks';
 import {
 	AddBook,
@@ -12,7 +12,6 @@ import {
 	useModalCrud,
 } from '@repo/ui';
 import React, { useEffect, useState } from 'react';
-
 export default function BooksPage() {
 	const [isClient, setIsClient] = useState(false);
 	useEffect(() => {
@@ -20,7 +19,10 @@ export default function BooksPage() {
 	}, []);
 
 	return isClient ? (
-		<ModalCrudProvider<IBook, ReturnType<typeof useBooks>> useHook={useBooks}>
+		<ModalCrudProvider<ReturnType<typeof useBooks>, IBook, BooksQueriesDto>
+			useHook={useBooks}
+			queries={new BooksQueriesDto()}
+		>
 			<div className="px-8 pt-3">
 				<h1 className="text-5xl font-bold text-primary">Libros</h1>
 				<span className="text-muted-foreground text-xl">

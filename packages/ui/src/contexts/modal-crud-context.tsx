@@ -1,6 +1,5 @@
 'use client';
-import { IGeneric } from '@repo/common';
-import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
+import { BaseQueriesDto, IGeneric } from '@repo/common';
 import {
 	Dispatch,
 	ReactNode,
@@ -17,43 +16,76 @@ export interface GenericHookProps {
 	page: number;
 }
 
-interface ModalCrudContextValue<T, K> {
-	entity: T | null;
+/* ===================== CONTEXT VALUE ===================== */
+
+interface ModalCrudContextValue<
+	TEntity extends IGeneric,
+	TQuery extends BaseQueriesDto<TEntity>,
+	THookResult,
+> {
+	entity: TEntity | null;
+
 	createOpen: boolean;
 	editOpen: boolean;
 	detailsOpen: boolean;
 
+	queryParams: TQuery;
+	setQueryParams: Dispatch<SetStateAction<TQuery>>;
+
 	setEditOpen: Dispatch<SetStateAction<boolean>>;
 	setCreateOpen: Dispatch<SetStateAction<boolean>>;
-	setEntity: Dispatch<SetStateAction<T | null>>;
+	setEntity: Dispatch<SetStateAction<TEntity | null>>;
 	setDetailsOpen: Dispatch<SetStateAction<boolean>>;
+
 	closeViewDetails: () => void;
 	closeEdit: () => void;
-	hook: K;
+
+	hook: THookResult;
 }
 
-type UseDataHook<K> = (props: GenericHookProps) => K;
+/* ===================== HOOK TYPE ===================== */
 
-interface ModalCrudProviderProps<T, K> {
+type UseDataHook<
+	TEntity extends IGeneric,
+	TQuery extends BaseQueriesDto<TEntity>,
+	THookResult,
+> = (props: TQuery) => THookResult;
+
+/* ===================== PROVIDER PROPS ===================== */
+
+interface ModalCrudProviderProps<
+	THookResult,
+	TEntity extends IGeneric = IGeneric,
+	TQuery extends BaseQueriesDto<TEntity> = BaseQueriesDto<TEntity>,
+> {
 	children: ReactNode;
-
-	useHook: UseDataHook<K>;
+	useHook: UseDataHook<TEntity, TQuery, THookResult>;
+	queries?: TQuery;
 }
 
-const ModalCrudContext = createContext<ModalCrudContextValue<any, any> | null>(
-	null,
-);
+/* ===================== CONTEXT ===================== */
 
-export const ModalCrudProvider = <T extends IGeneric, K>({
+const ModalCrudContext = createContext<ModalCrudContextValue<
+	any,
+	any,
+	any
+> | null>(null);
+
+/* ===================== PROVIDER ===================== */
+
+export const ModalCrudProvider = <
+	THookResult,
+	TEntity extends IGeneric,
+	TQuery extends BaseQueriesDto<TEntity> = BaseQueriesDto<TEntity>,
+>({
 	children,
 	useHook,
-}: ModalCrudProviderProps<T, K>) => {
-	const [page, _] = useQueryState('page', parseAsInteger.withDefault(1));
-	const [searchTerm, __] = useQueryState('q', parseAsString.withDefault(''));
+	queries = new BaseQueriesDto<TEntity>() as TQuery,
+}: ModalCrudProviderProps<THookResult, TEntity, TQuery>) => {
+	const [queryParams, setQueryParams] = useState<TQuery>(queries);
+	const hookResult = useHook(queryParams);
 
-	const hookResult = useHook({ page, searchTerm });
-
-	const [entity, setEntity] = useState<T | null>(null);
+	const [entity, setEntity] = useState<TEntity | null>(null);
 	const [createOpen, setCreateOpen] = useState(false);
 	const [editOpen, setEditOpen] = useState(false);
 	const [detailsOpen, setDetailsOpen] = useState(false);
@@ -62,6 +94,7 @@ export const ModalCrudProvider = <T extends IGeneric, K>({
 		setEditOpen(false);
 		setEntity(null);
 	}, []);
+
 	const closeViewDetails = useCallback(() => {
 		setEntity(null);
 		setDetailsOpen(false);
@@ -70,7 +103,8 @@ export const ModalCrudProvider = <T extends IGeneric, K>({
 	const value = useMemo(
 		() => ({
 			hook: hookResult,
-
+			queryParams,
+			setQueryParams,
 			entity,
 			setEntity,
 			createOpen,
@@ -84,14 +118,12 @@ export const ModalCrudProvider = <T extends IGeneric, K>({
 		}),
 		[
 			hookResult,
-			page,
-			searchTerm,
+			queryParams,
 			entity,
 			createOpen,
 			editOpen,
 			closeEdit,
 			detailsOpen,
-			setDetailsOpen,
 			closeViewDetails,
 		],
 	);
@@ -103,13 +135,16 @@ export const ModalCrudProvider = <T extends IGeneric, K>({
 	);
 };
 
-export const useModalCrud = <T extends IGeneric, K>(): ModalCrudContextValue<
-	T,
-	K
-> => {
+/* ===================== CONSUMER ===================== */
+
+export const useModalCrud = <
+	TEntity extends IGeneric,
+	TQuery extends BaseQueriesDto<TEntity>,
+	THookResult,
+>(): ModalCrudContextValue<TEntity, TQuery, THookResult> => {
 	const context = useContext(ModalCrudContext);
 	if (!context) {
 		throw new Error('useModalCrud must be used within a ModalCrudProvider');
 	}
-	return context as ModalCrudContextValue<T, K>;
+	return context as ModalCrudContextValue<TEntity, TQuery, THookResult>;
 };

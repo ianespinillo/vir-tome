@@ -2,7 +2,7 @@
 import { useModalCrud } from '@/contexts/modal-crud-context';
 import { Button } from '@/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/popover';
-import { ILoan } from '@repo/common';
+import { ILoan, ILoansQueries } from '@repo/common';
 import { useLoans } from '@repo/hooks';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -10,7 +10,7 @@ export function FinalizeLoanPopover({ loanId }: Readonly<{ loanId: number }>) {
 	const [open, setOpen] = useState(false);
 	const {
 		hook: { finishLoan },
-	} = useModalCrud<ILoan, ReturnType<typeof useLoans>>();
+	} = useModalCrud<ILoan, ILoansQueries, ReturnType<typeof useLoans>>();
 	const handleConfirm = () => {
 		toast.promise(finishLoan.mutateAsync(loanId), {
 			success() {

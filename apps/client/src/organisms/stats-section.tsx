@@ -38,14 +38,7 @@ export function StatsSection() {
 				</div>
 
 				<div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-					{stats.map((stat) => (
-						<StatCard
-							key={stat.value}
-							value={stat.value}
-							label={stat.label}
-							description={stat.description}
-						/>
-					))}
+					{/*TODO: Map through stats array to create StatCard components*/}
 				</div>
 			</div>
 		</section>

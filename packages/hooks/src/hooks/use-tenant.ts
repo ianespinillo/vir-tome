@@ -1,4 +1,5 @@
 import {
+	BaseQueriesDto,
 	CreateTenantDto,
 	GenericHookProps,
 	IApiResponse,
@@ -23,12 +24,15 @@ Nota mental de que debe hacer el hook
 2. paginacion
 3.
 */
-export const useTenants = ({ searchTerm = '', page = 1 }: GenericHookProps) => {
+export const useTenants = ({
+	search = '',
+	page = 1,
+}: BaseQueriesDto<ITenant>) => {
 	const client = useQueryClient();
 	const tenants = useQuery({
-		queryKey: ['tenants', page, searchTerm],
+		queryKey: ['tenants', page, search],
 		queryFn: async () =>
-			(await TenantService.getPaginatedTenants(page, searchTerm)).data,
+			(await TenantService.getPaginatedTenants(page, search)).data,
 		staleTime: 5000,
 		refetchOnWindowFocus: false,
 		retry: false,
@@ -47,20 +51,20 @@ export const useTenants = ({ searchTerm = '', page = 1 }: GenericHookProps) => {
 		mutationFn: async ({ data, id }: { data: UpdateTenantDto; id: number }) =>
 			(await TenantService.updateTenant(id, data)).data,
 		onSuccess: () => {
-			client.refetchQueries({ queryKey: ['tenants', page, searchTerm] });
+			client.refetchQueries({ queryKey: ['tenants', page, search] });
 		},
 	});
 	const deleteTenant = useMutation({
 		mutationFn: async (id: number) => (await TenantService.deleteTenant(id)).data,
 		onSuccess: () => {
-			client.refetchQueries({ queryKey: ['tenants', page, searchTerm] });
+			client.refetchQueries({ queryKey: ['tenants', page, search] });
 		},
 	});
 	const createTenant = useMutation({
 		mutationFn: async (data: CreateTenantDto) =>
 			(await TenantService.createTenant(data)).data,
 		onSuccess: () => {
-			client.refetchQueries({ queryKey: ['tenants', page, searchTerm] });
+			client.refetchQueries({ queryKey: ['tenants', page, search] });
 		},
 	});
 	const activateTenant = useMutation({
@@ -76,9 +80,15 @@ export const useTenants = ({ searchTerm = '', page = 1 }: GenericHookProps) => {
 		queryFn: async () => (await TenantService.getLastTenants()).data,
 	});
 	const getTenantAdmins = useQuery<IApiResponse<IPaginatedResponse<IUser>>>({
-		queryKey: ['admins', page, searchTerm],
+		queryKey: ['admins', page, search],
 		queryFn: async () =>
-			(await UsersService.getUsersByRole(page, ROLES.ADMIN, searchTerm)).data,
+			(
+				await UsersService.getUsers({
+					page,
+					search: search,
+					roleName: ROLES.ADMIN,
+				})
+			).data,
 	});
 	const getAllTenants = useQuery({
 		queryKey: ['full-tenants'],

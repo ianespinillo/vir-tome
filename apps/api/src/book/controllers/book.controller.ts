@@ -30,9 +30,9 @@ import {
 	ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {
+	BooksQueriesDto,
 	CreateBookDto,
 	IApiResponse,
-	IBooKForm,
 	IPaginatedResponse,
 	ROLES,
 	UpdateBookDto,
@@ -42,7 +42,6 @@ import {
 import { AuthBearer } from '../../auth/decorators/auth-bearer.decorators';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guard/role.guard';
-import { TenantEntity } from '../../tenants/entities/tenant.entity';
 import { BookEntity } from '../entities/book.entity';
 import { BookService } from '../services/book.service';
 
@@ -207,41 +206,13 @@ export class BookController {
 	})
 	async findAll(
 		@User() user: IAuthUser,
-		@Query('page', new ParseIntPipe({ optional: true })) page = 1,
-		@Query('full', new ParseBoolPipe({ optional: true })) full = false,
-		@Query('search') search?: string,
+		@Query() queries: BooksQueriesDto,
 	): Promise<
 		IApiResponse<BookEntity[]> | IApiResponse<IPaginatedResponse<BookEntity>>
 	> {
-		if (full) {
-			const data = await this.bookService.findAll(user.tenantId);
-			return {
-				message: 'Books retrieved successfully',
-				data,
-				status: HttpStatus.OK,
-				timestamp: new Date().toISOString(),
-			};
-		}
-		if (search) {
-			const data = await this.bookService.findBookByName(user.tenantId, search);
-			return {
-				message: 'Books retrieved successfully',
-				data: {
-					items: data.data,
-					meta: {
-						total: data.total,
-						current_page: data.current_page,
-						last_page: data.last_page,
-						per_page: data.data.length,
-					},
-				},
-				status: HttpStatus.OK,
-				timestamp: new Date().toISOString(),
-			};
-		}
 		const data = await this.bookService.findAllWithDetailsPaginated(
 			user.tenantId,
-			page,
+			queries,
 		);
 		return {
 			message: 'Books retrieved successfully',

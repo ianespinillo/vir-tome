@@ -37,7 +37,7 @@ export function BookSelectionModal({
 	const observerRef = useRef<IntersectionObserver | null>(null);
 	const sentinelRef = useRef<HTMLDivElement>(null);
 
-	const { books } = useBooks({ searchTerm: debouncedSearch, page: currentPage });
+	const { books } = useBooks({ search: debouncedSearch, page: currentPage });
 
 	// Debounce search input
 	useEffect(() => {

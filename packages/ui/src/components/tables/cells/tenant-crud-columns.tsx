@@ -7,23 +7,10 @@ import { useModalCrud } from '@/contexts/modal-crud-context';
 import { copyId } from '@/helpers/clipboard-helper';
 import { Badge } from '@/ui/badge';
 import { Button } from '@/ui/button';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuTrigger,
-} from '@/ui/dropdown-menu';
-import { ITenant, ROLES } from '@repo/common';
+import { BaseQueriesDto, ITenant, ROLES } from '@repo/common';
 import { useTenants } from '@repo/hooks';
 import { ColumnDef } from '@tanstack/react-table';
-import {
-	ArrowUpDown,
-	LogIn,
-	MoreHorizontal,
-	Pencil,
-	Trash,
-} from 'lucide-react';
+import { ArrowUpDown, LogIn, Pencil, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -102,7 +89,11 @@ function TenantActions({ tenant }: Readonly<{ tenant: ITenant }>) {
 		setEditOpen,
 		setDetailsOpen,
 		hook: { deleteTenant },
-	} = useModalCrud<ITenant, ReturnType<typeof useTenants>>();
+	} = useModalCrud<
+		ITenant,
+		BaseQueriesDto<ITenant>,
+		ReturnType<typeof useTenants>
+	>();
 	const [linkOpen, setLinkOpen] = useState(false);
 	return (
 		<>

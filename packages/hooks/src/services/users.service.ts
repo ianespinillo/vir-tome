@@ -5,15 +5,22 @@ import {
 	IUser,
 	IUserTenant,
 	ROLES,
+	UsersQueriesDto,
 } from '@repo/common';
 import axios from 'axios';
 
 export class UsersService {
 	private static readonly baseUrl =
 		`${process.env.NODE_ENV === 'production' ? 'https://' : 'http://'}${process.env.NEXT_PUBLIC_API_URL}/users`;
-	public static async getUsersByRole(page: number, role?: ROLES, q?: string) {
+	public static async getUsers(queries: UsersQueriesDto) {
+		const params = new URLSearchParams();
+		for (const [key, value] of Object.entries(queries)) {
+			if (value) {
+				params.append(key, value.toString());
+			}
+		}
 		return await axios.get<IApiResponse<IPaginatedResponse<IUser>>>(
-			`${UsersService.baseUrl}?role=${role ? role : ''}&page=${page}&q=${q}`,
+			`${UsersService.baseUrl}?${params.toString()}`,
 			{
 				withCredentials: true,
 				headers: {
@@ -31,12 +38,7 @@ export class UsersService {
 		});
 	}
 	public static async getLastRegisters() {
-		return axios.get<IApiResponse<IUser[]>>(`${UsersService.baseUrl}/lasts`, {
-			withCredentials: true,
-			headers: {
-				'Content-Type': 'application/json',
-			},
-		});
+		return UsersService.getUsers({ page: 1, limit: 5, onlyRecent: true });
 	}
 	public static async attachUserToTenant(dto: AddUserToTenantDto, id: number) {
 		return axios.post<IApiResponse<IUser>>(

@@ -20,7 +20,7 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuTrigger,
 } from '@/ui/dropdown-menu';
-import { IBook } from '@repo/common';
+import { BooksQueriesDto, IBook } from '@repo/common';
 import { useBooks } from '@repo/hooks';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, MoreHorizontal, Pencil, Trash } from 'lucide-react'; // Replace '@/ui/icons' with the correct module path for ArrowUpDown
@@ -140,7 +140,7 @@ function BookActions({ book }: Readonly<{ book: IBook }>) {
 		setDetailsOpen,
 		setEditOpen,
 		hook: { deleteBook },
-	} = useModalCrud<IBook, ReturnType<typeof useBooks>>();
+	} = useModalCrud<IBook, BooksQueriesDto, ReturnType<typeof useBooks>>();
 
 	return (
 		<>

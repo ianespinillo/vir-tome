@@ -4,19 +4,12 @@ import type React from 'react';
 
 import { useModalCrud } from '@/contexts/modal-crud-context';
 import { Badge } from '@/ui/badge';
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from '@/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/dialog';
 import { Separator } from '@/ui/separator';
-import { IUser, ROLES } from '@repo/common';
-import { useAuth } from '@repo/hooks';
+import { IUser, ROLES, UsersQueriesDto } from '@repo/common';
+import { useAuth, type useUsers } from '@repo/hooks';
 import { Building2, Calendar, Mail, Shield, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useUsers } from '../../../../../hooks/src/hooks/use-users';
 const planColors: Record<string, string> = {
 	enterprise: 'bg-violet-500/10 text-violet-600 border-violet-200',
 	permiun: 'bg-blue-500/10 text-blue-600 border-blue-200',
@@ -32,6 +25,7 @@ const toDate = (value: string | Date | null | undefined): Date | null => {
 export const UserDetailsDialog = () => {
 	const { entity, detailsOpen, closeViewDetails } = useModalCrud<
 		IUser,
+		UsersQueriesDto,
 		ReturnType<typeof useUsers>
 	>();
 	const [isSuperAdmin, setIsSuperAdmin] = useState(false);

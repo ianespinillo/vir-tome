@@ -85,7 +85,11 @@ describe('TenantsService', () => {
 			subdomain: 'test-school',
 			name: 'Test School',
 			contact_email: 'admin@test-school.com',
-		} as CreateTenantDto;
+			admin_email: 'john@doe.com',
+			admin_name: 'John',
+			admin_surname: 'Doe',
+			is_active: true,
+		};
 		const mockAdmin: Partial<UserEntity> = {
 			email: 'admin@email.com',
 			name: 'admin',
@@ -105,21 +109,16 @@ describe('TenantsService', () => {
 				is_demo: false,
 				plan: 'basic',
 				settings: {
-					theme: 'light',
-					features: ['basic_library'],
-					school_info: {},
-					limits: {
-						max_books: 1000,
-						max_users: 50,
-						max_loans: 100,
-					},
+					theme: undefined,
+					features: undefined,
+					school_info: undefined,
+					limits: undefined,
 				},
 			};
 
 			mockRepository.findOne
 				.mockResolvedValueOnce(null) // No existing subdomain
 				.mockResolvedValueOnce(null); // No existing email
-			mockRepository.create.mockReturnValue(savedTenant);
 			mockRepository.save.mockResolvedValue(savedTenant);
 			mockRoleService.findRoleByName.mockResolvedValue(ROLES.ADMIN);
 			mockUserService.create.mockResolvedValue({
@@ -130,7 +129,18 @@ describe('TenantsService', () => {
 			expect(result).toEqual(savedTenant);
 			expect(mockEmailService.sendEmailWelcome).toHaveBeenCalled();
 			expect(mockRepository.findOne).toHaveBeenCalledTimes(2);
-			expect(mockRepository.save).toHaveBeenCalledWith(savedTenant);
+			expect(mockRepository.save).toHaveBeenCalledWith({
+				...createTenantDto,
+				is_active: true,
+				is_demo: false,
+				plan: 'basic',
+				settings: {
+					theme: undefined,
+					features: undefined,
+					school_info: undefined,
+					limits: undefined,
+				},
+			});
 		});
 
 		it('should throw BadRequestException if subdomain exists', async () => {

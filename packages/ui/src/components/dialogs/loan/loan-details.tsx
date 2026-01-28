@@ -7,13 +7,14 @@ import { Badge } from '@/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/dialog';
 import { Separator } from '@/ui/separator';
 import {
+	BaseQueriesDto,
 	IBook,
 	ILoan,
 	IUser,
 	LoanBorrowerType,
 	LoanStatus,
 } from '@repo/common';
-import { useBooks, useUsers } from '@repo/hooks';
+import { useAuth, useBooks, useUsers } from '@repo/hooks';
 import {
 	AlertCircle,
 	BookOpen,
@@ -55,15 +56,28 @@ const toDate = (value: string | Date | null | undefined): Date | null => {
 };
 
 export const LoanDetailsDialog = () => {
-	const { entity, detailsOpen, closeViewDetails } = useModalCrud<ILoan, any>();
+	const { entity, detailsOpen, closeViewDetails } = useModalCrud<
+		ILoan,
+		BaseQueriesDto<ILoan>,
+		any
+	>();
 	const [book, setBook] = useState<IBook | null>(null);
 	const [user, setUser] = useState<IUser | null>(null);
-	const { getUserById } = useUsers({ page: 1, searchTerm: '' });
-	const { findBook } = useBooks({ page: 1, searchTerm: '' });
+	const { session } = useAuth();
+	const { getUserById } = useUsers({});
+	const { findBook } = useBooks({});
 	useEffect(() => {
 		if (!entity) return;
 		if (detailsOpen && !entity) closeViewDetails();
-		if (entity && entity?.borrower_type === LoanBorrowerType.REGISTERED_USER) {
+		if (
+			entity?.borrower_type === LoanBorrowerType.REGISTERED_USER &&
+			entity.user_id === session.data?.data?.id
+		) {
+			setUser(session.data?.data?.entity ?? null);
+		} else if (
+			entity &&
+			entity?.borrower_type === LoanBorrowerType.REGISTERED_USER
+		) {
 			getUserById.mutate(entity.user_id ?? 0);
 			setUser(getUserById.data?.data ?? null);
 		}

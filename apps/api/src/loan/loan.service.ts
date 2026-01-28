@@ -7,32 +7,23 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { LoanEntity } from './entities/loan.entity';
 
 import { IAuthUser } from '@/core/core.types';
+import { QueryHelper } from '@/core/query-helper';
 import { UsersService } from '@/users/services/users.service';
 import {
 	CreateLoanDto,
-	ILoansQueries,
+	ILoanAlert,
+	ILoanStatistics,
 	IPaginatedResponse,
 	LoanBorrowerType,
+	LoanQueriesDTO,
 	LoanStatus,
 	MostLoanedBooks,
 	RequestLoanDTO,
 } from '@repo/common';
-import {
-	Between,
-	FindOptionsRelations,
-	FindOptionsWhere,
-	ILike,
-	In,
-	IsNull,
-	LessThanOrEqual,
-	MoreThanOrEqual,
-	Not,
-	Repository,
-	UpdateResult,
-} from 'typeorm';
+import { addDays, differenceInDays, format } from 'date-fns';
+import { Repository, UpdateResult } from 'typeorm';
 import { BookService } from '../book/services/book.service';
 import { GenericService } from '../core/generic.service';
-
 @Injectable()
 export class LoanService extends GenericService {
 	constructor(
@@ -59,27 +50,28 @@ export class LoanService extends GenericService {
 			throw new BadRequestException('Return date cannot be in the past');
 		if (book.availableQuantity < data.quantity)
 			throw new BadRequestException('Not enough books available');
-		let loan: LoanEntity;
+
+		let loanData: Partial<LoanEntity>;
+
 		switch (data.borrower_type) {
-			case LoanBorrowerType.REGISTERED_USER:
-				{
-					if (!data.user_id)
-						throw new BadRequestException('Invalid payload provided');
-					const user = await this.usersService.findById(data.user_id);
-					if (!user)
-						throw new NotFoundException(`User with id ${data.user_id} not founded`);
-					loan = this.loanRepository.create({
-						loan_date: new Date(Date.now()),
-						book: {
-							id: data.bookId,
-						},
-						quantity: data.quantity,
-						borrower_type: data.borrower_type,
-						user_id: user.id,
-						status: LoanStatus.ACTIVE,
-					});
-				}
+			case LoanBorrowerType.REGISTERED_USER: {
+				if (!data.user_id)
+					throw new BadRequestException('Invalid payload provided');
+				const user = await this.usersService.findById(data.user_id);
+				if (!user)
+					throw new NotFoundException(`User with id ${data.user_id} not found`);
+
+				loanData = {
+					loan_date: new Date(),
+					book_id: data.bookId,
+					quantity: data.quantity,
+					borrower_type: data.borrower_type,
+					user_id: user.id,
+					return_date: data.returnDate,
+					status: LoanStatus.ACTIVE,
+				};
 				break;
+			}
 			case LoanBorrowerType.EXTERNAL_BORROWER: {
 				if (
 					!data.borrower_email ||
@@ -88,23 +80,30 @@ export class LoanService extends GenericService {
 					!data.borrower_phone
 				)
 					throw new BadRequestException('Invalid payload provided');
-				const { user_id, ...rest } = data;
-				loan = this.loanRepository.create({
-					...rest,
+
+				loanData = {
+					borrower_email: data.borrower_email,
+					borrower_name: data.borrower_name,
+					borrower_national_id: data.borrower_national_id,
+					borrower_phone: data.borrower_phone,
+					book_id: data.bookId,
+					quantity: data.quantity,
+					borrower_type: data.borrower_type,
+					return_date: data.returnDate,
 					status: LoanStatus.ACTIVE,
-					loan_date: new Date(Date.now()),
-				});
+					loan_date: new Date(),
+				};
 				break;
 			}
+			default:
+				throw new BadRequestException('Invalid borrower type');
 		}
 
-		await this.loanRepository.manager.transaction(
-			async (transactionalEntityManager) => {
-				await this.bookService.removeStock(tenantId, data.bookId, data.quantity);
-				await transactionalEntityManager.save(loan);
-			},
-		);
-		return loan;
+		const loan = this.loanRepository.create(loanData);
+
+		await this.bookService.removeStock(tenantId, data.bookId, data.quantity);
+
+		return this.loanRepository.save(loan);
 	}
 	async returnBook(tenantId: number, loanId: number): Promise<UpdateResult> {
 		const loan = await this.loanRepository.findOne({
@@ -131,115 +130,118 @@ export class LoanService extends GenericService {
 	}
 
 	async paginatedLoans(
-		queries: ILoansQueries,
+		queries: LoanQueriesDTO,
 		tenantId: number,
 	): Promise<IPaginatedResponse<LoanEntity>> {
-		const {
-			borrowerType,
-			status,
-			page = 1,
-			fields,
-			fromDate,
-			toDate,
-			ids,
-			isActive,
-			limit = 5,
-			orderBy,
-			orderDir,
-			relations,
-			search,
-			withDeleted,
-		} = queries;
+		const qb = this.loanRepository
+			.createQueryBuilder('loan')
+			.leftJoinAndSelect('loan.book', 'book')
+			.leftJoinAndSelect('loan.user', 'user')
+			.where('book.tenant_id = :tenantId', { tenantId });
+		const appliedJoins = new Set<string>(['book', 'user']);
+		// 1. Aplicamos filtros automáticos (IDs, Fechas base, isActive)
+		QueryHelper.applyBaseFilters(qb, queries, 'loan');
 
-		const skip = (page - 1) * limit;
-
-		const whereOptions: FindOptionsWhere<LoanEntity> = {
-			book: {
-				tenant_id: tenantId,
-			},
-		};
-
-		if (borrowerType) whereOptions.borrower_type = borrowerType;
-		if (status) whereOptions.status = status;
-		if (ids) whereOptions.id = In(ids);
-
-		if (search) {
-			(whereOptions.book as any).title = ILike(`%${search}%`);
+		// 2. Lógica de negocio específica (Esta NO va en el helper porque es única de Loans)
+		if (queries.isOverdue) {
+			qb.andWhere('loan.return_date < :now AND loan.status = :active', {
+				now: new Date(),
+				active: LoanStatus.ACTIVE,
+			});
 		}
 
-		if (fromDate && toDate) {
-			whereOptions.loan_date = Between(fromDate, toDate);
-		} else if (fromDate) {
-			whereOptions.loan_date = MoreThanOrEqual(fromDate);
-		} else if (toDate) {
-			whereOptions.loan_date = LessThanOrEqual(toDate);
+		if (queries.search) {
+			qb.andWhere('(book.title ILIKE :s OR loan.borrower_name ILIKE :s)', {
+				s: `%${queries.search}%`,
+			});
 		}
+		// 3. Relaciones dinámicas (Usando la lógica que corregimos antes)
+		(queries.relations ?? []).forEach((rel) => {
+			if (!rel) return;
 
-		if (isActive !== undefined) {
-			whereOptions.deleted_at = isActive ? IsNull() : Not(IsNull());
-		}
+			// Relación simple: 'book'
+			if (!rel.includes('.')) {
+				const alias = String(rel);
 
-		const [data, total] = await this.loanRepository.findAndCount({
-			where: whereOptions,
-			relations: relations as any,
-			skip,
-			take: limit,
-			order: orderBy ? { [orderBy]: orderDir || 'DESC' } : { id: 'DESC' },
-			select: fields as any,
-			withDeleted: withDeleted || false,
+				if (!appliedJoins.has(alias)) {
+					qb.leftJoinAndSelect(`loan.${alias}`, alias);
+					appliedJoins.add(alias);
+				}
+				return;
+			}
+
+			// Relación anidada: 'book.publisher'
+			const [parent, child] = rel.split('.');
+
+			// join del padre
+			if (!appliedJoins.has(parent)) {
+				qb.leftJoinAndSelect(`loan.${parent}`, parent);
+				appliedJoins.add(parent);
+			}
+
+			const childAlias = `${parent}_${child}`;
+
+			// join del hijo
+			if (!appliedJoins.has(childAlias)) {
+				qb.leftJoinAndSelect(`${parent}.${child}`, childAlias);
+				appliedJoins.add(childAlias);
+			}
 		});
 
-		return {
-			items: data,
-			meta: {
-				per_page: limit,
-				last_page: Math.ceil(total / limit),
-				total,
-				current_page: page,
-			},
-		};
+		// 4. Paginación y Respuesta unificada
+		QueryHelper.applyBasePagination(qb, queries, 'loan');
+		return QueryHelper.getPaginatedResponse(qb, queries);
 	}
-	async findByUser(tenantId: number, userId: number) {
-		return this.loanRepository.find({
-			where: {
-				book: {
-					tenant_id: tenantId,
-				},
-				user_id: userId,
-				deleted_at: IsNull(),
-			},
-			relations: ['book', 'book.category', 'book.publisher', 'user'],
-			order: {
-				loan_date: 'DESC',
-			},
-		});
-	}
+	async getStatistics(
+		tenantId: number,
+		userId?: number,
+	): Promise<ILoanStatistics> {
+		const qb = this.loanRepository.createQueryBuilder('loan');
 
-	async getMyLoansByPage(
-		userId: number,
-		page: number,
-	): Promise<IPaginatedResponse<LoanEntity>> {
-		const skip = (page - 1) * 6;
-		const [data, total] = await this.loanRepository.findAndCount({
-			where: {
-				user_id: userId,
-			},
-			order: {
-				loan_date: 'DESC',
-			},
-			take: 6,
-			skip,
-			relations: ['book'],
-		});
-		return {
-			items: data,
-			meta: {
-				per_page: 6,
-				last_page: Math.ceil(total / 6),
-				total,
-				current_page: page,
-			},
-		};
+		if (userId) {
+			qb.andWhere('loan.user_id = :userId', { userId });
+		}
+
+		const now = new Date();
+		const sevenDaysFromNow = new Date();
+		sevenDaysFromNow.setDate(now.getDate() + 7);
+
+		const [active, dueSoon, overdue, returned] = await Promise.all([
+			// Préstamos activos
+			qb
+				.clone()
+				.andWhere('loan.status = :status', { status: LoanStatus.ACTIVE })
+				.andWhere(userId ? 'loan.user_id = :userId' : '1=1', { userId })
+				.getCount(),
+
+			// Por vencer (próximos 7 días)
+			qb
+				.clone()
+				.andWhere('loan.status = :status', { status: LoanStatus.ACTIVE })
+				.andWhere('loan.return_date BETWEEN :now AND :future', {
+					now,
+					future: sevenDaysFromNow,
+				})
+				.andWhere(userId ? 'loan.user_id = :userId' : '1=1', { userId })
+				.getCount(),
+
+			// Vencidos
+			qb
+				.clone()
+				.andWhere('loan.status = :status', { status: LoanStatus.ACTIVE })
+				.andWhere('loan.return_date < :now', { now })
+				.andWhere(userId ? 'loan.user_id = :userId' : '1=1', { userId })
+				.getCount(),
+
+			// Devueltos
+			qb
+				.clone()
+				.andWhere('loan.status = :status', { status: LoanStatus.RETURNED })
+				.andWhere(userId ? 'loan.user_id = :userId' : '1=1', { userId })
+				.getCount(),
+		]);
+
+		return { active, dueSoon, overdue, returned };
 	}
 	async mostLoanedBooks(
 		limit: number,
@@ -284,29 +286,6 @@ export class LoanService extends GenericService {
 			take: 3,
 		});
 	}
-	async getLastRequests(page: number): Promise<IPaginatedResponse<LoanEntity>> {
-		const skip = (page - 1) * 6;
-		const [data, total] = await this.loanRepository.findAndCount({
-			where: {
-				status: LoanStatus.REQUESTED,
-			},
-			order: {
-				loan_date: 'DESC',
-			},
-			take: 6,
-			skip,
-			relations: ['book', 'user'],
-		});
-		return {
-			items: data,
-			meta: {
-				per_page: 6,
-				last_page: Math.ceil(total / 6),
-				total,
-				current_page: page,
-			},
-		};
-	}
 	async getLoansByMonth(tenantId?: number) {
 		const qb = this.loanRepository
 			.createQueryBuilder('loan')
@@ -346,5 +325,73 @@ export class LoanService extends GenericService {
 		loan.status = status;
 		await this.update(loanId, loan);
 		return loan;
+	}
+	async getAlerts(tenantId: number, userId?: number): Promise<ILoanAlert[]> {
+		const qb = this.loanRepository
+			.createQueryBuilder('loan')
+			.leftJoinAndSelect('loan.book', 'book')
+			.where('book.tenant_id = :tenantId', { tenantId })
+			.andWhere('loan.status = :status', { status: LoanStatus.ACTIVE });
+
+		if (userId) {
+			qb.andWhere('loan.user_id = :userId', { userId });
+		}
+
+		const loans = await qb.getMany();
+		const now = new Date(Date.now());
+		const alerts: ILoanAlert[] = [];
+
+		// Alertas de préstamos vencidos
+		const overdueLoans = loans.filter((loan) => loan.return_date < now);
+		overdueLoans.forEach((loan) => {
+			const daysOverdue = differenceInDays(now, loan.return_date);
+			alerts.push({
+				type: 'overdue',
+				severity: 'error',
+				message: `${loan.book.title} tiene ${daysOverdue} día${daysOverdue > 1 ? 's' : ''} de atraso`,
+				loan,
+				daysOverdue,
+			});
+		});
+
+		// Alertas de préstamos por vencer
+		// pasar a date-fns
+		const sevenDaysFromNow = addDays(now, 7);
+
+		const dueSoonLoans = loans.filter(
+			(loan) => loan.return_date >= now && loan.return_date <= sevenDaysFromNow,
+		);
+		dueSoonLoans.forEach((loan) => {
+			const daysUntilDue = differenceInDays(loan.return_date, now);
+			const timeText =
+				daysUntilDue === 0
+					? 'hoy'
+					: daysUntilDue === 1
+						? 'mañana'
+						: `en ${daysUntilDue} días`;
+			alerts.push({
+				type: 'due_soon',
+				severity: 'warning',
+				message: `${loan.book.title} vence ${timeText}`,
+				loan,
+				daysUntilDue,
+			});
+		});
+
+		// Alerta informativa de cantidad de préstamos activos
+		const activeCount = loans.length;
+		if (activeCount >= 8) {
+			alerts.push({
+				type: 'info',
+				severity: 'info',
+				message: `Tienes ${activeCount} de 10 préstamos activos`,
+			});
+		}
+
+		// Ordenar por severidad
+		return alerts.sort((a, b) => {
+			const severityOrder = { error: 0, warning: 1, info: 2 };
+			return severityOrder[a.severity] - severityOrder[b.severity];
+		});
 	}
 }

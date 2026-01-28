@@ -55,7 +55,7 @@ export class TenantsService {
 				`Email '${createTenantDto.contact_email}' already exists`,
 			);
 		}
-		const tenant = this.tenantRepository.create({
+		const saved = await this.tenantRepository.save({
 			...createTenantDto,
 			is_active: createTenantDto.is_active ?? true,
 			is_demo: createTenantDto.is_demo ?? false,
@@ -68,7 +68,6 @@ export class TenantsService {
 				...createTenantDto.settings,
 			},
 		});
-		const saved = await this.tenantRepository.save(tenant);
 		const role = await this.roleService.findRoleByName(ROLES.ADMIN);
 		if (!role) throw new ConflictException('No admin role registered');
 		// creo el primer admin

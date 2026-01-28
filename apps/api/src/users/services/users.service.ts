@@ -1,5 +1,6 @@
 import { IAuthUser } from '@/core/core.types';
 import { PasswordAdapter } from '@/core/passport-adapter';
+import { QueryHelper } from '@/core/query-helper';
 // src/users/services/users.service.ts
 import {
 	BadRequestException,
@@ -16,6 +17,7 @@ import {
 	Roles,
 	SignInDto,
 	SignUpDto,
+	UsersQueriesDto,
 } from '@repo/common';
 import * as bcrypt from 'bcrypt';
 import { IsNull, Repository } from 'typeorm';
@@ -386,51 +388,54 @@ export class UsersService {
 
 		return stats;
 	}
-	async filterInTenantByRole(
-		page: number,
+	async getUsers(
 		user: IAuthUser,
-		role?: ROLES,
-		q?: string,
+		queries: UsersQueriesDto,
 	): Promise<IPaginatedResponse<IUser>> {
-		const take = 6;
-		const skip = (page - 1) * take;
 		const qb = this.usersRepo
 			.createQueryBuilder('user')
 			.leftJoinAndSelect('user.userTenants', 'ut')
 			.leftJoinAndSelect('ut.role', 'role')
-			.leftJoinAndSelect('ut.tenant', 'tenant')
-			.where('user.deleted_at IS NULL');
-		if (role) {
-			qb.andWhere('role.name = :role', { role });
-		}
+			.leftJoinAndSelect('ut.tenant', 'tenant');
+
+		// 1. Filtros de Integridad y Seguridad
+		qb.where('user.deleted_at IS NULL');
+
 		if (user.roleName === ROLES.ADMIN) {
-			qb.andWhere('ut.tenant_id = :tenantId', { tenantId: user.tenantId });
-			qb.andWhere('role.name NOT IN (:...superAdminRole)', {
-				superAdminRole: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
-			});
+			qb
+				.andWhere('ut.tenant_id = :tenantId', { tenantId: user.tenantId })
+				.andWhere('role.name NOT IN (:...restricted)', {
+					restricted: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
+				});
 		}
-		if (q) {
+
+		// 2. Filtros Dinámicos del DTO
+		if (queries.search) {
 			qb.andWhere('(user.name ILIKE :q OR user.email ILIKE :q)', {
-				q: `%${q}%`,
+				q: `%${queries.search}%`,
 			});
 		}
 
-		qb.take(take).skip(skip);
+		if (queries.roleName) {
+			qb.andWhere('role.name = :roleName', { roleName: queries.roleName });
+		}
+		if (queries.rolesNames) {
+			qb.andWhere('role.name IN (:...rolesNames)', {
+				rolesNames: queries.rolesNames,
+			});
+		}
 
-		const [rows, count] = await qb.getManyAndCount();
+		if (queries.isActive !== undefined) {
+			qb.andWhere('user.isActive = :isActive', { isActive: queries.isActive });
+		}
 
-		return {
-			items: rows.map((u) => {
-				const { password, ...rest } = u;
-				return rest as unknown as IUser;
-			}),
-			meta: {
-				current_page: page,
-				last_page: Math.ceil(count / take),
-				per_page: take,
-				total: count,
-			},
-		};
+		// 3. Aplicar Paginación y Retornar
+		QueryHelper.applyBasePagination(qb, queries, 'user');
+
+		return QueryHelper.getPaginatedResponse(qb, queries, (u) => {
+			const { password, ...rest } = u;
+			return rest as UserEntity;
+		});
 	}
 	async findLastsRegistered(user: IAuthUser): Promise<UserEntity[]> {
 		if (user.roleName === ROLES.ADMIN) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { IUser, ROLES } from '@repo/common';
+import { IUser, ROLES, UsersQueriesDto } from '@repo/common';
 import { useUsers } from '@repo/hooks';
 import {
 	AddButton,
@@ -20,7 +20,10 @@ export default function AdminsPage() {
 
 	return (
 		isClient && (
-			<ModalCrudProvider<IUser, ReturnType<typeof useUsers>> useHook={useUsers}>
+			<ModalCrudProvider<ReturnType<typeof useUsers>, IUser, UsersQueriesDto>
+				useHook={useUsers}
+				queries={new UsersQueriesDto()}
+			>
 				<Toaster richColors position="top-right" />
 				<div className="flex flex-col gap-6 p-6 h-full w-full">
 					<div className="flex justify-end p-2 gap-2">

@@ -4,17 +4,17 @@ import {
 } from '@/components/dropdown/generic-actions';
 import { useModalCrud } from '@/contexts/modal-crud-context';
 import { Button } from '@/ui/button';
-import { ILoan } from '@repo/common';
+import { BaseQueriesDto, ILoan } from '@repo/common';
+import { useMyLoans } from '@repo/hooks';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { AlertTriangle, ArrowUpDown, Check, Clock, X } from 'lucide-react';
-import { useMyLoans } from '../../../../../hooks/src/hooks/use-loans';
 
 export const MyLoansColumns: ColumnDef<ILoan>[] = [
 	{
 		accessorKey: 'book',
 		header: 'Libro prestado',
-		cell: ({ row }) => row.original.book || 'N/A',
+		cell: ({ row }) => row.original.book?.title || 'N/A',
 	},
 	{
 		accessorKey: 'loan_date',
@@ -94,6 +94,7 @@ export const MyLoansColumns: ColumnDef<ILoan>[] = [
 			const loan = row.original;
 			const { setDetailsOpen, setEntity, setCreateOpen } = useModalCrud<
 				ILoan,
+				BaseQueriesDto<ILoan>,
 				ReturnType<typeof useMyLoans>
 			>();
 			const nodes: ActionNode[] = [

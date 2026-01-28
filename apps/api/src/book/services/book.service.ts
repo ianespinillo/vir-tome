@@ -6,12 +6,19 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+	BooksQueriesDto,
 	CreateBookDto,
-	IBooKForm,
 	IPaginatedResponse,
 	UpdateBookDto,
 } from '@repo/common';
-import { ILike, In, IsNull, Like, Repository, UpdateResult } from 'typeorm';
+import {
+	Between,
+	FindOptionsWhere,
+	ILike,
+	In,
+	MoreThan,
+	Repository,
+} from 'typeorm';
 import { BookEntity } from '../entities/book.entity';
 import { CategoryService } from '../services/category.service';
 import { PublisherService } from './publisher.service';
@@ -95,24 +102,50 @@ export class BookService extends MultiTenantService<BookEntity> {
 	}
 	async findAllWithDetailsPaginated(
 		tenantId: number,
-		page: number,
+		query: BooksQueriesDto,
 	): Promise<IPaginatedResponse<BookEntity>> {
-		const [data, total] = await this.findAndCount(
-			tenantId,
-			{},
-			{
-				relations: ['categories', 'publisher'],
-				order: { id: 'ASC' },
-				take: 6,
-				skip: (page - 1) * 6,
-			},
-		);
+		const {
+			page = 1,
+			limit = 6,
+			search,
+			categoryIds,
+			publisherId,
+			minYear,
+			maxYear,
+			hasAvailableStock,
+			minQuantity,
+			maxQuantity,
+		} = query;
+
+		const where: FindOptionsWhere<BookEntity> = {
+			...(search && { title: ILike(`%${search}%`) }),
+			...(publisherId && { publisher: { id: publisherId } }),
+			...(categoryIds?.length && { categories: { id: In(categoryIds) } }),
+			...((minYear || maxYear) && {
+				publicationYear: Between(
+					minYear ?? 0,
+					maxYear ?? new Date().getFullYear() + 10,
+				),
+			}),
+			...(hasAvailableStock && { availableQuantity: MoreThan(0) }),
+			...((minQuantity !== undefined || maxQuantity !== undefined) && {
+				availableQuantity: Between(minQuantity ?? 0, maxQuantity ?? 999999),
+			}),
+		};
+
+		const [data, total] = await this.findAndCount(tenantId, where, {
+			relations: ['categories', 'publisher'],
+			order: { id: 'ASC' },
+			take: limit,
+			skip: (page - 1) * limit,
+		});
+
 		return {
 			items: data,
 			meta: {
 				current_page: page,
-				last_page: Math.ceil(total / 6),
-				per_page: 6,
+				last_page: Math.ceil(total / limit),
+				per_page: limit,
 				total,
 			},
 		};
