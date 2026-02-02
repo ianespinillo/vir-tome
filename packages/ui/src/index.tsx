@@ -53,6 +53,7 @@ export { CTAButtons } from './components/buttons/cta-buttons';
 export { FeatureCard } from './components/cards/feature-card';
 export { NavigationMenu } from './components/menus/navigation-menu';
 export { Logo } from './components/icons/logo';
+export { DemoRoleCard } from './components/cards/demo-role-card';
 // Shadcn
 export { Button } from './ui/button';
 export { AddButton } from './components/buttons/add-button';
