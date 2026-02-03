@@ -54,6 +54,7 @@ export { FeatureCard } from './components/cards/feature-card';
 export { NavigationMenu } from './components/menus/navigation-menu';
 export { Logo } from './components/icons/logo';
 export { DemoRoleCard } from './components/cards/demo-role-card';
+export { DemoSection } from './components/sections/demo-section';
 // Shadcn
 export { Button } from './ui/button';
 export { AddButton } from './components/buttons/add-button';
