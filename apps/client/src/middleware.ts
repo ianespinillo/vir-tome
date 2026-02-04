@@ -1,5 +1,11 @@
 import { rootDomain } from '@/constants/utils';
 import { type NextRequest, NextResponse } from 'next/server';
+import {
+	getDashboardForUser,
+	hasRouteAccess,
+	isPublicRoute,
+} from './middleware-config';
+import { extractRoleFromToken, isValidToken } from './middleware-jwt-utils';
 
 function extractSubdomain(request: NextRequest): string | null {
 	const url = request.url;
@@ -80,18 +86,61 @@ export async function middleware(request: NextRequest) {
 	const url = request.nextUrl.clone();
 	const subdomain = extractSubdomain(request);
 
-	// Auth protection - check before subdomain logic
-	if (pathname.startsWith('/dashboard') && !token) {
+	// 1. Rutas públicas - permitir acceso sin autenticación
+	if (isPublicRoute(pathname)) {
+		// Si ya está autenticado y trata de acceder a auth, redirigir a su dashboard
+		if (pathname.startsWith('/auth') && token && isValidToken(token)) {
+			const roleInfo = extractRoleFromToken(token);
+			if (roleInfo) {
+				const dashboardPath = getDashboardForUser(roleInfo.role, roleInfo.type);
+				url.pathname = dashboardPath;
+				// Remover subdominio para auth
+				const host = request.headers.get('host') || '';
+				const newHost = host.includes('.')
+					? host.split('.').slice(-2).join('.')
+					: host;
+				url.host = newHost;
+				return NextResponse.redirect(url);
+			}
+		}
+		return NextResponse.next();
+	}
+
+	// 2. Verificar autenticación para rutas protegidas
+	if (!token || !isValidToken(token)) {
+		// Redirigir a auth/sign-in SIN subdominio
 		url.pathname = '/auth/sign-in';
+		const host = request.headers.get('host') || '';
+		const newHost = host.includes('.')
+			? host.split('.').slice(-2).join('.')
+			: host;
+		url.host = newHost;
 		return NextResponse.redirect(url);
 	}
 
-	if (pathname.startsWith('/auth') && token) {
-		url.pathname = '/dashboard';
+	// 3. Extraer información del usuario y verificar acceso por rol
+	const roleInfo = extractRoleFromToken(token);
+	if (!roleInfo) {
+		// Token inválido o malformed
+		url.pathname = '/auth/sign-in';
+		const host = request.headers.get('host') || '';
+		const newHost = host.includes('.')
+			? host.split('.').slice(-2).join('.')
+			: host;
+		url.host = newHost;
 		return NextResponse.redirect(url);
 	}
 
-	// Subdomain logic
+	// 4. Verificar acceso a la ruta específica
+	if (!hasRouteAccess(pathname, roleInfo.role)) {
+		// Usuario autenticado pero sin acceso a esta ruta
+		// Redirigir al dashboard correspondiente a su rol
+		const dashboardPath = getDashboardForUser(roleInfo.role, roleInfo.type);
+		url.pathname = dashboardPath;
+		return NextResponse.redirect(url);
+	}
+
+	// 5. Lógica de subdominios (después de la validación de autenticación)
 	if (subdomain) {
 		// Validate if the tenant exists via API
 		const tenantExists = await validateTenant(subdomain);
@@ -117,7 +166,7 @@ export async function middleware(request: NextRequest) {
 		}
 	}
 
-	// On the root domain, allow normal access
+	// 6. Permitir acceso normal
 	return NextResponse.next();
 }
 
