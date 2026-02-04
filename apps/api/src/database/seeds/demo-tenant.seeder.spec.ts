@@ -10,8 +10,11 @@ import { PublisherEntity } from '../../book/entities/publisher.entity';
 import { LoanEntity } from '../../loan/entities/loan.entity';
 import { TenantEntity } from '../../tenants/entities/tenant.entity';
 import { RoleEntity } from '../../users/entities/role.entity';
+import { UserTenantEntity } from '../../users/entities/user-tenant.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 import { DemoSeeder } from './demo-tenant.seeder';
+
+jest.mock('bcrypt');
 
 type MockRepo<T extends ObjectLiteral = any> = Partial<
 	Record<keyof Repository<T>, jest.Mock>
@@ -23,6 +26,14 @@ function createMockRepo<T extends ObjectLiteral = any>(): MockRepo<T> {
 		create: jest.fn(),
 		save: jest.fn(),
 		delete: jest.fn(),
+		query: jest.fn(),
+		createQueryBuilder: jest.fn(() => ({
+			leftJoin: jest.fn().mockReturnThis(),
+			where: jest.fn().mockReturnThis(),
+			andWhere: jest.fn().mockReturnThis(),
+			delete: jest.fn().mockReturnThis(),
+			execute: jest.fn().mockResolvedValue(undefined),
+		})),
 	};
 }
 
@@ -35,6 +46,7 @@ describe('DemoSeeder', () => {
 	let publisherRepo: MockRepo<PublisherEntity>;
 	let bookRepo: MockRepo<BookEntity>;
 	let loanRepo: MockRepo<LoanEntity>;
+	let userTenantRepo: MockRepo<UserTenantEntity>;
 
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -56,6 +68,10 @@ describe('DemoSeeder', () => {
 					useValue: createMockRepo(),
 				},
 				{ provide: getRepositoryToken(LoanEntity), useValue: createMockRepo() },
+				{
+					provide: getRepositoryToken(UserTenantEntity),
+					useValue: createMockRepo(),
+				},
 			],
 		}).compile();
 
@@ -84,6 +100,10 @@ describe('DemoSeeder', () => {
 		loanRepo = module.get<MockRepo<LoanEntity>>(getRepositoryToken(LoanEntity), {
 			strict: false,
 		});
+		userTenantRepo = module.get<MockRepo<UserTenantEntity>>(
+			getRepositoryToken(UserTenantEntity),
+			{ strict: false },
+		);
 	});
 
 	describe('createDemoTenant', () => {
@@ -95,7 +115,9 @@ describe('DemoSeeder', () => {
 			const result = await seeder['createDemoTenant']();
 
 			expect(tenantRepo.findOne).toHaveBeenCalledWith({
-				where: { subdomain: 'demo', deleted_at: expect.any(Object) },
+				where: {
+					subdomain: 'demo',
+				},
 			});
 			expect(tenantRepo.create).toHaveBeenCalled();
 			expect(tenantRepo.save).toHaveBeenCalled();
@@ -108,7 +130,11 @@ describe('DemoSeeder', () => {
 
 			const result = await seeder['createDemoTenant']();
 
-			expect(tenantRepo.findOne).toHaveBeenCalled();
+			expect(tenantRepo.findOne).toHaveBeenCalledWith({
+				where: {
+					subdomain: 'demo',
+				},
+			});
 			expect(tenantRepo.create).not.toHaveBeenCalled();
 			expect(result).toBe(existingTenant);
 		});
@@ -131,12 +157,17 @@ describe('DemoSeeder', () => {
 	});
 
 	describe('createUsers', () => {
-		it('crea usuarios con password hasheado', async () => {
+		it('crea usuarios con password hasheado si no existen', async () => {
+			const hashedPassword = 'hashed_password_demo1234';
+			(bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
+			(bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
 			userRepo.findOne?.mockResolvedValue(null);
 			userRepo.create?.mockImplementation((data) => data);
 			userRepo.save?.mockImplementation((data) =>
 				Promise.resolve({ id: Date.now(), ...data }),
 			);
+			userTenantRepo.save?.mockResolvedValue(undefined);
 
 			const roles: RoleEntity[] = [{ id: 1, name: ROLES.ADMIN } as RoleEntity];
 
@@ -144,36 +175,63 @@ describe('DemoSeeder', () => {
 
 			expect(userRepo.findOne).toHaveBeenCalled();
 			expect(userRepo.save).toHaveBeenCalled();
-			expect(result[0].password).not.toBe('demo123');
-			expect(await bcrypt.compare('demo123', result[0].password)).toBe(true);
+			expect(userTenantRepo.save).toHaveBeenCalled();
+			expect(bcrypt.hash).toHaveBeenCalledWith('demo1234', 10);
+			expect(result[0].password).toBe(hashedPassword);
+			expect(result[0].password).not.toBe('demo1234');
+			expect(await bcrypt.compare('demo1234', result[0].password)).toBe(true);
+		});
+
+		it('no recrea usuarios existentes, solo asegura relación tenant', async () => {
+			const existingUser = {
+				id: 123,
+				email: 'admin@demo.com',
+				userTenants: [],
+			};
+			userRepo.findOne?.mockResolvedValue(existingUser);
+			userTenantRepo.save?.mockResolvedValue(undefined);
+
+			const roles: RoleEntity[] = [{ id: 1, name: ROLES.ADMIN } as RoleEntity];
+
+			const result = await seeder['createUsers'](1, roles);
+
+			expect(userRepo.save).not.toHaveBeenCalled();
+			expect(userTenantRepo.save).toHaveBeenCalled();
+			expect(result[0]).toBe(existingUser);
 		});
 	});
 
 	describe('reset', () => {
-		it('borra entidades y re-seedea si existe tenant demo', async () => {
-			tenantRepo.findOne?.mockResolvedValue({ id: 1, subdomain: 'demo' });
+		it('resetea datos del demo tenant y re-seedea si existe', async () => {
+			const demoTenant = { id: 1, subdomain: 'demo' };
+			tenantRepo.findOne?.mockResolvedValue(demoTenant);
 
-			loanRepo.delete?.mockResolvedValue(undefined);
+			// Mock query for resetDemoLoans
+			loanRepo.query?.mockResolvedValue(undefined);
+
+			// Mock delete operations
 			bookRepo.delete?.mockResolvedValue(undefined);
 			categoryRepo.delete?.mockResolvedValue(undefined);
 			publisherRepo.delete?.mockResolvedValue(undefined);
-			userRepo.delete?.mockResolvedValue(undefined);
-			roleRepo.delete?.mockResolvedValue(undefined);
+			userTenantRepo.delete?.mockResolvedValue(undefined);
 
 			const seedSpy = jest.spyOn(seeder, 'seed').mockResolvedValue(undefined);
 
 			await seeder.reset();
 
-			expect(loanRepo.delete).toHaveBeenCalledWith({
-				deleted_at: expect.any(Object),
+			expect(tenantRepo.findOne).toHaveBeenCalledWith({
+				where: {
+					subdomain: 'demo',
+				},
 			});
+			expect(loanRepo.query).toHaveBeenCalledWith(
+				expect.stringContaining('DELETE FROM loan'),
+				[1],
+			);
 			expect(bookRepo.delete).toHaveBeenCalledWith({ tenant_id: 1 });
-			expect(categoryRepo.delete).toHaveBeenCalled();
-			expect(publisherRepo.delete).toHaveBeenCalled();
-			expect(userRepo.delete).toHaveBeenCalledWith({
-				userTenants: { tenant_id: 1 },
-			});
-			expect(roleRepo.delete).toHaveBeenCalled();
+			expect(categoryRepo.delete).toHaveBeenCalledWith({});
+			expect(publisherRepo.delete).toHaveBeenCalledWith({});
+			expect(userTenantRepo.delete).toHaveBeenCalledWith({ tenant_id: 1 });
 			expect(seedSpy).toHaveBeenCalled();
 		});
 
@@ -184,7 +242,7 @@ describe('DemoSeeder', () => {
 
 			await seeder.reset();
 
-			expect(bookRepo.delete).not.toHaveBeenCalled();
+			expect(loanRepo.query).not.toHaveBeenCalled();
 			expect(seedSpy).not.toHaveBeenCalled();
 		});
 	});

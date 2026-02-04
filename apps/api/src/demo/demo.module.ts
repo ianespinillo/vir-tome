@@ -1,3 +1,4 @@
+import { TenantsModule } from '@/tenants/tenants.module';
 import { UsersModule } from '@/users/users.module';
 // src/demo/demo.module.ts
 import { Module } from '@nestjs/common';
@@ -10,6 +11,7 @@ import { DemoSeeder } from '../database/seeds/demo-tenant.seeder';
 import { LoanEntity } from '../loan/entities/loan.entity';
 import { TenantEntity } from '../tenants/entities/tenant.entity';
 import { RoleEntity } from '../users/entities/role.entity';
+import { UserTenantEntity } from '../users/entities/user-tenant.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { DemoResetService } from './demo-reset.service';
 import { DemoController } from './demo.controller';
@@ -21,6 +23,7 @@ import { DemoMiddleware } from './middleware/demo.middleware';
 		TypeOrmModule.forFeature([
 			TenantEntity,
 			UserEntity,
+			UserTenantEntity,
 			BookEntity,
 			LoanEntity,
 			CategoryEntity,
@@ -28,6 +31,7 @@ import { DemoMiddleware } from './middleware/demo.middleware';
 			RoleEntity,
 		]),
 		UsersModule,
+		TenantsModule,
 	],
 	controllers: [DemoController],
 	providers: [DemoResetService, DemoSeeder, DemoMiddleware],

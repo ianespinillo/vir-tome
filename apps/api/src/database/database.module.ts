@@ -1,3 +1,4 @@
+import { UserTenantEntity } from '@/users/entities/user-tenant.entity';
 // src/database/database.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -20,6 +21,7 @@ import { DemoSeeder } from './seeds/demo-tenant.seeder';
 			CategoryEntity,
 			PublisherEntity,
 			LoanEntity,
+			UserTenantEntity,
 		]),
 	],
 	providers: [DemoSeeder],

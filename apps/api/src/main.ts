@@ -8,6 +8,7 @@ import { AppModule } from './app.module';
 import { AuthModule } from './auth/auth.module';
 import { BookModule } from './book/book.module';
 import { AllExceptionsFilter } from './core/http-exception.filter';
+import { DemoModule } from './demo/demo.module';
 import { LoanModule } from './loan/loan.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
 import { TenantsModule } from './tenants/tenants.module';
@@ -63,6 +64,7 @@ async function bootstrap() {
 			UsersModule,
 			LoanModule,
 			AuthModule,
+			DemoModule,
 			BookModule,
 			AnalyticsModule,
 			TenantsModule,

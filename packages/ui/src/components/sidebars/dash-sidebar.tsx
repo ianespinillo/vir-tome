@@ -32,8 +32,10 @@ import {
 	SidebarRail,
 } from '@/ui/sidebar';
 
+import { useUINav } from '@/contexts/navigation-context';
 import { MenuLinkBase, PAYLOAD_TYPE, ROLES } from '@repo/common';
 import { useAuth } from '@repo/hooks';
+import { toast } from 'sonner';
 import { SwitchTenant } from '../select/switch-tenant';
 
 // --- TIPO ---
@@ -139,6 +141,7 @@ const FOOTER_LINKS: MenuLink[] = [
 export function DashSidebar() {
 	const { signOut, session } = useAuth();
 	const sessionData = session.data?.data;
+	const { navigate } = useUINav();
 
 	// Filtramos los items basándonos en el usuario actual
 	const filteredLinks = useMemo(() => {
@@ -252,7 +255,14 @@ export function DashSidebar() {
 					{/* Botón de Logout separado para manejar el onClick */}
 					<SidebarMenuItem>
 						<SidebarMenuButton
-							onClick={() => signOut.mutate()}
+							onClick={() => {
+								toast.promise(signOut.mutateAsync(), {
+									loading: 'Cerrando sesión...',
+									success: 'Sesión cerrada correctamente',
+									error: 'Error al cerrar sesión',
+								});
+								navigate('/', { isExternal: false });
+							}}
 							className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400"
 						>
 							<LogOut className="mr-2 h-4 w-4" />
