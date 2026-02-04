@@ -1,4 +1,5 @@
 import { Button, Logo, Menu, NavigationMenu, Play } from '@repo/ui';
+import Link from 'next/link';
 
 export function Navbar() {
 	return (
@@ -10,11 +11,13 @@ export function Navbar() {
 
 				<div className="flex items-center gap-4">
 					<Button variant="ghost" className="hidden md:inline-flex">
-						Iniciar sesión
+						<Link href="/auth/sign-in">Iniciar sesión</Link>
 					</Button>
 					<Button className="hidden md:inline-flex">
-						<Play />
-						Ver demo
+						<Link href="/demo" className="flex items-center gap-2">
+							<Play className="h-4 w-4" />
+							Prueba gratis
+						</Link>
 					</Button>
 					<Button variant="ghost" size="icon" className="md:hidden">
 						<Menu className="h-5 w-5" />

@@ -37,6 +37,8 @@ export { AlertsPanel } from './components/cards/alert-card';
 export { StatCard } from './components/cards/stat-card';
 export { LoansPanel } from './components/cards/last-loans-card';
 export { UpcomingCard } from './components/cards/upcoming-card';
+export { DemoSection } from './components/sections/demo-section';
+export { LandingStatCard } from './components/cards/landing-stat-card';
 export * from './ui/scroll-area';
 
 // toaster

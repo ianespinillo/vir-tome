@@ -1,4 +1,4 @@
-import { StatCard } from '@repo/ui';
+import { LandingStatCard } from '@repo/ui';
 
 const stats = [
 	{
@@ -38,7 +38,14 @@ export function StatsSection() {
 				</div>
 
 				<div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-					{/*TODO: Map through stats array to create StatCard components*/}
+					{stats.map((stat) => (
+						<LandingStatCard
+							key={stat.value}
+							value={stat.value}
+							label={stat.label}
+							description={stat.description}
+						/>
+					))}
 				</div>
 			</div>
 		</section>

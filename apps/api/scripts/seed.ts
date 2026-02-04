@@ -107,6 +107,11 @@ async function seed() {
 		await roleRepo.save({
 			name: role as ROLES,
 		});
+		('demo123');
+		('demo123');
+		('demo123');
+		('demo123');
+		('demo123');
 	}
 
 	// Roles para Vecina
@@ -123,7 +128,7 @@ async function seed() {
 	const userTenantRepo = AppDataSource.getRepository(UserTenantEntity);
 
 	// Password hash mock (en realidad deberías usar bcrypt aquí si tu entidad no lo hace automáticamente)
-	const pass = '12345678';
+	const pass = 'demo1234';
 	const mockPass = await bcrypt.hash(pass, 10);
 
 	// Usuario 1: Admin del Tenant Demo

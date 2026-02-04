@@ -1,7 +1,7 @@
 // src/database/seeds/demo-tenant.seeder.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LoanStatus, ROLES } from '@repo/common';
+import { LoanBorrowerType, LoanStatus, ROLES } from '@repo/common';
 import * as bcrypt from 'bcrypt';
 import { IsNull, Repository } from 'typeorm';
 import { BookEntity } from '../../book/entities/book.entity';
@@ -9,8 +9,52 @@ import { CategoryEntity } from '../../book/entities/category.entity';
 import { PublisherEntity } from '../../book/entities/publisher.entity';
 import { LoanEntity } from '../../loan/entities/loan.entity';
 import { TenantEntity } from '../../tenants/entities/tenant.entity';
+import { TenantsService } from '../../tenants/tenants.service';
 import { RoleEntity } from '../../users/entities/role.entity';
+import { UserTenantEntity } from '../../users/entities/user-tenant.entity';
 import { UserEntity } from '../../users/entities/user.entity';
+
+// Constantes globales para usuarios protegidos
+const SUPER_ADMIN_EMAIL = 'espinilloian@hotmail.com';
+const PROTECTED_GLOBAL_USERS = [SUPER_ADMIN_EMAIL];
+
+const DEMO_USERS = [
+	{
+		email: 'admin@demo.com',
+		name: 'María',
+		surname: 'González',
+		role: ROLES.ADMIN,
+		password: 'demo1234',
+	},
+	{
+		email: 'bibliotecario@demo.com',
+		name: 'Carlos',
+		surname: 'Ruiz',
+		role: ROLES.LIBRARIAN,
+		password: 'demo1234',
+	},
+	{
+		email: 'profesora@demo.com',
+		name: 'Ana',
+		surname: 'Martínez',
+		role: ROLES.TEACHER,
+		password: 'demo1234',
+	},
+	{
+		email: 'estudiante1@demo.com',
+		name: 'Lucas',
+		surname: 'Pérez',
+		role: ROLES.STUDENT,
+		password: 'demo1234',
+	},
+	{
+		email: 'estudiante2@demo.com',
+		name: 'Sofía',
+		surname: 'López',
+		role: ROLES.STUDENT,
+		password: 'demo1234',
+	},
+];
 
 @Injectable()
 export class DemoSeeder {
@@ -29,6 +73,8 @@ export class DemoSeeder {
 		private readonly publisherRepository: Repository<PublisherEntity>,
 		@InjectRepository(LoanEntity)
 		private readonly loanRepository: Repository<LoanEntity>,
+		@InjectRepository(UserTenantEntity)
+		private readonly userTenantRepository: Repository<UserTenantEntity>,
 	) {}
 
 	async seed(): Promise<void> {
@@ -46,8 +92,9 @@ export class DemoSeeder {
 		const users = await this.createUsers(demoTenant.id, roles);
 		console.log(`✅ Created ${users.length} users`);
 
+		// 4. Crear Super Admin si no existe (solo una vez)
 		await this.createSuperAdmin();
-		console.log('✅ Created super admin');
+		console.log('✅ Super admin ensured');
 		// 4. Crear categorías
 		const categories = await this.createCategories();
 		console.log(`✅ Created ${categories.length} categories`);
@@ -70,38 +117,78 @@ export class DemoSeeder {
 	async reset(): Promise<void> {
 		console.log('🧹 Resetting demo data...');
 
-		const demoTenant = await this.tenantRepository.findOne({
-			where: { subdomain: 'demo', deleted_at: IsNull() },
-		});
+		try {
+			const demoTenant = await this.tenantRepository.findOne({
+				where: {
+					subdomain: 'demo',
+				},
+			});
+			if (!demoTenant) {
+				console.log('❌ Demo tenant not found');
+				return;
+			}
+			const tenantId = demoTenant.id;
 
-		if (!demoTenant) {
-			console.log('❌ Demo tenant not found');
-			return;
+			// 1. Resetear préstamos SOLO del demo tenant
+			await this.resetDemoLoans(tenantId);
+
+			// 2. Resetear datos del demo tenant
+			await this.resetDemoTenantData(tenantId);
+
+			// 3. Asegurar usuarios demo (híbrido: mantener si existen)
+			await this.seed(); // Reutilizar seed que ya tiene lógica híbrida
+
+			console.log('🧹 Demo data reset completed');
+		} catch (error) {
+			console.error('❌ Demo reset failed:', error);
+			// Don't re-throw - handle gracefully when tenant not found
 		}
+	}
 
-		const tenantId = demoTenant.id;
+	private async resetDemoLoans(tenantId: number): Promise<void> {
+		await this.loanRepository.query(
+			`
+			DELETE FROM loan
+			USING book
+			WHERE loan.book_id = book.id
+			AND loan.deleted_at IS NULL
+			AND book.tenant_id = $1
+			`,
+			[tenantId],
+		);
+	}
 
-		// Eliminar en orden inverso por las foreign keys
-		await this.loanRepository.delete({ deleted_at: IsNull() });
+	private async resetDemoTenantData(tenantId: number): Promise<void> {
+		// Resetear en orden inverso por foreign keys
+
+		// 1. Libros del demo tenant
 		await this.bookRepository.delete({ tenant_id: tenantId });
+
+		// 2. Categorías y Publishers (globales, se recrean)
 		await this.categoryRepository.delete({});
 		await this.publisherRepository.delete({});
-		await this.userRepository.delete({ userTenants: { tenant_id: tenantId } });
-		await this.roleRepository.delete({});
 
-		console.log('🧹 Demo data reset completed');
+		// 3. UserTenant relationships SOLO del demo tenant
+		await this.userTenantRepository.delete({ tenant_id: tenantId });
 
-		// Re-seed
-		await this.seed();
+		// NOTA: NO borrar usuarios globales protegidos
 	}
 
 	private async createDemoTenant(): Promise<TenantEntity> {
-		let demoTenant = await this.tenantRepository.findOne({
-			where: { subdomain: 'demo', deleted_at: IsNull() },
-		});
-
-		if (!demoTenant) {
-			demoTenant = this.tenantRepository.create({
+		try {
+			// Intentar usar el service (throws si no existe)
+			const demoTenant = await this.tenantRepository.findOne({
+				where: {
+					subdomain: 'demo',
+				},
+			});
+			if (!demoTenant) {
+				throw new Error('Demo tenant not found');
+			}
+			return demoTenant;
+		} catch (error) {
+			// Si no existe, crearlo
+			const demoTenant = this.tenantRepository.create({
 				subdomain: 'demo',
 				name: 'Escuela Primaria Demo',
 				contact_email: 'demo@escuela.com',
@@ -125,10 +212,12 @@ export class DemoSeeder {
 					},
 				},
 			});
-			demoTenant = await this.tenantRepository.save(demoTenant);
+			const saved = await this.tenantRepository.save(demoTenant);
+			if (!saved) {
+				throw new Error('Failed to create demo tenant');
+			}
+			return saved;
 		}
-
-		return demoTenant;
 	}
 	private async createSuperAdmin() {
 		const superAdminRole = await this.roleRepository.findOne({
@@ -136,17 +225,16 @@ export class DemoSeeder {
 		});
 
 		const existingSuperAdmin = await this.userRepository.findOne({
-			where: { email: 'superadmin@sistema.com' },
+			where: { email: SUPER_ADMIN_EMAIL },
 		});
 
 		if (!existingSuperAdmin && superAdminRole) {
 			await this.userRepository.save({
-				email: 'superadmin@sistema.com',
-				name: 'Super',
-				surname: 'Admin',
+				email: SUPER_ADMIN_EMAIL,
+				name: 'Ian',
+				surname: 'Espíndola',
 				password: await bcrypt.hash('superadmin123', 10),
-				tenant_id: undefined, // Sin tenant específico, o tenant 0
-				role_id: superAdminRole.id,
+				// SIN tenant_id (global)
 			});
 		}
 	}
@@ -183,75 +271,43 @@ export class DemoSeeder {
 		tenantId: number,
 		roles: RoleEntity[],
 	): Promise<UserEntity[]> {
-		const saltRounds = 10;
-		const defaultPassword = await bcrypt.hash('demo123', saltRounds);
-
-		const usersData = [
-			{
-				name: 'María',
-				surname: 'González',
-				email: 'admin@demo.com',
-				role: ROLES.ADMIN,
-			},
-			{
-				name: 'Carlos',
-				surname: 'Ruiz',
-				email: 'bibliotecario@demo.com',
-				role: ROLES.LIBRARIAN,
-			},
-			{
-				name: 'Ana',
-				surname: 'Martínez',
-				email: 'profesora@demo.com',
-				role: ROLES.TEACHER,
-			},
-			{
-				name: 'Lucas',
-				surname: 'Pérez',
-				email: 'estudiante1@demo.com',
-				role: ROLES.STUDENT,
-			},
-			{
-				name: 'Sofía',
-				surname: 'López',
-				email: 'estudiante2@demo.com',
-				role: ROLES.STUDENT,
-			},
-		];
-
 		const users: UserEntity[] = [];
-		for (const userData of usersData) {
+
+		for (const userData of DEMO_USERS) {
+			// Buscar usuario existente (global)
 			let user = await this.userRepository.findOne({
-				where: {
-					email: userData.email,
-					userTenants: { tenant_id: tenantId },
-					deleted_at: IsNull(),
-				},
+				where: { email: userData.email },
+				relations: ['userTenants'],
 			});
 
 			if (!user) {
-				const role = roles.find((r) => r.name === userData.role);
-				if (!role) {
-					console.warn(
-						`Role ${userData.role} not found, skipping user ${userData.email}`,
-					);
-					continue;
-				}
+				// Crear nuevo usuario global
 				user = this.userRepository.create({
+					email: userData.email,
 					name: userData.name,
 					surname: userData.surname,
-					email: userData.email,
-					password: defaultPassword,
-					userTenants: [
-						{
-							tenant_id: tenantId,
-							role_id: role.id,
-						},
-					],
+					password: await bcrypt.hash(userData.password, 10),
 				});
-
-				await this.userRepository.save(user);
+				user = await this.userRepository.save(user);
 			}
+
+			// Asegurar relación con demo tenant
+			const existingRelation = user.userTenants?.find(
+				(ut) => ut.tenant_id === tenantId,
+			);
+
+			if (!existingRelation) {
+				const role = roles.find((r) => r.name === userData.role);
+				if (role) {
+					await this.userTenantRepository.save({
+						user_id: user.id,
+						tenant_id: tenantId,
+						role_id: role.id,
+						is_active: true,
+					});
+				}
+			}
+
 			users.push(user);
 		}
 
@@ -496,6 +552,7 @@ export class DemoSeeder {
 
 			if (!existingLoan) {
 				const loan = this.loanRepository.create({
+					borrower_type: LoanBorrowerType.REGISTERED_USER,
 					user_id: user.id,
 					book_id: book.id,
 					quantity: loanData.quantity,

@@ -4,7 +4,7 @@ import { TenantsService } from '@/tenants/tenants.service';
 import { TokensService } from '@/tokens/tokens.service';
 import { RoleService } from '@/users/services/role.service';
 import { UsersService } from '@/users/services/users.service';
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 // src/auth/__tests__/auth.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';

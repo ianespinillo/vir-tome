@@ -18,9 +18,6 @@ export class DemoController {
 	constructor(private readonly demoResetService: DemoResetService) {}
 
 	@Post('reset')
-	@AuthBearer()
-	@UseGuards(RolesGuard)
-	@Roles(ROLES.ADMIN) // Solo admin del tenant demo puede resetear
 	@ApiBearerAuth()
 	@ApiOperation({
 		summary: 'Reset demo tenant data',

@@ -12,6 +12,12 @@ export class DemoResetService {
 	// Reset demo data every day at 2 AM
 	@Cron(CronExpression.EVERY_DAY_AT_2AM)
 	async scheduledReset() {
+		// Permitir deshabilitar por environment
+		if (process.env.ENABLE_DEMO_RESET === 'false') {
+			this.logger.log('Demo reset disabled by environment');
+			return;
+		}
+
 		this.logger.log('Starting scheduled demo reset...');
 		try {
 			await this.demoSeeder.reset();
