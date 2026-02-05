@@ -29,7 +29,7 @@ export function SeeLoan({
 					<div className="grid grid-cols-2 gap-4">
 						<div>
 							<h4 className="text-sm font-medium text-gray-500">Docente</h4>
-							<p>{loan.user.email}</p>
+							<p>{loan.user?.email || 'No disponible'}</p>
 						</div>
 						<div>
 							<h4 className="text-sm font-medium text-gray-500">Libro</h4>
