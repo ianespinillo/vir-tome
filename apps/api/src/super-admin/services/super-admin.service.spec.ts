@@ -1,10 +1,10 @@
-import { PasswordAdapter } from '@/core/passport-adapter';
-import { EmailService } from '@/email/email.service';
 import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ROLES } from '@repo/common';
 import { Repository } from 'typeorm';
+import { PasswordAdapter } from '../../core/passport-adapter';
+import { EmailService } from '../../email/email.service';
 import { SuperAdminEntity } from '../entities/super-admin.entity';
 import { SuperAdminService } from './super-admin.service';
 import 'reflect-metadata';

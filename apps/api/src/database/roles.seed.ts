@@ -1,6 +1,6 @@
-import { RoleEntity } from '@/users/entities/role.entity';
 import { ROLES } from '@repo/common';
 import { DataSource } from 'typeorm';
+import { RoleEntity } from '../users/entities/role.entity';
 
 // src/database/seeds/roles.seed.ts
 export class RolesSeed {

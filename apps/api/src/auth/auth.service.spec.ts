@@ -1,9 +1,3 @@
-import { EmailService } from '@/email/email.service';
-import { SuperAdminService } from '@/super-admin/services/super-admin.service';
-import { TenantsService } from '@/tenants/tenants.service';
-import { TokensService } from '@/tokens/tokens.service';
-import { RoleService } from '@/users/services/role.service';
-import { UsersService } from '@/users/services/users.service';
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 // src/auth/__tests__/auth.service.spec.ts
@@ -18,6 +12,12 @@ import {
 	SignUpDto,
 } from '@repo/common';
 import * as bcrypt from 'bcrypt';
+import { EmailService } from '../email/email.service';
+import { SuperAdminService } from '../super-admin/services/super-admin.service';
+import { TenantsService } from '../tenants/tenants.service';
+import { TokensService } from '../tokens/tokens.service';
+import { RoleService } from '../users/services/role.service';
+import { UsersService } from '../users/services/users.service';
 import { AuthService } from './auth.service';
 
 jest.mock('bcrypt');

@@ -1,6 +1,3 @@
-import { IAuthUser } from '@/core/core.types';
-import { PasswordAdapter } from '@/core/passport-adapter';
-import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 // src/auth/__tests__/auth.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
@@ -12,10 +9,13 @@ import {
 	SignUpDto,
 } from '@repo/common';
 import { Response } from 'express';
+import { IAuthUser } from '../core/core.types';
+import { PasswordAdapter } from '../core/passport-adapter';
+import { UsersService } from '../users/services/users.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
-jest.mock('@/core/passport-adapter', () => ({
+jest.mock('../core/passport-adapter', () => ({
 	PasswordAdapter: {
 		generateHashedPassword: jest.fn(),
 	},

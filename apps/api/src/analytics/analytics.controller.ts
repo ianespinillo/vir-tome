@@ -1,7 +1,7 @@
-import { Roles } from '@/auth/decorators/roles.decorator';
-import { User } from '@/auth/decorators/user.decorator';
-import { IAuthUser } from '@/core/core.types';
-import { LoanEntity } from '@/loan/entities/loan.entity';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { User } from '../auth/decorators/user.decorator';
+import { IAuthUser } from '../core/core.types';
+import { LoanEntity } from '../loan/entities/loan.entity';
 
 import {
 	Controller,

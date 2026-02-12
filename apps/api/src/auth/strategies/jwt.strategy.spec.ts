@@ -1,10 +1,10 @@
-import { SuperAdminService } from '@/super-admin/services/super-admin.service';
-import { TenantsService } from '@/tenants/tenants.service';
-import { UsersService } from '@/users/services/users.service';
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PAYLOAD_TYPE, ROLES } from '@repo/common';
+import { SuperAdminService } from '../../super-admin/services/super-admin.service';
+import { TenantsService } from '../../tenants/tenants.service';
+import { UsersService } from '../../users/services/users.service';
 import { JwtStrategy } from '../strategies/jwt.strategy'; // Ajusta la ruta según tu estructura
 
 describe('JwtStrategy', () => {

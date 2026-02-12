@@ -6,9 +6,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { LoanEntity } from './entities/loan.entity';
 
-import { IAuthUser } from '@/core/core.types';
-import { QueryHelper } from '@/core/query-helper';
-import { UsersService } from '@/users/services/users.service';
 import {
 	CreateLoanDto,
 	ILoanAlert,
@@ -23,7 +20,10 @@ import {
 import { addDays, differenceInDays, format } from 'date-fns';
 import { Repository, UpdateResult } from 'typeorm';
 import { BookService } from '../book/services/book.service';
+import { IAuthUser } from '../core/core.types';
 import { GenericService } from '../core/generic.service';
+import { QueryHelper } from '../core/query-helper';
+import { UsersService } from '../users/services/users.service';
 @Injectable()
 export class LoanService extends GenericService {
 	constructor(

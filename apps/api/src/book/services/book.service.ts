@@ -1,4 +1,3 @@
-import { MultiTenantService } from '@/core/multi-tenant.service';
 import {
 	BadRequestException,
 	Injectable,
@@ -19,6 +18,7 @@ import {
 	MoreThan,
 	Repository,
 } from 'typeorm';
+import { MultiTenantService } from '../../core/multi-tenant.service';
 import { BookEntity } from '../entities/book.entity';
 import { CategoryService } from '../services/category.service';
 import { PublisherService } from './publisher.service';

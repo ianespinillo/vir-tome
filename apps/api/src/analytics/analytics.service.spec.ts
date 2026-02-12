@@ -1,8 +1,8 @@
-import { BookService } from '@/book/services/book.service';
-import { IAuthUser } from '@/core/core.types';
-import { LoanService } from '@/loan/loan.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ROLES } from '@repo/common';
+import { BookService } from '../book/services/book.service';
+import { IAuthUser } from '../core/core.types';
+import { LoanService } from '../loan/loan.service';
 import { AnalyticsService } from './analytics.service';
 
 describe('AnalyticsService', () => {

@@ -1,5 +1,3 @@
-import { User } from '@/auth/decorators/user.decorator';
-import { IAuthUser } from '@/core/core.types';
 import {
 	Body,
 	Controller,
@@ -41,7 +39,9 @@ import {
 // src/book/controllers/book.controller.ts
 import { AuthBearer } from '../../auth/decorators/auth-bearer.decorators';
 import { Roles } from '../../auth/decorators/roles.decorator';
+import { User } from '../../auth/decorators/user.decorator';
 import { RolesGuard } from '../../auth/guard/role.guard';
+import { IAuthUser } from '../../core/core.types';
 import { BookEntity } from '../entities/book.entity';
 import { BookService } from '../services/book.service';
 

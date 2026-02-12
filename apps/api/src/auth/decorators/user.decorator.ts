@@ -1,5 +1,5 @@
-import { IAuthUser } from '@/core/core.types';
 import { ExecutionContext, createParamDecorator } from '@nestjs/common';
+import { IAuthUser } from '../../core/core.types';
 
 export const User = createParamDecorator((_: any, ctx: ExecutionContext) => {
 	const request = ctx.switchToHttp().getRequest();

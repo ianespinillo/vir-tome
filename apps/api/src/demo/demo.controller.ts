@@ -1,6 +1,3 @@
-import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
-import { Roles } from '@/auth/decorators/roles.decorator';
-import { RolesGuard } from '@/auth/guard/role.guard';
 // src/demo/demo.controller.ts
 import { Controller, Post, UseGuards } from '@nestjs/common';
 import {
@@ -10,6 +7,9 @@ import {
 	ApiTags,
 } from '@nestjs/swagger';
 import { ROLES } from '@repo/common';
+import { AuthBearer } from '../auth/decorators/auth-bearer.decorators';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guard/role.guard';
 import { DemoResetService } from './demo-reset.service';
 
 @ApiTags('Demo')

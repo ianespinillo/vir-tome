@@ -1,8 +1,3 @@
-import { BookEntity } from '@/book/entities/book.entity';
-import { LoanEntity } from '@/loan/entities/loan.entity';
-import { TenantEntity } from '@/tenants/entities/tenant.entity';
-import { RoleEntity } from '@/users/entities/role.entity';
-import { UserEntity } from '@/users/entities/user.entity';
 import {
 	BadRequestException,
 	ConflictException,
@@ -21,6 +16,11 @@ import {
 } from '@repo/common';
 import bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
+import { BookEntity } from '../../book/entities/book.entity';
+import { LoanEntity } from '../../loan/entities/loan.entity';
+import { TenantEntity } from '../../tenants/entities/tenant.entity';
+import { RoleEntity } from '../../users/entities/role.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 
 // src/admin/admin.service.ts
 @Injectable()

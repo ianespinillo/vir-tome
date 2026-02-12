@@ -1,6 +1,3 @@
-import { IAuthUser } from '@/core/core.types';
-import { PasswordAdapter } from '@/core/passport-adapter';
-import { QueryHelper } from '@/core/query-helper';
 // src/users/services/users.service.ts
 import {
 	BadRequestException,
@@ -21,6 +18,9 @@ import {
 } from '@repo/common';
 import * as bcrypt from 'bcrypt';
 import { IsNull, Repository } from 'typeorm';
+import { IAuthUser } from '../../core/core.types';
+import { PasswordAdapter } from '../../core/passport-adapter';
+import { QueryHelper } from '../../core/query-helper';
 import { RoleEntity } from '../entities/role.entity';
 import { UserTenantEntity } from '../entities/user-tenant.entity';
 import { UserEntity } from '../entities/user.entity';
@@ -403,7 +403,9 @@ export class UsersService {
 
 		if (user.roleName === ROLES.ADMIN) {
 			qb
-				.andWhere('ut.tenant_id = :tenantId', { tenantId: user.tenantId })
+				.andWhere('ut.tenant_id = :tenantId', {
+					tenantId: user.tenantId,
+				})
 				.andWhere('role.name NOT IN (:...restricted)', {
 					restricted: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
 				});

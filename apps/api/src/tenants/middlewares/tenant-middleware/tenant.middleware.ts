@@ -1,4 +1,3 @@
-import { ExtendedRequest } from '@/core/core.types';
 import {
 	BadRequestException,
 	Injectable,
@@ -6,6 +5,7 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { ExtendedRequest } from '../../../core/core.types';
 import { TenantsService } from '../../../tenants/tenants.service';
 import { TenantEntity } from '../../entities/tenant.entity';
 

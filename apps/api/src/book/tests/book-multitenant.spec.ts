@@ -1,4 +1,4 @@
-import { getTestDatabaseConfig } from '@/__tests__/database-test.config';
+import { getTestDatabaseConfig } from '../../__tests__/database-test.config';
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';

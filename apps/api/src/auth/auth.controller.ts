@@ -1,5 +1,3 @@
-import { getCookieDomain } from '@/core/cookie-helper';
-import { IAuthUser } from '@/core/core.types';
 // src/auth/auth.controller.ts
 import {
 	BadRequestException,
@@ -32,6 +30,8 @@ import {
 	SignUpDto,
 } from '@repo/common';
 import type { Request as IRequest, Response } from 'express';
+import { getCookieDomain } from '../core/cookie-helper';
+import { IAuthUser } from '../core/core.types';
 import { AuthService } from './auth.service';
 import { AuthBearer } from './decorators/auth-bearer.decorators';
 import { User } from './decorators/user.decorator';

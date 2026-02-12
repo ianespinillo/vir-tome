@@ -1,9 +1,3 @@
-// src/category/controllers/category.controller.ts
-import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
-import { Roles } from '@/auth/decorators/roles.decorator';
-import { RolesGuard } from '@/auth/guard/role.guard';
-import { CurrentTenant } from '@/tenants/decorators/current-tenant.decorator';
-import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import {
 	Body,
 	Controller,
@@ -40,6 +34,12 @@ import {
 	ROLES,
 	UpdateCategoryDto,
 } from '@repo/common';
+// src/category/controllers/category.controller.ts
+import { AuthBearer } from '../../auth/decorators/auth-bearer.decorators';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { RolesGuard } from '../../auth/guard/role.guard';
+import { CurrentTenant } from '../../tenants/decorators/current-tenant.decorator';
+import { TenantEntity } from '../../tenants/entities/tenant.entity';
 import { CategoryEntity } from '../entities/category.entity';
 import { CategoryService } from '../services/category.service';
 

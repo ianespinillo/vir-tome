@@ -1,9 +1,9 @@
-import { getTestDatabaseConfig } from '@/__tests__/database-test.config';
 import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ROLES, SignUpDto } from '@repo/common';
 import { DataSource } from 'typeorm';
+import { getTestDatabaseConfig } from '../../__tests__/database-test.config';
 import { TenantEntity } from '../../tenants/entities/tenant.entity';
 import { RoleEntity } from '../entities/role.entity';
 import { UserTenantEntity } from '../entities/user-tenant.entity';

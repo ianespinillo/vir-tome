@@ -1,7 +1,7 @@
-import { IAuthUser } from '@/core/core.types';
-import { TenantEntity } from '@/tenants/entities/tenant.entity';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ROLES } from '@repo/common';
+import { IAuthUser } from '../core/core.types';
+import { TenantEntity } from '../tenants/entities/tenant.entity';
 import { AnalyticsController } from './analytics.controller';
 import { AnalyticsService } from './analytics.service';
 

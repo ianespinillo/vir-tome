@@ -1,8 +1,3 @@
-import { PublisherEntity } from '@/book/entities/publisher.entity';
-import { IAuthUser } from '@/core/core.types';
-import { TenantEntity } from '@/tenants/entities/tenant.entity';
-import { UserEntity } from '@/users/entities/user.entity';
-import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -16,7 +11,12 @@ import {
 } from '@repo/common';
 import { Repository, UpdateResult } from 'typeorm';
 import { BookEntity } from '../book/entities/book.entity';
+import { PublisherEntity } from '../book/entities/publisher.entity';
 import { BookService } from '../book/services/book.service';
+import { IAuthUser } from '../core/core.types';
+import { TenantEntity } from '../tenants/entities/tenant.entity';
+import { UserEntity } from '../users/entities/user.entity';
+import { UsersService } from '../users/services/users.service';
 import { LoanEntity } from './entities/loan.entity';
 import { LoanService } from './loan.service';
 

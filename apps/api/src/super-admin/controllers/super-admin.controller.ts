@@ -1,6 +1,3 @@
-import { IsSuperAdmin } from '@/auth/decorators/is-superadmin.decorator';
-import { TenantEntity } from '@/tenants/entities/tenant.entity';
-import { UserEntity } from '@/users/entities/user.entity';
 import {
 	Body,
 	Controller,
@@ -32,6 +29,9 @@ import {
 	TenantMetricsDto,
 	UpdateTenantDto,
 } from '@repo/common';
+import { IsSuperAdmin } from '../../auth/decorators/is-superadmin.decorator';
+import { TenantEntity } from '../../tenants/entities/tenant.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 import { AdminService } from '../services/admin.service';
 
 // src/admin/admin.controller.ts

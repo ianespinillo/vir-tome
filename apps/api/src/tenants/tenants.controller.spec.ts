@@ -1,9 +1,9 @@
-import { EmailService } from '@/email/email.service';
-import { RoleService } from '@/users/services/role.service';
-import { UsersService } from '@/users/services/users.service';
 import { HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateTenantDto, IApiResponse } from '@repo/common';
+import { EmailService } from '../email/email.service';
+import { RoleService } from '../users/services/role.service';
+import { UsersService } from '../users/services/users.service';
 import { TenantsController } from './tenants.controller';
 import { TenantsService } from './tenants.service';
 

@@ -1,7 +1,7 @@
-import { UsersService } from '@/users/services/users.service';
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PAYLOAD_TYPE } from '@repo/common';
+import { UsersService } from '../../users/services/users.service';
 import { MultitenantGuard } from './multitenant.guard'; // Ajusta la ruta
 
 describe('MultitenantGuard', () => {

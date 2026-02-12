@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
-import { TenantEntity } from '@/tenants/entities/tenant.entity';
-import { RoleEntity } from '@/users/entities/role.entity';
 import { BadRequestException } from '@nestjs/common';
 // src/tokens/services/tokens.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { TokenTypes } from '@repo/common';
 import { Repository } from 'typeorm';
+import { TenantEntity } from '../tenants/entities/tenant.entity';
+import { RoleEntity } from '../users/entities/role.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { TokenEntity } from './entities/tokens.entity';
 import { TokensService } from './tokens.service';

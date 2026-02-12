@@ -1,7 +1,7 @@
-import { ExtendedRequest } from '@/core/core.types';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Request, Response } from 'express';
+import { ExtendedRequest } from '../../../core/core.types';
 import { TenantsService } from '../../../tenants/tenants.service';
 import { TenantMiddleware } from './tenant.middleware'; // Ajusta la ruta
 

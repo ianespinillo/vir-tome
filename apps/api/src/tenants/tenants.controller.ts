@@ -1,8 +1,3 @@
-import { IsSuperAdmin } from '@/auth/decorators/is-superadmin.decorator';
-import { Roles as RolesDecorator } from '@/auth/decorators/roles.decorator';
-import { User } from '@/auth/decorators/user.decorator';
-import { RolesGuard } from '@/auth/guard/role.guard';
-import { IAuthUser } from '@/core/core.types';
 // src/tenants/tenants.controller.ts
 import {
 	BadRequestException,
@@ -32,6 +27,11 @@ import {
 	Roles,
 	type UpdateTenantDto,
 } from '@repo/common';
+import { IsSuperAdmin } from '../auth/decorators/is-superadmin.decorator';
+import { Roles as RolesDecorator } from '../auth/decorators/roles.decorator';
+import { User } from '../auth/decorators/user.decorator';
+import { RolesGuard } from '../auth/guard/role.guard';
+import { IAuthUser } from '../core/core.types';
 import { TenantEntity } from './entities/tenant.entity';
 import { ValidRolePipe } from './pipe/valid-role.pipe';
 import { TenantsService } from './tenants.service';

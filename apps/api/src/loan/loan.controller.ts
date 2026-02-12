@@ -1,8 +1,8 @@
 // src/loan/loan.controller.ts
-import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
-import { Roles } from '@/auth/decorators/roles.decorator';
-import { User } from '@/auth/decorators/user.decorator';
-import { IAuthUser } from '@/core/core.types';
+import { AuthBearer } from '../auth/decorators/auth-bearer.decorators';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { User } from '../auth/decorators/user.decorator';
+import { IAuthUser } from '../core/core.types';
 
 import {
 	Body,

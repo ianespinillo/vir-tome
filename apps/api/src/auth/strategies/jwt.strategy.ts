@@ -1,6 +1,3 @@
-import { SuperAdminService } from '@/super-admin/services/super-admin.service';
-import { TenantsService } from '@/tenants/tenants.service';
-import { UsersService } from '@/users/services/users.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
@@ -12,6 +9,9 @@ import {
 } from '@repo/common';
 import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { SuperAdminService } from '../../super-admin/services/super-admin.service';
+import { TenantsService } from '../../tenants/tenants.service';
+import { UsersService } from '../../users/services/users.service';
 
 type JwtPayload = IAuthPayload | ISuperAdminLoginPayload;
 

@@ -1,8 +1,8 @@
-import { GenericService } from '@/core/generic.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreatePublisherDto, IPaginatedResponse } from '@repo/common';
 import { FindOptionsWhere, ILike, IsNull, Repository } from 'typeorm';
+import { GenericService } from '../../core/generic.service';
 import { PublisherEntity } from '../entities/publisher.entity';
 
 @Injectable()

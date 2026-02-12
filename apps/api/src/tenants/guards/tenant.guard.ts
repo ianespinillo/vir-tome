@@ -1,4 +1,3 @@
-import { ExtendedRequest } from '@/core/core.types';
 // src/common/guards/tenant.guard.ts
 import {
 	CanActivate,
@@ -9,6 +8,7 @@ import {
 	UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { ExtendedRequest } from '../../core/core.types';
 import { UsersService } from '../../users/services/users.service';
 import { TenantEntity } from '../entities/tenant.entity';
 import { TenantsService } from '../tenants.service';

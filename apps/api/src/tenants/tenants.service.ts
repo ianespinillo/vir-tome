@@ -1,7 +1,3 @@
-import { GenericService } from '@/core/generic.service';
-import { EmailService } from '@/email/email.service';
-import { RoleService } from '@/users/services/role.service';
-import { UsersService } from '@/users/services/users.service';
 // src/tenants/tenants.service.ts
 import {
 	BadRequestException,
@@ -18,6 +14,10 @@ import {
 	UpdateTenantDto,
 } from '@repo/common';
 import { ILike, IsNull, Repository } from 'typeorm';
+import { GenericService } from '../core/generic.service';
+import { EmailService } from '../email/email.service';
+import { RoleService } from '../users/services/role.service';
+import { UsersService } from '../users/services/users.service';
 import { TenantEntity } from './entities/tenant.entity';
 
 @Injectable()

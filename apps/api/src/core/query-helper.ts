@@ -27,7 +27,9 @@ export class QueryHelper {
 
 		// Filtro isActive
 		if (queries.isActive !== undefined) {
-			qb.andWhere(`${alias}.isActive = :isActive`, { isActive: queries.isActive });
+			qb.andWhere(`${alias}.isActive = :isActive`, {
+				isActive: queries.isActive,
+			});
 		}
 	}
 

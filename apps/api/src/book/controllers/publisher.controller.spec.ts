@@ -1,4 +1,3 @@
-import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 // src/publishers/controllers/publisher.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
@@ -8,6 +7,7 @@ import {
 	IPaginatedResponse,
 	UpdatePublisherDto,
 } from '@repo/common';
+import { UsersService } from '../../users/services/users.service';
 import { PublisherEntity } from '../entities/publisher.entity';
 import { PublisherService } from '../services/publisher.service';
 import { PublisherController } from './publisher.controller';

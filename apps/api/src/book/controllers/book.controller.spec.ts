@@ -1,6 +1,3 @@
-import { IAuthUser } from '@/core/core.types';
-import { TenantEntity } from '@/tenants/entities/tenant.entity';
-import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 // src/books/controllers/book.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
@@ -12,6 +9,9 @@ import {
 	UpdateBookDto,
 	UpdateStockDto,
 } from '@repo/common';
+import { IAuthUser } from '../../core/core.types';
+import { TenantEntity } from '../../tenants/entities/tenant.entity';
+import { UsersService } from '../../users/services/users.service';
 import { BookEntity } from '../entities/book.entity';
 import { PublisherEntity } from '../entities/publisher.entity';
 import { BookService } from '../services/book.service';

@@ -1,7 +1,3 @@
-// src/publisher/controllers/publisher.controller.ts
-import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
-import { Roles } from '@/auth/decorators/roles.decorator';
-import { RolesGuard } from '@/auth/guard/role.guard';
 import {
 	Body,
 	Controller,
@@ -37,6 +33,10 @@ import {
 	ROLES,
 	UpdatePublisherDto,
 } from '@repo/common';
+// src/publisher/controllers/publisher.controller.ts
+import { AuthBearer } from '../../auth/decorators/auth-bearer.decorators';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { RolesGuard } from '../../auth/guard/role.guard';
 import { PublisherEntity } from '../entities/publisher.entity';
 import { PublisherService } from '../services/publisher.service';
 

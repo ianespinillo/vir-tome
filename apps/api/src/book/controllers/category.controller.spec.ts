@@ -1,5 +1,3 @@
-import { TenantEntity } from '@/tenants/entities/tenant.entity';
-import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 // src/categories/controllers/category.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
@@ -9,6 +7,8 @@ import {
 	IPaginatedResponse,
 	UpdateCategoryDto,
 } from '@repo/common';
+import { TenantEntity } from '../../tenants/entities/tenant.entity';
+import { UsersService } from '../../users/services/users.service';
 import { CategoryEntity } from '../entities/category.entity';
 import { CategoryService } from '../services/category.service';
 import { CategoryController } from './category.controller';

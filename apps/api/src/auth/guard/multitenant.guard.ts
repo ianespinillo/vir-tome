@@ -1,5 +1,3 @@
-import { IAuthUser } from '@/core/core.types';
-import { UsersService } from '@/users/services/users.service';
 import {
 	CanActivate,
 	ExecutionContext,
@@ -8,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { PAYLOAD_TYPE } from '@repo/common';
 import { Request } from 'express';
+import { IAuthUser } from '../../core/core.types';
+import { UsersService } from '../../users/services/users.service';
 
 @Injectable()
 export class MultitenantGuard implements CanActivate {

@@ -1,5 +1,5 @@
-import { ExtendedRequest } from '@/core/core.types';
 import { ExecutionContext, createParamDecorator } from '@nestjs/common';
+import { ExtendedRequest } from '../../core/core.types';
 
 export const CurrentTenant = createParamDecorator(
 	(_, ctx: ExecutionContext) => {

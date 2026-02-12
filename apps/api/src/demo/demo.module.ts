@@ -1,5 +1,3 @@
-import { TenantsModule } from '@/tenants/tenants.module';
-import { UsersModule } from '@/users/users.module';
 // src/demo/demo.module.ts
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -10,9 +8,11 @@ import { PublisherEntity } from '../book/entities/publisher.entity';
 import { DemoSeeder } from '../database/seeds/demo-tenant.seeder';
 import { LoanEntity } from '../loan/entities/loan.entity';
 import { TenantEntity } from '../tenants/entities/tenant.entity';
+import { TenantsModule } from '../tenants/tenants.module';
 import { RoleEntity } from '../users/entities/role.entity';
 import { UserTenantEntity } from '../users/entities/user-tenant.entity';
 import { UserEntity } from '../users/entities/user.entity';
+import { UsersModule } from '../users/users.module';
 import { DemoResetService } from './demo-reset.service';
 import { DemoController } from './demo.controller';
 import { DemoMiddleware } from './middleware/demo.middleware';

@@ -1,7 +1,7 @@
-// src/demo/demo.middleware.ts
-import { ExtendedRequest } from '@/core/core.types';
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Response } from 'express';
+// src/demo/demo.middleware.ts
+import { ExtendedRequest } from '../../core/core.types';
 
 @Injectable()
 export class DemoMiddleware implements NestMiddleware {

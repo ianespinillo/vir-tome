@@ -1,8 +1,8 @@
-import { BookService } from '@/book/services/book.service';
-import { IAuthUser } from '@/core/core.types';
-import { LoanService } from '@/loan/loan.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { MostLoanedBooks, ROLES } from '@repo/common';
+import { BookService } from '../book/services/book.service';
+import { IAuthUser } from '../core/core.types';
+import { LoanService } from '../loan/loan.service';
 @Injectable()
 export class AnalyticsService {
 	constructor(

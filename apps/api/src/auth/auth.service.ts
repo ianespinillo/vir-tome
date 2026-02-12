@@ -1,10 +1,3 @@
-// src/auth/auth.service.ts
-import { PasswordAdapter } from '@/core/passport-adapter';
-import { EmailService } from '@/email/email.service';
-import { SuperAdminService } from '@/super-admin/services/super-admin.service';
-import { TenantsService } from '@/tenants/tenants.service';
-import { TokensService } from '@/tokens/tokens.service';
-import { RoleService } from '@/users/services/role.service';
 import {
 	BadRequestException,
 	Injectable,
@@ -28,6 +21,13 @@ import {
 	TokenTypes,
 } from '@repo/common';
 import * as bcrypt from 'bcrypt';
+// src/auth/auth.service.ts
+import { PasswordAdapter } from '../core/passport-adapter';
+import { EmailService } from '../email/email.service';
+import { SuperAdminService } from '../super-admin/services/super-admin.service';
+import { TenantsService } from '../tenants/tenants.service';
+import { TokensService } from '../tokens/tokens.service';
+import { RoleService } from '../users/services/role.service';
 import { UsersService } from '../users/services/users.service';
 
 @Injectable()

@@ -1,4 +1,3 @@
-import { UserTenantEntity } from '@/users/entities/user-tenant.entity';
 // src/database/database.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -8,6 +7,7 @@ import { PublisherEntity } from '../book/entities/publisher.entity';
 import { LoanEntity } from '../loan/entities/loan.entity';
 import { TenantEntity } from '../tenants/entities/tenant.entity';
 import { RoleEntity } from '../users/entities/role.entity';
+import { UserTenantEntity } from '../users/entities/user-tenant.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { DemoSeeder } from './seeds/demo-tenant.seeder';
 

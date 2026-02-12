@@ -1,4 +1,3 @@
-import { UserTenantEntity } from '@/users/entities/user-tenant.entity';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -10,6 +9,7 @@ import { PublisherEntity } from '../book/entities/publisher.entity';
 import { TenantEntity } from '../tenants/entities/tenant.entity';
 import { TenantsModule } from '../tenants/tenants.module';
 import { RoleEntity } from '../users/entities/role.entity';
+import { UserTenantEntity } from '../users/entities/user-tenant.entity';
 import { UserEntity } from '../users/entities/user.entity';
 // Importamos la función dinámica en lugar del objeto estático
 import { getTestDatabaseConfig } from './database-test.config';

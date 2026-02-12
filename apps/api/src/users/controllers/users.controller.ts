@@ -1,10 +1,9 @@
-import { AuthBearer } from '@/auth/decorators/auth-bearer.decorators';
-import { Roles as RolesDecorator } from '@/auth/decorators/roles.decorator';
-import { User } from '@/auth/decorators/user.decorator';
-import { IAuthUser } from '@/core/core.types';
-import { ValidRolePipe } from '@/tenants/pipe/valid-role.pipe';
+import { AuthBearer } from '../../auth/decorators/auth-bearer.decorators';
+import { Roles as RolesDecorator } from '../../auth/decorators/roles.decorator';
+import { User } from '../../auth/decorators/user.decorator';
+import { IAuthUser } from '../../core/core.types';
+
 import {
-	BadRequestException,
 	Body,
 	Controller,
 	Get,
@@ -14,7 +13,6 @@ import {
 	ParseIntPipe,
 	Post,
 	Query,
-	UnauthorizedException,
 } from '@nestjs/common';
 import {
 	ApiOperation,

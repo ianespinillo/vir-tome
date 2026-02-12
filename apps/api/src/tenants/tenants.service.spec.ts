@@ -1,14 +1,14 @@
-import { EmailService } from '@/email/email.service';
-import { RoleEntity } from '@/users/entities/role.entity';
-import { UserTenantEntity } from '@/users/entities/user-tenant.entity';
-import { UserEntity } from '@/users/entities/user.entity';
-import { RoleService } from '@/users/services/role.service';
-import { UsersService } from '@/users/services/users.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CreateTenantDto, ROLES, SignUpDto } from '@repo/common';
 import { Repository } from 'typeorm';
+import { EmailService } from '../email/email.service';
+import { RoleEntity } from '../users/entities/role.entity';
+import { UserTenantEntity } from '../users/entities/user-tenant.entity';
+import { UserEntity } from '../users/entities/user.entity';
+import { RoleService } from '../users/services/role.service';
+import { UsersService } from '../users/services/users.service';
 import { TenantEntity } from './entities/tenant.entity';
 import { TenantsService } from './tenants.service';
 
