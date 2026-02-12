@@ -20,6 +20,13 @@
 		"paths": {
 			"@/*": ["./src/*"],
 			"@repo/common": ["../../packages/common/src"]
-		}
-	}
+		},
+		"types": ["node", "jest"]
+	},
+	"include": [
+		"src/**/*",
+		"src/types/**/*.d.ts",
+		"src/**/*.spec.ts",
+		"src/**/*.test.ts"
+	]
 }

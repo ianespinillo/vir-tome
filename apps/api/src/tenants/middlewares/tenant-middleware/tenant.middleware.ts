@@ -1,3 +1,4 @@
+import { ExtendedRequest } from '@/core/core.types';
 import {
 	BadRequestException,
 	Injectable,
@@ -12,7 +13,7 @@ import { TenantEntity } from '../../entities/tenant.entity';
 export class TenantMiddleware implements NestMiddleware {
 	constructor(private readonly tenantService: TenantsService) {}
 
-	async use(req: Request, res: Response, next: () => void) {
+	async use(req: ExtendedRequest, res: Response, next: () => void) {
 		// Detect tenant from header or subdomain
 		const tenant =
 			(await this.getTenantFromHeader(req)) ??
@@ -24,7 +25,9 @@ export class TenantMiddleware implements NestMiddleware {
 		return next();
 	}
 
-	private async getTenantFromHeader(req: Request): Promise<TenantEntity | null> {
+	private async getTenantFromHeader(
+		req: ExtendedRequest,
+	): Promise<TenantEntity | null> {
 		const header = req.headers['x-tenant-id'] as string | undefined;
 
 		if (!header) return null;
@@ -42,7 +45,7 @@ export class TenantMiddleware implements NestMiddleware {
 	}
 
 	private async getTenantFromSubdomain(
-		req: Request,
+		req: ExtendedRequest,
 	): Promise<TenantEntity | null> {
 		const host = req.get('host') || ''; // Use 'host' instead of 'origin'
 		const subdomain = this.extractSubdomain(host);
@@ -62,12 +65,16 @@ export class TenantMiddleware implements NestMiddleware {
 		return tenant;
 	}
 
-	private validateAndAssignTenant(req: Request, tenant: TenantEntity): void {
+	private validateAndAssignTenant(
+		req: ExtendedRequest,
+		tenant: TenantEntity,
+	): void {
 		if (!tenant.is_active) {
 			throw new BadRequestException(`Tenant "${tenant.name}" is inactive`);
 		}
 
 		// Only assign tenant info — do NOT touch req.user
+		req.user.tenant = tenant;
 		req.tenant = tenant;
 		req.tenantId = tenant.id;
 	}

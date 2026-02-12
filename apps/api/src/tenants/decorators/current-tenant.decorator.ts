@@ -1,14 +1,9 @@
-import {
-	ExecutionContext,
-	SetMetadata,
-	createParamDecorator,
-} from '@nestjs/common';
-import { Request } from 'express';
-import { TenantEntity } from '../entities/tenant.entity';
+import { ExtendedRequest } from '@/core/core.types';
+import { ExecutionContext, createParamDecorator } from '@nestjs/common';
 
 export const CurrentTenant = createParamDecorator(
 	(_, ctx: ExecutionContext) => {
-		const req: Request = ctx.switchToHttp().getRequest<Request>();
+		const req = ctx.switchToHttp().getRequest<ExtendedRequest>();
 		return req.tenant;
 	},
 );

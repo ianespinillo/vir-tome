@@ -1,3 +1,4 @@
+import { ExtendedRequest } from '@/core/core.types';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Request, Response } from 'express';
@@ -37,7 +38,10 @@ describe('TenantMiddleware', () => {
 			const mockTenant = { id: 1, name: 'Tenant A', is_active: true };
 			const mockRequest = {
 				headers: { 'x-tenant-id': '1' },
-			} as unknown as Request;
+				tenant: undefined as any,
+				tenantId: undefined as any,
+				user: { tenant: undefined as any } as any,
+			} as unknown as ExtendedRequest;
 
 			mockTenantsService.findById.mockResolvedValue(mockTenant);
 
@@ -51,7 +55,10 @@ describe('TenantMiddleware', () => {
 		it('debería lanzar NotFoundException si el ID de la cabecera no existe', async () => {
 			const mockRequest = {
 				headers: { 'x-tenant-id': '99' },
-			} as unknown as Request;
+				tenant: undefined as any,
+				tenantId: undefined as any,
+				user: { tenant: undefined as any } as any,
+			} as unknown as ExtendedRequest;
 
 			mockTenantsService.findById.mockResolvedValue(null);
 
@@ -67,7 +74,10 @@ describe('TenantMiddleware', () => {
 			const mockRequest = {
 				headers: {},
 				get: jest.fn().mockReturnValue('empresa-b.vir-tome.local'),
-			} as unknown as Request;
+				tenant: undefined as any,
+				tenantId: undefined as any,
+				user: { tenant: undefined as any } as any,
+			} as unknown as ExtendedRequest;
 
 			mockTenantsService.findBySubdomain.mockResolvedValue(mockTenant);
 
@@ -82,7 +92,10 @@ describe('TenantMiddleware', () => {
 			const mockRequest = {
 				headers: {},
 				get: jest.fn().mockReturnValue('www.vir-tome.local'),
-			} as unknown as Request;
+				tenant: undefined as any,
+				tenantId: undefined as any,
+				user: { tenant: undefined as any } as any,
+			} as unknown as ExtendedRequest;
 
 			await middleware.use(mockRequest, mockResponse, nextFunction);
 
@@ -95,7 +108,10 @@ describe('TenantMiddleware', () => {
 			const mockRequest = {
 				headers: {},
 				get: jest.fn().mockReturnValue('desconocido.vir-tome.local'),
-			} as unknown as Request;
+				tenant: undefined as any,
+				tenantId: undefined as any,
+				user: { tenant: undefined as any } as any,
+			} as unknown as ExtendedRequest;
 
 			mockTenantsService.findBySubdomain.mockResolvedValue(null);
 
@@ -110,7 +126,10 @@ describe('TenantMiddleware', () => {
 			const mockTenant = { id: 1, name: 'Bloqueado', is_active: false };
 			const mockRequest = {
 				headers: { 'x-tenant-id': '1' },
-			} as unknown as Request;
+				tenant: undefined as any,
+				tenantId: undefined as any,
+				user: { tenant: undefined as any } as any,
+			} as unknown as ExtendedRequest;
 
 			mockTenantsService.findById.mockResolvedValue(mockTenant);
 
@@ -125,7 +144,10 @@ describe('TenantMiddleware', () => {
 			const mockRequest = {
 				headers: {},
 				get: jest.fn().mockReturnValue('localhost'),
-			} as unknown as Request;
+				tenant: undefined as any,
+				tenantId: undefined as any,
+				user: { tenant: undefined as any } as any,
+			} as unknown as ExtendedRequest;
 
 			await middleware.use(mockRequest, mockResponse, nextFunction);
 

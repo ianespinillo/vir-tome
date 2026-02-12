@@ -1,3 +1,4 @@
+import { ExtendedRequest } from '@/core/core.types';
 // src/common/guards/tenant.guard.ts
 import {
 	CanActivate,
@@ -22,7 +23,7 @@ export class TenantGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const req = context.switchToHttp().getRequest<Request>();
+		const req = context.switchToHttp().getRequest<ExtendedRequest>();
 
 		// Opcional: Excluir rutas públicas
 		if (this.isPublicRoute(req)) {

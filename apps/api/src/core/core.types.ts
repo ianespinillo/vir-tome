@@ -1,4 +1,5 @@
 import { ITenant, IUser, PAYLOAD_TYPE, ROLES } from '@repo/common';
+import { Request } from 'express';
 
 // Definimos la estructura exacta que retorna tu JwtStrategy
 export interface IAuthUser {
@@ -14,13 +15,8 @@ export interface IAuthUser {
 	getRoleInTenant: (tenantId: number) => any;
 }
 
-declare module 'express' {
-	interface Request {
-		// Propiedades inyectadas por tu TenantMiddleware
-		tenant: ITenant;
-		tenantId: number;
-
-		// Propiedad inyectada por Passport (ahora fuertemente tipada)
-		user: IAuthUser;
-	}
+export interface ExtendedRequest extends Request {
+	tenant: ITenant;
+	tenantId: number;
+	user: IAuthUser;
 }
