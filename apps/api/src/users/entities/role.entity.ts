@@ -12,7 +12,7 @@ export class RoleEntity extends GenericEntity implements IRole {
 	name!: ROLES;
 
 	@Column({ nullable: true })
-	description: string;
+	description!: string;
 
 	// Helper methods
 	isSuperAdmin(): boolean {

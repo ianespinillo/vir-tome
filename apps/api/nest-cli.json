@@ -6,6 +6,7 @@
 		"deleteOutDir": true,
 		"manualRestart": true,
 		"tsConfigPath": "tsconfig.json",
+		"webpack": true,
 		"assets": [],
 		"plugins": []
 	}
