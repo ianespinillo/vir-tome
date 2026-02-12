@@ -1,6 +1,6 @@
-import { UsersModule } from '@/users/users.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsersModule } from '../users/users.module';
 import { BookController } from './controllers/book.controller';
 import { CategoryController } from './controllers/category.controller';
 import { PublisherController } from './controllers/publisher.controller';
