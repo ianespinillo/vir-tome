@@ -6,7 +6,7 @@
 	"private": true,
 	"license": "UNLICENSED",
 	"scripts": {
-		"build": "nest build && tsc-alias -p tsconfig.json",
+		"build": "nest build && tsc-alias -p tsconfig.json --dir dist/apps/api",
 		"format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
 		"start": "nest start",
 		"seed": "ts-node --require tsconfig-paths/register ./src/users/seeds/role.seed.ts",
