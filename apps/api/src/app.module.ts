@@ -35,7 +35,7 @@ import { UsersModule } from './users/users.module';
 			useFactory: (config: ConfigService) => ({
 				type: 'postgres',
 				url: config.get('DATABASE_URL'),
-				synchronize: true,
+				synchronize: false,
 				logger: 'simple-console',
 				entities: [
 					UserEntity,
