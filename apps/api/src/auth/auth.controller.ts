@@ -66,8 +66,7 @@ export class AuthController {
 			httpOnly: true,
 			secure: false,
 			expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
-			sameSite: 'lax',
-			domain: process.env.FRONTEND_DOMAIN,
+			sameSite: 'none',
 		});
 		// Returning the user allows Nest to handle sending the response while
 		// we still set the cookie using the response object passed with passthrough.
@@ -104,8 +103,7 @@ export class AuthController {
 			httpOnly: true,
 			secure: false,
 			expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
-			sameSite: 'lax',
-			domain: process.env.FRONTEND_DOMAIN,
+			sameSite: 'none',
 		});
 		return {
 			message: 'Tenant switched successfully',
@@ -139,8 +137,7 @@ export class AuthController {
 				httpOnly: true,
 				expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
 				secure: false,
-				sameSite: 'lax',
-				domain: process.env.FRONTEND_DOMAIN,
+				sameSite: 'none',
 			});
 		}
 		return {
@@ -170,8 +167,7 @@ export class AuthController {
 			httpOnly: true,
 			expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
 			secure: false,
-			sameSite: 'lax',
-			domain: process.env.FRONTEND_DOMAIN,
+			sameSite: 'none',
 		});
 
 		// Let Nest send the final response (return body) while cookie is set via passthrough.
@@ -304,7 +300,7 @@ export class AuthController {
 		res.cookie('access_token', access_token, {
 			httpOnly: true,
 			secure: false,
-			sameSite: 'lax',
+			sameSite: 'none',
 		});
 		return {
 			message: 'New access token generated',
