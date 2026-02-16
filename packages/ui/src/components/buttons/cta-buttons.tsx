@@ -14,7 +14,7 @@ export function CTAButtons() {
 				variant="outline"
 				size="lg"
 				className="text-lg px-8 py-6 bg-transparent"
-				onClick={() => navigate('/demo', { isExternal: false })}
+				onClick={() => navigate('/demo-info', { isExternal: false })}
 			>
 				<Play className="mr-2 h-5 w-5" />
 				Ver demo

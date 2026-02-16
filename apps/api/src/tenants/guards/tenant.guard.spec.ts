@@ -64,11 +64,9 @@ describe('TenantGuard', () => {
 		it('should allow access with valid x-tenant-id header', async () => {
 			const mockRequest = {
 				headers: { 'x-tenant-id': '1' },
-				hostname: 'api.localhost',
+				path: '/api/products',
 				ip: '127.0.0.1',
 				user: null,
-				path: '/api/products',
-				method: 'GET',
 			};
 
 			const result = await guard.canActivate(createMockContext(mockRequest));
@@ -80,11 +78,9 @@ describe('TenantGuard', () => {
 		it('should allow access with valid subdomain', async () => {
 			const mockRequest = {
 				headers: {},
-				hostname: 'test.example.com',
+				path: '/app/test',
 				ip: '127.0.0.1',
 				user: null,
-				path: '/api/products',
-				method: 'GET',
 			};
 
 			const result = await guard.canActivate(createMockContext(mockRequest));
@@ -96,19 +92,17 @@ describe('TenantGuard', () => {
 		it('should allow access when user belongs to tenant', async () => {
 			const mockRequest = {
 				headers: { 'x-tenant-id': '1' },
-				hostname: 'api.localhost',
-				ip: '127.0.0.1',
-				user: { id: 1, tenant_id: 1 },
-				tenant: { id: 1 },
 				path: '/api/products',
-				method: 'GET',
+				ip: '127.0.0.1',
+				user: { id: 1 },
+				tenant: { id: 1 },
 			};
 			mockUser.hasAccessToTenant.mockReturnValueOnce(true);
 
 			const result = await guard.canActivate(createMockContext(mockRequest));
 
 			expect(result).toBe(true);
-			expect(mockUsersService.findById).toHaveBeenCalledWith(1); // tenantId, userId
+			expect(mockUsersService.findById).toHaveBeenCalledWith(1);
 		});
 	});
 
@@ -116,11 +110,9 @@ describe('TenantGuard', () => {
 		it('should allow access to public routes without tenant', async () => {
 			const mockRequest = {
 				headers: {},
-				hostname: 'api.localhost',
+				path: '/api/health',
 				ip: '127.0.0.1',
 				user: null,
-				path: '/api/health',
-				method: 'GET',
 			};
 
 			const result = await guard.canActivate(createMockContext(mockRequest));
@@ -132,11 +124,9 @@ describe('TenantGuard', () => {
 		it('should allow access to auth login without tenant', async () => {
 			const mockRequest = {
 				headers: {},
-				hostname: 'api.localhost',
+				path: '/auth/login',
 				ip: '127.0.0.1',
 				user: null,
-				path: '/auth/login',
-				method: 'POST',
 			};
 
 			const result = await guard.canActivate(createMockContext(mockRequest));
@@ -150,12 +140,12 @@ describe('TenantGuard', () => {
 		it('should deny access without tenant on protected routes', async () => {
 			const mockRequest = {
 				headers: {},
-				hostname: 'api.localhost',
+				path: '/api/some-path',
 				ip: '127.0.0.1',
 				user: null,
-				path: '/api/products',
-				method: 'GET',
 			};
+
+			mockTenantService.findBySubdomain.mockResolvedValueOnce(null);
 
 			await expect(
 				guard.canActivate(createMockContext(mockRequest)),
@@ -165,11 +155,9 @@ describe('TenantGuard', () => {
 		it('should deny access with invalid tenant ID', async () => {
 			const mockRequest = {
 				headers: { 'x-tenant-id': 'invalid' },
-				hostname: 'api.localhost',
+				path: '/api/products',
 				ip: '127.0.0.1',
 				user: null,
-				path: '/api/products',
-				method: 'GET',
 			};
 
 			await expect(
@@ -180,11 +168,9 @@ describe('TenantGuard', () => {
 		it('should deny access when tenant not found', async () => {
 			const mockRequest = {
 				headers: { 'x-tenant-id': '999' },
-				hostname: 'api.localhost',
+				path: '/api/products',
 				ip: '127.0.0.1',
 				user: null,
-				path: '/api/products',
-				method: 'GET',
 			};
 
 			mockTenantService.findById.mockResolvedValueOnce(null);
@@ -197,11 +183,9 @@ describe('TenantGuard', () => {
 		it('should deny access when user does not belong to tenant', async () => {
 			const mockRequest = {
 				headers: { 'x-tenant-id': '1' },
-				hostname: 'api.localhost',
+				path: '/api/products',
 				ip: '127.0.0.1',
 				user: { id: 1 },
-				path: '/api/products',
-				method: 'GET',
 			};
 
 			const userFromDifferentTenant = { ...mockUser, tenant_id: 2 };
@@ -217,11 +201,9 @@ describe('TenantGuard', () => {
 		it('should handle special subdomains correctly', async () => {
 			const mockRequest = {
 				headers: {},
-				hostname: 'www.example.com',
+				path: '/app/www',
 				ip: '127.0.0.1',
 				user: null,
-				path: '/api/products',
-				method: 'GET',
 			};
 
 			await expect(
@@ -234,11 +216,9 @@ describe('TenantGuard', () => {
 		it('should handle user not found scenario', async () => {
 			const mockRequest = {
 				headers: { 'x-tenant-id': '1' },
-				hostname: 'api.localhost',
+				path: '/api/products',
 				ip: '127.0.0.1',
 				user: { id: 999 },
-				path: '/api/products',
-				method: 'GET',
 			};
 
 			mockUsersService.findById.mockResolvedValueOnce(null);

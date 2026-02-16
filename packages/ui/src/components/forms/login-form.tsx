@@ -45,10 +45,7 @@ export function LoginForm() {
 			loading: 'Signing in...',
 			success: () => {
 				setTimeout(() => {
-					navigate(
-						`${process.env.NODE_ENV === 'production' ? 'https://' : 'http://'}${tenant.subdomain}.${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
-						{ isExternal: true },
-					);
+					navigate(`/app/${tenant.subdomain}/dashboard`, { isExternal: false });
 				}, 1000);
 				return 'Signed in successfully';
 			},
@@ -85,10 +82,9 @@ export function LoginForm() {
 						data.data?.requiresTenantSelection === false &&
 						'tenant' in data.data
 					) {
-						navigate(
-							`${process.env.NODE_ENV === 'production' ? 'https://' : 'http://'}${data.data.tenant.subdomain}.${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
-							{ isExternal: true },
-						);
+						navigate(`/app/${data.data.tenant.subdomain}/dashboard`, {
+							isExternal: false,
+						});
 					}
 				} else {
 					setError('Invalid credentials');
