@@ -64,7 +64,7 @@ export class AuthController {
 		);
 		res.cookie('access_token', access_token, {
 			httpOnly: true,
-			secure: false,
+			secure: true,
 			expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
 			sameSite: 'none',
 		});
@@ -101,7 +101,7 @@ export class AuthController {
 			await this.authService.switchTenant(user.id, dto.tenantId);
 		res.cookie('access_token', access_token, {
 			httpOnly: true,
-			secure: false,
+			secure: true,
 			expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
 			sameSite: 'none',
 		});
@@ -136,7 +136,7 @@ export class AuthController {
 			res.cookie('access_token', result.access_token, {
 				httpOnly: true,
 				expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
-				secure: false,
+				secure: true,
 				sameSite: 'none',
 			});
 		}
@@ -166,7 +166,7 @@ export class AuthController {
 		res.cookie('access_token', access_token, {
 			httpOnly: true,
 			expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
-			secure: false,
+			secure: true,
 			sameSite: 'none',
 		});
 
@@ -299,7 +299,7 @@ export class AuthController {
 		);
 		res.cookie('access_token', access_token, {
 			httpOnly: true,
-			secure: false,
+			secure: true,
 			sameSite: 'none',
 		});
 		return {
