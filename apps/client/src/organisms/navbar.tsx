@@ -14,7 +14,7 @@ export function Navbar() {
 						<Link href="/auth/sign-in">Iniciar sesión</Link>
 					</Button>
 					<Button className="hidden md:inline-flex">
-						<Link href="/demo" className="flex items-center gap-2">
+						<Link href="/demo-info" className="flex items-center gap-2">
 							<Play className="h-4 w-4" />
 							Prueba gratis
 						</Link>

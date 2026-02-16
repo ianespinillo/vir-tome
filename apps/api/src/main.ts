@@ -19,38 +19,14 @@ async function bootstrap() {
 	console.log('Applying global configurations...');
 	app.useGlobalPipes(new ValidationPipe());
 	app.setGlobalPrefix('api');
-	app.use(cookieParser());
 	app.useGlobalFilters(new AllExceptionsFilter());
-	const baseDomain = process.env.FRONTEND_URL; // vir-tome.local
-	const isProd = process.env.NODE_ENV === 'production';
+	app.use(cookieParser());
 
 	app.enableCors({
-		origin: (origin, callback) => {
-			if (!origin) return callback(null, true);
-
-			let url: URL;
-			try {
-				url = new URL(origin);
-			} catch {
-				return callback(new Error('Invalid origin'), false);
-			}
-
-			const hostname = url.hostname;
-
-			const isAllowedDomain =
-				hostname === baseDomain || hostname.endsWith(`.${baseDomain}`);
-			const isAllowedProtocol = isProd
-				? url.protocol === 'https:'
-				: url.protocol === 'http:';
-
-			if (isAllowedDomain && isAllowedProtocol) {
-				return callback(null, true);
-			}
-
-			return callback(new Error(`CORS blocked: ${origin}`), false);
-		},
-
+		origin: process.env.FRONTEND_URL,
 		credentials: true,
+		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+		allowedHeaders: ['Content-Type', 'Authorization'],
 	});
 
 	/// Swagger API

@@ -212,7 +212,10 @@ export function DashSidebar() {
 											isActive={isActive}
 											className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
 										>
-											<a href={link.href} className="text-sidebar-foreground">
+											<a
+												href={`/app/${sessionData?.tenant?.subdomain}${link.href}`}
+												className="text-sidebar-foreground"
+											>
 												<link.icon className="mr-2 h-4 w-4" />
 												<span>{link.title}</span>
 											</a>
@@ -244,7 +247,10 @@ export function DashSidebar() {
 								asChild
 								className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
 							>
-								<a href={link.href} className="text-sidebar-foreground">
+								<a
+									href={`/app/${sessionData?.tenant?.subdomain}${link.href}`}
+									className="text-sidebar-foreground"
+								>
 									<link.icon className="mr-2 h-4 w-4" />
 									<span>{link.title}</span>
 								</a>

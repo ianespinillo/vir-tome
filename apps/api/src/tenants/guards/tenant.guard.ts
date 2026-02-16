@@ -100,7 +100,7 @@ export class TenantGuard implements CanActivate {
 
 		// Prioridad 2: Subdomain
 		if (!tenantId) {
-			const subdomain = this.extractSubdomain(req.hostname);
+			const subdomain = this.extractSubdomain(req.path);
 			if (subdomain && !this.isSpecialSubdomain(subdomain)) {
 				const tenant = await this.tenantService.findBySubdomain(subdomain);
 				if (tenant) {
@@ -143,9 +143,9 @@ export class TenantGuard implements CanActivate {
 		return Number.isNaN(id) || id <= 0 ? null : id;
 	}
 
-	private extractSubdomain(hostname: string): string | null {
-		const parts = hostname.split('.');
-		return parts.length > 2 ? parts[0] : null;
+	private extractSubdomain(pathname: string): string | null {
+		const parts = pathname.split('/').filter(Boolean);
+		return parts.length > 1 ? parts[1] : null;
 	}
 
 	private isSpecialSubdomain(subdomain: string): boolean {

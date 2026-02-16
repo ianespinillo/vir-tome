@@ -91,9 +91,6 @@ export function DemoSection() {
 			});
 
 			if (result?.data) {
-				const baseUrl =
-					process.env.NODE_ENV === 'production' ? 'https://' : 'http://';
-
 				if (
 					result.data.requiresTenantSelection === false &&
 					'tenant' in result.data
@@ -110,10 +107,7 @@ export function DemoSection() {
 					toast.success('Iniciando demo...');
 
 					setTimeout(() => {
-						navigate(
-							`${baseUrl}${tenant.subdomain}.${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
-							{ isExternal: true },
-						);
+						navigate(`/app/${tenant.subdomain}/dashboard`, { isExternal: false });
 					}, 1000);
 				} else if (
 					result.data.requiresTenantSelection &&
@@ -133,10 +127,9 @@ export function DemoSection() {
 						toast.success('Iniciando demo...');
 
 						setTimeout(() => {
-							navigate(
-								`${baseUrl}demo.${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
-								{ isExternal: true },
-							);
+							navigate(`/app/${demoTenant.subdomain}/dashboard`, {
+								isExternal: false,
+							});
 						}, 1000);
 					}
 				}

@@ -69,11 +69,11 @@ describe('TenantMiddleware', () => {
 	});
 
 	describe('Detección por Subdominio', () => {
-		it('debería extraer y asignar el tenant desde el host (formato vir-tome.local)', async () => {
+		it('debería extraer y asignar el tenant desde el path (formato /app/empresa-b)', async () => {
 			const mockTenant = { id: 2, name: 'Empresa B', is_active: true };
 			const mockRequest = {
 				headers: {},
-				get: jest.fn().mockReturnValue('empresa-b.vir-tome.local'),
+				path: '/app/empresa-b',
 				tenant: undefined as any,
 				tenantId: undefined as any,
 				user: { tenant: undefined as any } as any,
@@ -91,7 +91,7 @@ describe('TenantMiddleware', () => {
 		it('debería ignorar casos especiales como "www" o "api"', async () => {
 			const mockRequest = {
 				headers: {},
-				get: jest.fn().mockReturnValue('www.vir-tome.local'),
+				path: '/app/www',
 				tenant: undefined as any,
 				tenantId: undefined as any,
 				user: { tenant: undefined as any } as any,
@@ -107,7 +107,7 @@ describe('TenantMiddleware', () => {
 		it('debería lanzar NotFoundException si el subdominio no existe en la DB', async () => {
 			const mockRequest = {
 				headers: {},
-				get: jest.fn().mockReturnValue('desconocido.vir-tome.local'),
+				path: '/app/desconocido',
 				tenant: undefined as any,
 				tenantId: undefined as any,
 				user: { tenant: undefined as any } as any,
@@ -143,7 +143,7 @@ describe('TenantMiddleware', () => {
 		it('debería continuar (next) si no hay cabecera ni subdominio válido', async () => {
 			const mockRequest = {
 				headers: {},
-				get: jest.fn().mockReturnValue('localhost'),
+				path: '/api/health',
 				tenant: undefined as any,
 				tenantId: undefined as any,
 				user: { tenant: undefined as any } as any,

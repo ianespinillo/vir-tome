@@ -58,14 +58,12 @@ export class AuthController {
 		@Res({ passthrough: true }) res: Response,
 	): Promise<IApiResponse<ILoginResponse>> {
 		if (!loginDto.tenantId) throw new BadRequestException('No tenant id found');
-		const { access_token, user, tenant } = await this.authService.login(
+		const { access_token, user } = await this.authService.login(
 			loginDto,
 			loginDto.tenantId,
 		);
 		res.cookie('access_token', access_token, {
 			httpOnly: true,
-			path: '/',
-			domain: '.vir-tome.local',
 			secure: false,
 			expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
 			sameSite: 'lax',
@@ -103,8 +101,6 @@ export class AuthController {
 			await this.authService.switchTenant(user.id, dto.tenantId);
 		res.cookie('access_token', access_token, {
 			httpOnly: true,
-			path: '/',
-			domain: '.vir-tome.local',
 			secure: false,
 			expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
 			sameSite: 'lax',
@@ -141,8 +137,6 @@ export class AuthController {
 				httpOnly: true,
 				expires: new Date(new Date().getTime() + 4 * 60 * 60 * 1000),
 				secure: false,
-				path: '/',
-				domain: '.vir-tome.local',
 				sameSite: 'lax',
 			});
 		}

@@ -1,185 +1,69 @@
-import { rootDomain } from '@/constants/utils';
-import { type NextRequest, NextResponse } from 'next/server';
-import {
-	getDashboardForUser,
-	hasRouteAccess,
-	isPublicRoute,
-} from './middleware-config';
-import { extractRoleFromToken, isValidToken } from './middleware-jwt-utils';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-function extractSubdomain(request: NextRequest): string | null {
-	const url = request.url;
-	const host = request.headers.get('host') || '';
-	const hostname = host.split(':')[0];
-
-	// Local development environment
-	if (url.includes('localhost') || url.includes('127.0.0.1')) {
-		// Try to extract subdomain from the full URL
-		const fullUrlMatch = url.match(/http:\/\/([^.]+)\.localhost/);
-		if (fullUrlMatch?.[1]) {
-			return fullUrlMatch[1];
-		}
-
-		// Fallback to host header approach
-		if (hostname.includes('.localhost')) {
-			return hostname.split('.')[0];
-		}
-
-		return null;
-	}
-
-	// Production environment
-	const rootDomainFormatted = rootDomain.split(':')[0];
-
-	// Handle preview deployment URLs (tenant---branch-name.vercel.app)
-	if (hostname.includes('---') && hostname.endsWith('.vercel.app')) {
-		const parts = hostname.split('---');
-		return parts.length > 0 ? parts[0] : null;
-	}
-
-	// Regular subdomain detection
-	const isSubdomain =
-		hostname !== rootDomainFormatted &&
-		hostname !== `www.${rootDomainFormatted}` &&
-		hostname.endsWith(`.${rootDomainFormatted}`);
-
-	return isSubdomain ? hostname.replace(`.${rootDomainFormatted}`, '') : null;
-}
+// Forzamos el uso de Node.js si tienes problemas con DTOs en el fetch
+export const runtime = 'nodejs';
 
 async function validateTenant(subdomain: string): Promise<boolean> {
+	const apiUrl = process.env.NEXT_PUBLIC_API_URL; // Usa la variable pública que definimos para Render
+	if (!apiUrl) return false;
+
 	try {
-		const apiUrl = process.env.NEXT_API_URL;
-
-		if (!apiUrl) {
-			console.error('NEXT_API_URL is not defined');
-			return false;
-		}
-
 		const response = await fetch(`${apiUrl}/tenants/subdomain/${subdomain}`, {
 			method: 'GET',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			credentials: 'include',
-			// Add cache control for better performance
-			next: { revalidate: 60 }, // Cache for 60 seconds
+			headers: { 'Content-Type': 'application/json' },
+			// Eliminamos credentials: 'include' para evitar errores en Edge
+			next: { revalidate: 3600 }, // Cacheamos por 1 hora para no saturar a Render
 		});
 
-		// If tenant exists (200 OK), return true
-		if (response.ok) {
-			const tenant = await response.json();
-			return !!tenant; // Ensure we have data
-		}
-
-		// If tenant doesn't exist (404 or other error), return false
-		return false;
+		return response.ok;
 	} catch (error) {
-		console.error('Error validating tenant:', error);
-		// In case of network errors, fail closed (return false)
 		return false;
 	}
 }
 
 export async function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;
-	const token = request.cookies.get('access_token')?.value;
-	const url = request.nextUrl.clone();
-	const subdomain = extractSubdomain(request);
+	const segments = pathname.split('/').filter(Boolean);
+	const firstSegment = segments[1];
 
-	// 1. Rutas públicas - permitir acceso sin autenticación
-	if (isPublicRoute(pathname)) {
-		// Si ya está autenticado y trata de acceder a auth, redirigir a su dashboard
-		if (pathname.startsWith('/auth') && token && isValidToken(token)) {
-			const roleInfo = extractRoleFromToken(token);
-			if (roleInfo) {
-				const dashboardPath = getDashboardForUser(roleInfo.role, roleInfo.type);
-				url.pathname = dashboardPath;
-				// Remover subdominio para auth
-				const host = request.headers.get('host') || '';
-				const newHost = host.includes('.')
-					? host.split('.').slice(-2).join('.')
-					: host;
-				url.host = newHost;
-				return NextResponse.redirect(url);
-			}
-		}
+	// Evitar procesar archivos estáticos o la propia ruta de destino interna
+	if (
+		firstSegment === 's' ||
+		firstSegment === '_next' ||
+		pathname.includes('.')
+	) {
 		return NextResponse.next();
 	}
 
-	// 2. Verificar autenticación para rutas protegidas
-	if (!token || !isValidToken(token)) {
-		// Redirigir a auth/sign-in SIN subdominio
-		url.pathname = '/auth/sign-in';
-		const host = request.headers.get('host') || '';
-		const newHost = host.includes('.')
-			? host.split('.').slice(-2).join('.')
-			: host;
-		url.host = newHost;
-		return NextResponse.redirect(url);
+	const fixedRoutes = ['demo-info', 'auth', 'dashboard', 'super-admin', 'api'];
+	if (fixedRoutes.includes(firstSegment)) {
+		return NextResponse.next();
 	}
 
-	// 3. Extraer información del usuario y verificar acceso por rol
-	const roleInfo = extractRoleFromToken(token);
-	if (!roleInfo) {
-		// Token inválido o malformed
-		url.pathname = '/auth/sign-in';
-		const host = request.headers.get('host') || '';
-		const newHost = host.includes('.')
-			? host.split('.').slice(-2).join('.')
-			: host;
-		url.host = newHost;
-		return NextResponse.redirect(url);
-	}
+	if (firstSegment === 'app') {
+		const slug = segments[2];
+		if (!slug) return NextResponse.redirect(new URL('/404', request.url));
 
-	// 4. Verificar acceso a la ruta específica
-	if (!hasRouteAccess(pathname, roleInfo.role)) {
-		// Usuario autenticado pero sin acceso a esta ruta
-		// Redirigir al dashboard correspondiente a su rol
-		const dashboardPath = getDashboardForUser(roleInfo.role, roleInfo.type);
-		url.pathname = dashboardPath;
-		return NextResponse.redirect(url);
-	}
-
-	// 5. Lógica de subdominios (después de la validación de autenticación)
-	if (subdomain) {
-		// Validate if the tenant exists via API
-		const tenantExists = await validateTenant(subdomain);
-
+		// Validación contra tu API en Render
+		const tenantExists = await validateTenant(slug);
 		if (!tenantExists) {
-			// Redirect to a 404 or error page if tenant doesn't exist
 			return NextResponse.redirect(new URL('/404', request.url));
 		}
 
-		// Block access to admin page from subdomains
-		if (pathname.startsWith('/admin')) {
-			return NextResponse.redirect(new URL('/', request.url));
-		}
-
-		// Block access to dashboard from subdomains (force to main domain)
-		if (pathname.startsWith('/dashboard')) {
-			return NextResponse.redirect(new URL('/dashboard', `https://${rootDomain}`));
-		}
-
-		// For the root path on a subdomain, rewrite to the subdomain page
-		if (pathname === '/') {
-			return NextResponse.rewrite(new URL(`/s/${subdomain}`, request.url));
-		}
+		// Reescritura interna: El usuario ve /app/biblioteca pero Next lee /s/biblioteca
+		// Esto mantiene los subdominios dinámicos funcionando en Vercel
+		return NextResponse.rewrite(
+			new URL(
+				`/s/${slug}${pathname.replace(String().concat('/app/', slug), '')}`,
+				request.url,
+			),
+		);
 	}
 
-	// 6. Permitir acceso normal
 	return NextResponse.next();
 }
 
 export const config = {
-	matcher: [
-		/*
-		 * Match all paths except for:
-		 * 1. /api routes
-		 * 2. /_next (Next.js internals)
-		 * 3. /_static (static files)
-		 * 4. /_vercel (Vercel internals)
-		 * 5. all root files inside /public (e.g. /favicon.ico)
-		 */
-		'/((?!api|_next|_static|_vercel|[\\w-]+\\.\\w+).*)',
-	],
+	matcher: ['/((?!api|_next|_static|_vercel|[\\w-]+\\.\\w+).*)'],
 };

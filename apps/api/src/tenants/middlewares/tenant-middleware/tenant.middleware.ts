@@ -4,7 +4,7 @@ import {
 	NestMiddleware,
 	NotFoundException,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import { ExtendedRequest } from '../../../core/core.types';
 import { TenantsService } from '../../../tenants/tenants.service';
 import { TenantEntity } from '../../entities/tenant.entity';
@@ -47,19 +47,17 @@ export class TenantMiddleware implements NestMiddleware {
 	private async getTenantFromSubdomain(
 		req: ExtendedRequest,
 	): Promise<TenantEntity | null> {
-		const host = req.get('host') || ''; // Use 'host' instead of 'origin'
-		const subdomain = this.extractSubdomain(host);
+		const host = req.path || ''; // Use 'host' instead of 'origin'
+		const subpath = this.extractSubPath(host);
 
-		if (this.isSpecialCase(subdomain, host)) return null;
+		if (this.isSpecialCase(subpath, host)) return null;
 
-		if (!subdomain) return null;
+		if (!subpath) return null;
 
-		const tenant = await this.tenantService.findBySubdomain(subdomain);
+		const tenant = await this.tenantService.findBySubdomain(subpath);
 
 		if (!tenant) {
-			throw new NotFoundException(
-				`Tenant with subdomain "${subdomain}" not found`,
-			);
+			throw new NotFoundException(`Tenant with subdomain "${subpath}" not found`);
 		}
 
 		return tenant;
@@ -79,15 +77,12 @@ export class TenantMiddleware implements NestMiddleware {
 		req.tenantId = tenant.id;
 	}
 
-	private extractSubdomain(host: string): string {
-		const base = host.split(':')[0]; // Remove port
-		const parts = base.split('.');
-
+	private extractSubPath(path: string): string {
+		const base = path.split('/').filter(Boolean);
 		// Adjust logic to handle the specific format of your URLs
-		if (parts.length > 2 && parts[1] === 'vir-tome' && parts[2] === 'local') {
-			return parts[0]; // Return the first part as the subdomain
+		if (base.length > 1 && base[0] === 'app') {
+			return base[1];
 		}
-
 		return '';
 	}
 
