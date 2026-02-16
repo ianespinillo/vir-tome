@@ -16,17 +16,8 @@ import {
 	StatCard,
 	UpcomingCard,
 } from '@repo/ui';
-import React from 'react';
 
-export default function DashPageLayout({
-	admins,
-	common,
-	children,
-}: Readonly<{
-	admins: React.ReactNode;
-	common: React.ReactNode;
-	children: React.ReactNode;
-}>) {
+export default function DashPageLayout() {
 	const { session } = useAuth();
 	if (session.isLoading || session.isRefetching) {
 		return <div>Loading...</div>;

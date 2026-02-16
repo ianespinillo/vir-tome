@@ -1,4 +1,5 @@
-import { PAYLOAD_TYPE, ROLES } from '@repo/common';
+import { PAYLOAD_TYPE } from './types/payload-type.enum';
+import { ROLES } from './types/roles.enum';
 
 // --- CONFIGURACIÓN DE RUTAS PROTEGIDAS ---
 export interface RouteConfig {

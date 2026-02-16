@@ -1,9 +1,17 @@
 'use client';
-import { ConfirmEmail } from '@repo/ui';
+import { ConfirmEmail, SpinnerWithText } from '@repo/ui';
 import { useRouter, useSearchParams } from 'next/navigation';
-import React from 'react';
+import { Suspense } from 'react';
 
 export default function ConfirmPage() {
+	return (
+		<Suspense fallback={<SpinnerWithText />}>
+			<Content />
+		</Suspense>
+	);
+}
+
+function Content() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const token = searchParams.get('token');

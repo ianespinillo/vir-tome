@@ -6,30 +6,33 @@ import {
 	CreateUserDialog,
 	InputFilter,
 	ModalCrudProvider,
+	SpinnerWithText,
 	Toaster,
 	UserDetailsDialog,
 	UsersTable,
 	useModalCrud,
 } from '@repo/ui';
-import React from 'react';
+import { Suspense } from 'react';
 export default function MyUsersPage() {
 	return (
-		<ModalCrudProvider<ReturnType<typeof useUsers>, IUser, BaseQueriesDto<IUser>>
-			useHook={useUsers}
-		>
-			<Toaster richColors position="top-right" />
-			<div className="flex flex-col gap-6 p-6 h-full w-full">
-				<div className="flex justify-end p-2 gap-2">
-					<InputFilter text="Buscar usuario por nombre o mail" />
-					<Button />
+		<Suspense fallback={<SpinnerWithText text="Cargando usuarios..." />}>
+			<ModalCrudProvider<ReturnType<typeof useUsers>, IUser, BaseQueriesDto<IUser>>
+				useHook={useUsers}
+			>
+				<Toaster richColors position="top-right" />
+				<div className="flex flex-col gap-6 p-6 h-full w-full">
+					<div className="flex justify-end p-2 gap-2">
+						<InputFilter text="Buscar usuario por nombre o mail" />
+						<Button />
+					</div>
+					<div className="w-full">
+						<UsersTable />
+					</div>
 				</div>
-				<div className="w-full">
-					<UsersTable />
-				</div>
-			</div>
-			<CreateUserDialog />
-			<UserDetailsDialog />
-		</ModalCrudProvider>
+				<CreateUserDialog />
+				<UserDetailsDialog />
+			</ModalCrudProvider>
+		</Suspense>
 	);
 }
 

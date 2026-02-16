@@ -1,4 +1,5 @@
-import { PAYLOAD_TYPE, ROLES } from '@repo/common';
+import { PAYLOAD_TYPE } from './types/payload-type.enum';
+import { ROLES } from './types/roles.enum';
 
 // --- INTERFACES PARA JWT PAYLOAD ---
 export interface AuthPayload {

@@ -1,45 +1,46 @@
 import 'reflect-metadata';
 
-export { LoginForm } from './components/forms/login-form';
-export { DashSidebar } from './components/sidebars/dash-sidebar';
-export { SidebarProvider } from './ui/sidebar';
-export { BookForm } from './components/forms/book-form';
-export { AddBook } from './components/dialogs/books/add-book';
-export { BooksTable } from './components/tables/table/books-table';
-export { LoansTable } from './components/tables/table/loans-table';
-export { NewLoan } from './components/dialogs/loan/new-loan';
-export { PersonalInfoForm } from './components/forms/personal-info';
-export { PasswordChangeForm } from './components/forms/password-change';
-export { ConfirmEmail } from './components/cards/confirm-email';
+export { AlertsPanel } from './components/cards/alert-card';
 export { BooksCount } from './components/cards/books-count';
+export { ConfirmEmail } from './components/cards/confirm-email';
+export { LandingStatCard } from './components/cards/landing-stat-card';
+export { LoansPanel } from './components/cards/last-loans-card';
 export { LoansCount } from './components/cards/loans-count';
-export { LastLoansTable } from './components/tables/table/last-loans';
-export { LastReturnsTable } from './components/tables/table/last-returns';
-export { RecentTenantsTable } from './components/tables/table/recent-tenants-table';
+export { StatCard } from './components/cards/stat-card';
+export { UpcomingCard } from './components/cards/upcoming-card';
 export { OverviewChart } from './components/charts/overview-chart';
-export { KpiGrid } from './components/kpi/kpi-grid';
-export { TenantsTable } from './components/tables/table/tenants-table';
-export { UsersTable } from './components/tables/table/user-table';
+export { AddBook } from './components/dialogs/books/add-book';
+export { BookDetailDialog } from './components/dialogs/books/book-details';
+export { EditBook } from './components/dialogs/books/edit-book';
+export { LoanDetailsDialog } from './components/dialogs/loan/loan-details';
+export { NewLoan } from './components/dialogs/loan/new-loan';
+export { RequestLoanDialog } from './components/dialogs/loan/request-loan';
 export { CreateTenantDialog } from './components/dialogs/tenants/create-tenant-dialog';
 export { EditTenantDialog } from './components/dialogs/tenants/edit-tenant-dialog';
 export { TenantDetailsDialog } from './components/dialogs/tenants/tenant-details-dialog';
 export { CreateUserDialog } from './components/dialogs/users/create-user-dialog';
 export { UserDetailsDialog } from './components/dialogs/users/user-details-dialog';
-export { MostLoanedBooksTable } from './components/tables/table/most-loaned-books-table';
-export { LastUsersTable } from './components/tables/table/last-users';
-export { EditBook } from './components/dialogs/books/edit-book';
-export { BookDetailDialog } from './components/dialogs/books/book-details';
-export { LoanDetailsDialog } from './components/dialogs/loan/loan-details';
-export { MyLoansTable } from './components/tables/table/my-loans-table';
-export { RequestLoanDialog } from './components/dialogs/loan/request-loan';
-export { RequestTable } from './components/tables/table/requests-table';
-export { AlertsPanel } from './components/cards/alert-card';
-export { StatCard } from './components/cards/stat-card';
-export { LoansPanel } from './components/cards/last-loans-card';
-export { UpcomingCard } from './components/cards/upcoming-card';
+export { BookForm } from './components/forms/book-form';
+export { LoginForm } from './components/forms/login-form';
+export { PasswordChangeForm } from './components/forms/password-change';
+export { PersonalInfoForm } from './components/forms/personal-info';
+export { KpiGrid } from './components/kpi/kpi-grid';
 export { DemoSection } from './components/sections/demo-section';
-export { LandingStatCard } from './components/cards/landing-stat-card';
+export { DashSidebar } from './components/sidebars/dash-sidebar';
+export { SpinnerWithText } from './components/spinners/spinner-with-text';
+export { BooksTable } from './components/tables/table/books-table';
+export { LastLoansTable } from './components/tables/table/last-loans';
+export { LastReturnsTable } from './components/tables/table/last-returns';
+export { LastUsersTable } from './components/tables/table/last-users';
+export { LoansTable } from './components/tables/table/loans-table';
+export { MostLoanedBooksTable } from './components/tables/table/most-loaned-books-table';
+export { MyLoansTable } from './components/tables/table/my-loans-table';
+export { RecentTenantsTable } from './components/tables/table/recent-tenants-table';
+export { RequestTable } from './components/tables/table/requests-table';
+export { TenantsTable } from './components/tables/table/tenants-table';
+export { UsersTable } from './components/tables/table/user-table';
 export * from './ui/scroll-area';
+export { SidebarProvider } from './ui/sidebar';
 
 // toaster
 export { Toaster } from 'sonner';
@@ -53,24 +54,24 @@ export { MostLoanedBooks } from './components/cards/most-loaned-books';
 //landing
 export { CTAButtons } from './components/buttons/cta-buttons';
 export { FeatureCard } from './components/cards/feature-card';
-export { NavigationMenu } from './components/menus/navigation-menu';
 export { Logo } from './components/icons/logo';
+export { NavigationMenu } from './components/menus/navigation-menu';
 // Shadcn
-export { Button } from './ui/button';
 export { AddButton } from './components/buttons/add-button';
+export { Button } from './ui/button';
 
 //Lucide
 export {
-	Menu,
-	BookOpen,
-	Users,
-	BarChart3,
-	Shield,
-	Clock,
-	Smartphone,
-	Play,
 	AlertTriangle,
+	BarChart3,
+	BookOpen,
 	CheckCircle,
+	Clock,
+	Menu,
+	Play,
+	Shield,
+	Smartphone,
+	Users,
 } from 'lucide-react';
 // Input
 export { InputFilter } from './components/inputs/input-filter';

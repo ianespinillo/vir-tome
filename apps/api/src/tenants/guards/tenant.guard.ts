@@ -23,7 +23,7 @@ export class TenantGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const req = context.switchToHttp().getRequest<ExtendedRequest>();
+		const req = context.switchToHttp().getRequest<Request & ExtendedRequest>();
 
 		// Opcional: Excluir rutas públicas
 		if (this.isPublicRoute(req)) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { IUser, ROLES, UsersQueriesDto } from '@repo/common';
+import { IUser, UsersQueriesDto } from '@repo/common';
 import { useUsers } from '@repo/hooks';
 import {
 	AddButton,
@@ -12,7 +12,7 @@ import {
 	UsersTable,
 	useModalCrud,
 } from '@repo/ui';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function AdminsPage() {
 	const [isClient, setIsClient] = useState(false);
